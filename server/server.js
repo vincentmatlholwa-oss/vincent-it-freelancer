@@ -45,6 +45,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
+// Health check (before rate limiter to avoid 429)
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
+app.get('/health', (req, res) => res.status(200).send('ok'));
+
 // Rate limiting
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
