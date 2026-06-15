@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vincent-it-freelancer
+    env: node
+    buildCommand: npm install --prefix server
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@vincentit.com
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: WHATSAPP_NUMBER
+        value: "27677834591"
