@@ -1,0 +1,29 @@
+[
+    {
+        "title": "5 Signs Your PC Needs a Professional Cleanup",
+        "slug": "pc-cleanup-signs",
+        "excerpt": "Is your PC running slower than usual? Here are 5 tell-tale signs that it's time for a professional cleanup.",
+        "content": "<p>Over time, every PC accumulates digital clutter that slows it down. Here are 5 signs it's time for a cleanup:</p><h3>1. Slow Boot Times</h3><p>If your PC takes more than 2 minutes to boot, it's likely overloaded with startup programs and background processes.</p><h3>2. Frequent Crashes</h3><p>Random crashes and blue screens often indicate driver conflicts, corrupted system files, or failing hardware.</p><h3>3. Low Storage Space</h3><p>Running out of storage? Temporary files, old downloads, and system caches can eat up precious space.</p><h3>4. Overheating</h3><p>Dust buildup inside your PC case can cause overheating, leading to performance throttling and hardware damage.</p><h3>5. Pop-ups and Unwanted Software</h3><p>If you're seeing unusual pop-ups or browser redirects, your PC may have adware or unwanted programs installed.</p><p>Contact Vincent IT Freelancer for a thorough PC cleanup and optimization service!</p>",
+        "author": "Vincent IT",
+        "tags": "pc, cleanup, maintenance, tips",
+        "created_at": "2026-01-15"
+    },
+    {
+        "title": "Microsoft Office vs LibreOffice: Which is Right for You?",
+        "slug": "office-vs-libreoffice",
+        "excerpt": "Comparing Microsoft Office and LibreOffice to help you decide which productivity suite fits your needs and budget.",
+        "content": "<p>Choosing between Microsoft Office and LibreOffice can be tough. Here's a breakdown:</p><h3>Microsoft Office</h3><p>The industry standard with full-featured Word, Excel, PowerPoint, and Outlook. Offers cloud integration via OneDrive and regular updates. Best for professionals and students who need compatibility with others.</p><h3>LibreOffice</h3><p>A free, open-source alternative that supports most Office file formats. Includes Writer, Calc, Impress, and more. Great for basic document creation and editing without the cost.</p><h3>Our Recommendation</h3><p>For most users in Mahikeng, we recommend Microsoft Office for its reliability and compatibility. We offer affordable activation services for Office 2013 through 365.</p><p>Contact us for a discounted Office activation!</p>",
+        "author": "Vincent IT",
+        "tags": "office, software, comparison",
+        "created_at": "2026-02-01"
+    },
+    {
+        "title": "How to Backup Your Data Before a Repair",
+        "slug": "backup-before-repair",
+        "excerpt": "Essential steps to backup your important files before bringing your PC in for repair or maintenance.",
+        "content": "<p>Before any PC repair, backing up your data is essential. Here's how:</p><h3>1. Use an External Drive</h3><p>Connect an external hard drive or USB stick and copy your important documents, photos, and videos manually.</p><h3>2. Cloud Backup</h3><p>Services like Google Drive, OneDrive, and Dropbox offer free storage up to 15GB. Upload your critical files.</p><h3>3. Windows Backup Tool</h3><p>Windows has a built-in backup tool (Control Panel > Backup and Restore) that can create a full system image.</p><h3>4. What to Backup</h3><p>Focus on: Documents, Photos/Videos, Bookmarks, Email files, and any work projects. Software can be reinstalled.</p><p>Remember: Vincent IT Freelancer is not liable for pre-existing data loss. Always backup before service!</p>",
+        "author": "Vincent IT",
+        "tags": "backup, data, repair, tips",
+        "created_at": "2026-03-10"
+    }
+]

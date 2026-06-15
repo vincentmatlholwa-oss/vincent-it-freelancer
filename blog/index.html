@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Tips & Blog - Vincent IT Freelancer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .blog-page { max-width:800px; margin:4rem auto; padding:2rem; }
+        .blog-header { text-align:center; margin-bottom:3rem; }
+        .blog-header a { color:var(--accent-1); text-decoration:none; font-size:0.85rem; display:inline-block; margin-bottom:1rem; }
+        .blog-post { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:2rem; margin-bottom:1.5rem; transition:0.3s; }
+        .blog-post:hover { transform:translateY(-3px); box-shadow:0 8px 32px rgba(0,0,0,0.4); }
+        .blog-post h2 { font-size:1.3rem; margin-bottom:0.5rem; }
+        .blog-post h2 a { color:var(--text-primary); text-decoration:none; }
+        .blog-post h2 a:hover { color:var(--accent-1); }
+        .blog-meta { color:var(--text-muted); font-size:0.8rem; margin-bottom:0.8rem; }
+        .blog-excerpt { color:var(--text-secondary); font-size:0.9rem; line-height:1.7; margin-bottom:1rem; }
+        .blog-tag { display:inline-block; padding:0.15rem 0.5rem; font-size:0.7rem; border-radius:50px; background:rgba(0,212,255,0.1); color:var(--accent-1); margin-right:0.3rem; margin-bottom:0.3rem; }
+        .blog-single { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:2rem; }
+        .blog-single h1 { font-size:1.8rem; margin-bottom:0.5rem; }
+        .blog-single .content { color:var(--text-secondary); line-height:1.9; font-size:0.95rem; }
+        .blog-single .content h3 { color:var(--text-primary); margin-top:1.5rem; margin-bottom:0.5rem; }
+        .blog-single .content p { margin-bottom:1rem; }
+        .blog-single .content ul, .blog-single .content ol { margin-left:1.5rem; margin-bottom:1rem; }
+        .blog-single .content li { margin-bottom:0.3rem; }
+        #blogList, #blogSingle { transition:0.3s; }
+        .loading { text-align:center; color:var(--text-muted); padding:3rem; }
+        .loading i { font-size:2rem; margin-bottom:1rem; }
+    </style>
+</head>
+<body>
+    <div class="blog-page">
+        <div class="blog-header">
+            <a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            <h1 style="font-size:2.5rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Tech Tips & Blog</h1>
+            <p style="color:var(--text-secondary)">IT tips, guides, and updates from Vincent IT Freelancer</p>
+        </div>
+        <div id="blogList"><div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Loading posts...</p></div></div>
+        <div id="blogSingle" style="display:none"></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3000';
+
+        async function loadPosts() {
+            const container = document.getElementById('blogList');
+            const params = new URLSearchParams(window.location.search);
+            const slug = params.get('slug');
+
+            if (slug) { loadSinglePost(slug); return; }
+
+            try {
+                const posts = await fetch(API + '/api/blog').then(r => r.json());
+                if (posts.length) {
+                    container.innerHTML = posts.map(p => `
+                        <div class="blog-post">
+                            <h2><a href="?slug=${p.slug}">${p.title}</a></h2>
+                            <div class="blog-meta">By ${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
+                            <div class="blog-excerpt">${p.excerpt}</div>
+                            <div>${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">No posts yet. Check back soon!</p>';
+                    try {
+                        const localPosts = await fetch('../blog/posts.json').then(r => r.json());
+                        if (localPosts.length) {
+                            container.innerHTML = localPosts.map(p => `
+                                <div class="blog-post">
+                                    <h2><a href="?slug=${p.slug}">${p.title}</a></h2>
+                                    <div class="blog-meta">By ${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
+                                    <div class="blog-excerpt">${p.excerpt}</div>
+                                    <div>${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
+                                </div>
+                            `).join('');
+                        }
+                    } catch {}
+                }
+            } catch {
+                try {
+                    const localPosts = await fetch('../blog/posts.json').then(r => r.json());
+                    container.innerHTML = localPosts.map(p => `
+                        <div class="blog-post">
+                            <h2><a href="?slug=${p.slug}">${p.title}</a></h2>
+                            <div class="blog-meta">By ${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
+                            <div class="blog-excerpt">${p.excerpt}</div>
+                            <div>${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
+                        </div>
+                    `).join('');
+                } catch { container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Could not load posts.</p>'; }
+            }
+        }
+
+        async function loadSinglePost(slug) {
+            document.getElementById('blogList').style.display = 'none';
+            const container = document.getElementById('blogSingle');
+            container.style.display = 'block';
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Loading post...</p></div>';
+
+            try {
+                const post = await fetch(API + '/api/blog/' + slug).then(r => r.json());
+                if (post.error) throw new Error(post.error);
+                container.innerHTML = `
+                    <div class="blog-single">
+                        <a href="?" style="color:var(--accent-1);text-decoration:none;font-size:0.85rem"><i class="fas fa-arrow-left"></i> Back to all posts</a>
+                        <h1 style="margin-top:1rem">${post.title}</h1>
+                        <div class="blog-meta" style="margin-bottom:1.5rem">By ${post.author} &middot; ${new Date(post.created_at).toLocaleDateString()}</div>
+                        <div class="content">${post.content}</div>
+                        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+                            <p style="color:var(--text-muted);font-size:0.85rem">Tags: ${(post.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</p>
+                        </div>
+                    </div>
+                `;
+            } catch {
+                try {
+                    const localPosts = await fetch('../blog/posts.json').then(r => r.json());
+                    const post = localPosts.find(p => p.slug === slug);
+                    if (post) {
+                        container.innerHTML = `
+                            <div class="blog-single">
+                                <a href="?" style="color:var(--accent-1);text-decoration:none;font-size:0.85rem"><i class="fas fa-arrow-left"></i> Back to all posts</a>
+                                <h1 style="margin-top:1rem">${post.title}</h1>
+                                <div class="blog-meta" style="margin-bottom:1.5rem">By ${post.author} &middot; ${new Date(post.created_at).toLocaleDateString()}</div>
+                                <div class="content">${post.content}</div>
+                            </div>
+                        `;
+                    } else { container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Post not found.</p>'; }
+                } catch { container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Could not load post.</p>'; }
+            }
+        }
+
+        loadPosts();
+    </script>
+</body>
+</html>

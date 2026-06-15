@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal - Vincent IT Freelancer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .portal-page { max-width:800px; margin:4rem auto; padding:2rem; }
+        .portal-header { text-align:center; margin-bottom:2rem; }
+        .portal-header a { color:var(--accent-1); text-decoration:none; font-size:0.85rem; }
+        .portal-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1rem; }
+        .portal-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
+        .portal-card-body { color:var(--text-secondary); font-size:0.9rem; }
+        .portal-card-body span { display:block; margin-bottom:0.3rem; }
+        .portal-form { max-width:400px; margin:0 auto; }
+        .portal-form .form-group { margin-bottom:1rem; }
+        .portal-form label { display:block; color:var(--text-secondary); font-size:0.85rem; margin-bottom:0.3rem; }
+        .portal-form input { width:100%; padding:0.7rem; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:#fff; font-family:inherit; }
+        .order-track { display:flex; gap:0.5rem; margin-top:1rem; justify-content:center; }
+        .track-step { display:flex; flex-direction:column; align-items:center; gap:0.3rem; font-size:0.7rem; color:var(--text-muted); padding:0.5rem; border-radius:8px; flex:1; text-align:center; }
+        .track-step.active { color:var(--accent-1); }
+        .track-step i { font-size:1.2rem; }
+        .status-badge { padding:0.2rem 0.6rem; border-radius:50px; font-size:0.7rem; font-weight:600; }
+        .status-pending { background:rgba(255,107,53,0.15); color:#ff6b35; }
+        .status-in_progress { background:rgba(0,212,255,0.15); color:var(--accent-1); }
+        .status-completed { background:rgba(0,200,83,0.15); color:#00c853; }
+        .status-cancelled { background:rgba(255,68,68,0.15); color:#ff4444; }
+    </style>
+</head>
+<body>
+    <div class="portal-page">
+        <div class="portal-header">
+            <a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            <h1 style="margin-top:1rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Client Portal</h1>
+            <p style="color:var(--text-secondary)">Track your orders and manage your account</p>
+        </div>
+
+        <div id="portalAuth" class="portal-form">
+            <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem">
+                <button id="showLogin" class="btn btn-primary" style="flex:1;justify-content:center">Login</button>
+                <button id="showRegister" class="btn btn-outline" style="flex:1;justify-content:center">Register</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group"><label>Email</label><input type="email" id="loginEmail" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="loginPassword" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Login</button>
+                <div id="loginMsg" style="margin-top:0.5rem;font-size:0.85rem"></div>
+            </form>
+            <form id="registerForm" style="display:none">
+                <div class="form-group"><label>Full Name</label><input type="text" id="regName" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="regEmail" required></div>
+                <div class="form-group"><label>Phone</label><input type="tel" id="regPhone"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="regPassword" required minlength="4"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Register</button>
+                <div id="regMsg" style="margin-top:0.5rem;font-size:0.85rem"></div>
+            </form>
+        </div>
+
+        <div id="portalDashboard" style="display:none">
+            <div class="portal-card" style="text-align:center">
+                <h3>Welcome, <span id="portalUserName"></span>!</h3>
+                <p style="color:var(--text-secondary);font-size:0.85rem">Referral Code: <strong id="portalRefCode" style="color:var(--accent-1)"></strong></p>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+                <button id="showOrders" class="btn btn-primary" style="flex:1;justify-content:center">My Orders</button>
+                <button id="showAppts" class="btn btn-outline" style="flex:1;justify-content:center">Appointments</button>
+                <button id="portalLogout" class="btn btn-outline" style="justify-content:center">Logout</button>
+            </div>
+            <div id="portalOrders"></div>
+            <div id="portalAppointments" style="display:none"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        let client = JSON.parse(localStorage.getItem('vit_portal_session'));
+
+        if (client) showDashboard();
+
+        document.getElementById('showLogin').addEventListener('click', () => {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('showLogin').className = 'btn btn-primary';
+            document.getElementById('showRegister').className = 'btn btn-outline';
+        });
+        document.getElementById('showRegister').addEventListener('click', () => {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('showRegister').className = 'btn btn-primary';
+            document.getElementById('showLogin').className = 'btn btn-outline';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch(API+'/api/clients/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+                email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value
+            })});
+            const data = await res.json();
+            if (data.success) { client = data.client; localStorage.setItem('vit_portal_session', JSON.stringify(client)); showDashboard(); }
+            else document.getElementById('loginMsg').innerHTML = '<span style="color:#ff6b35">'+data.error+'</span>';
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch(API+'/api/clients/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+                name: document.getElementById('regName').value, email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value
+            })});
+            const data = await res.json();
+            if (data.success) { client = data.client; localStorage.setItem('vit_portal_session', JSON.stringify(client)); showDashboard(); }
+            else document.getElementById('regMsg').innerHTML = '<span style="color:#ff6b35">'+data.error+'</span>';
+        });
+
+        document.getElementById('portalLogout').addEventListener('click', () => {
+            client = null; localStorage.removeItem('vit_portal_session');
+            document.getElementById('portalAuth').style.display = 'block';
+            document.getElementById('portalDashboard').style.display = 'none';
+        });
+
+        document.getElementById('showOrders').addEventListener('click', () => {
+            document.getElementById('portalOrders').style.display = 'block';
+            document.getElementById('portalAppointments').style.display = 'none';
+            loadOrders();
+        });
+        document.getElementById('showAppts').addEventListener('click', () => {
+            document.getElementById('portalOrders').style.display = 'none';
+            document.getElementById('portalAppointments').style.display = 'block';
+            loadAppointments();
+        });
+
+        function showDashboard() {
+            document.getElementById('portalAuth').style.display = 'none';
+            document.getElementById('portalDashboard').style.display = 'block';
+            document.getElementById('portalUserName').textContent = client.name;
+            document.getElementById('portalRefCode').textContent = client.referral_code;
+            loadOrders();
+        }
+
+        async function loadOrders() {
+            const c = document.getElementById('portalOrders');
+            try {
+                const orders = await fetch(API+'/api/orders?email='+encodeURIComponent(client.email)).then(r=>r.json());
+                c.innerHTML = orders.length ? orders.map(o => `
+                    <div class="portal-card">
+                        <div class="portal-card-header"><strong>${o.service}</strong><span class="status-badge status-${o.status}">${o.status}</span></div>
+                        <div class="portal-card-body">
+                            <span>Price: ${o.price||'N/A'}</span>
+                            <span>Payment: ${o.deposit_paid ? 'Deposit Paid' : o.payment_status}</span>
+                            <span>Ordered: ${new Date(o.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="order-track">
+                            <div class="track-step active"><i class="fas fa-file-signature"></i><span>Contract</span></div>
+                            <div class="track-step ${o.status==='in_progress'||o.status==='completed'?'active':''}"><i class="fas fa-cogs"></i><span>In Progress</span></div>
+                            <div class="track-step ${o.status==='completed'?'active':''}"><i class="fas fa-check-circle"></i><span>Done</span></div>
+                        </div>
+                    </div>
+                `).join('') : '<p style="color:var(--text-secondary);text-align:center">No orders yet</p>';
+            } catch { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Server offline</p>'; }
+        }
+
+        async function loadAppointments() {
+            const c = document.getElementById('portalAppointments');
+            c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Appointment tracking coming soon with full calendar integration.</p>';
+        }
+
+        if (client) { document.getElementById('showOrders').click(); }
+    </script>
+</body>
+</html>
