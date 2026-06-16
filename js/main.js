@@ -67,25 +67,29 @@ const cvTemplates = [
         icon: 'fa-solid fa-file-lines', title: 'Classic Professional CV',
         desc: 'Timeless serif design with traditional layout. Perfect for law, finance, academia, and conservative industries. ATS-friendly semantic HTML.',
         features: ['Serif typography', 'Traditional layout', 'ATS-optimized', 'Print-ready CSS', 'Customizable colors'], id: 'cv-classic',
-        category: 'CV Template', price: 'R150', type: 'cv'
+        category: 'CV Template', price: 'R150', type: 'cv',
+        demo: '/templates/cv/classic.html'
     },
     {
         icon: 'fa-solid fa-pen-fancy', title: 'Modern Clean CV',
         desc: 'Contemporary sans-serif design with accent color sidebar. Ideal for tech, creative, and marketing professionals. Two-column layout.',
         features: ['Sans-serif modern', 'Two-column layout', 'ATS-friendly HTML', 'Gradient header', 'Print optimized'], id: 'cv-modern',
-        category: 'CV Template', price: 'R150', type: 'cv'
+        category: 'CV Template', price: 'R150', type: 'cv',
+        demo: '/templates/cv/modern.html'
     },
     {
         icon: 'fa-solid fa-crown', title: 'Executive Premium CV',
         desc: 'Executive-grade CV with skill bars, dark header, and premium feel. Made for senior roles, C-level positions, and board members.',
         features: ['Executive styling', 'Skill proficiency bars', 'Dark premium header', 'ATS semantic markup', 'Contact sidebar'], id: 'cv-executive',
-        category: 'CV Template', price: 'R200', type: 'cv'
+        category: 'CV Template', price: 'R200', type: 'cv',
+        demo: '/templates/cv/executive.html'
     },
     {
         icon: 'fa-solid fa-minus', title: 'Minimal ATS CV',
-        desc: 'Ultra-clean, maximum ATS compatibility. No columns, no tables, no complex CSS. Highest parser score guaranteed.',
+        desc: 'Ultra-clear, maximum ATS compatibility. No columns, no tables, no complex CSS. Highest parser score guaranteed.',
         features: ['Maximum ATS score', 'Single-column flow', 'No complex layouts', 'Plain semantic HTML', 'Fast parsing'], id: 'cv-minimal',
-        category: 'CV Template', price: 'R100', type: 'cv'
+        category: 'CV Template', price: 'R100', type: 'cv',
+        demo: '/templates/cv/minimal.html'
     }
 ];
 

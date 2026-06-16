@@ -3903,6 +3903,23 @@ img { max-width: 100%; display: block; }
         align-items: stretch;
     }
     .template-actions {
+        flex-direction: column;
+        justify-content: stretch;
+    }
+    .template-actions .btn-sm {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        width: 100%;
+    }
+}
+@media(min-width:481px) and (max-width:768px) {
+    .template-footer {
+        flex-direction: column;
+        gap: 0.8rem;
+        align-items: stretch;
+    }
+    .template-actions {
         justify-content: stretch;
     }
     .template-actions .btn-sm {
