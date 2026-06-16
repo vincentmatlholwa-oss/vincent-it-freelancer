@@ -616,8 +616,14 @@ function initNavbar() {
 
 function initMobileNav() {
     const toggle = document.getElementById('navToggle'), menu = document.getElementById('navMenu');
-    toggle.addEventListener('click', () => { toggle.classList.toggle('active'); menu.classList.toggle('active'); });
-    document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => { toggle.classList.remove('active'); menu.classList.remove('active'); }));
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active'); menu.classList.toggle('active');
+        document.body.classList.toggle('nav-open');
+    });
+    document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => {
+        toggle.classList.remove('active'); menu.classList.remove('active');
+        document.body.classList.remove('nav-open');
+    }));
 }
 
 function initScrollTop() {
