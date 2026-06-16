@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Clean CV</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 10.5pt; line-height: 1.6; color: #2d2d2d; background: #f5f7fa; padding: 40px; }
+  .page { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden; }
+  .header-section { background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff; padding: 36px 40px 32px; }
+  h1 { font-size: 28pt; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+  .subtitle { font-size: 12pt; font-weight: 400; opacity: 0.9; margin-top: 4px; }
+  .contact-bar { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 16px; font-size: 9.5pt; }
+  .contact-bar span { display: inline-flex; align-items: center; gap: 6px; opacity: 0.9; }
+  .contact-bar i { font-style: normal; }
+  .body-content { padding: 32px 40px 40px; }
+  .grid-2col { display: grid; grid-template-columns: 1fr 2fr; gap: 32px; }
+  .left-col { border-right: 1px solid #e5e7eb; padding-right: 28px; }
+  h2 { font-size: 11pt; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+  .section { margin-bottom: 24px; }
+  .section-full { margin-bottom: 24px; }
+  .contact-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 9.5pt; color: #555; }
+  .contact-item i { font-style: normal; width: 16px; color: #2563eb; }
+  .skill-group { margin-bottom: 14px; }
+  .skill-group h3 { font-size: 9.5pt; font-weight: 700; color: #444; margin-bottom: 4px; }
+  .skill-group p { font-size: 9pt; color: #666; line-height: 1.5; }
+  .job { margin-bottom: 18px; }
+  .job-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 2px; }
+  .job-title { font-weight: 700; font-size: 11pt; color: #1e1e1e; }
+  .job-date { color: #888; font-size: 9pt; white-space: nowrap; }
+  .job-company { color: #2563eb; font-weight: 600; font-size: 10pt; margin-bottom: 4px; }
+  ul { padding-left: 16px; margin-top: 4px; }
+  li { margin-bottom: 4px; font-size: 9.5pt; color: #444; }
+  .edu-item { margin-bottom: 12px; }
+  .edu-degree { font-weight: 700; font-size: 10.5pt; }
+  .edu-school { color: #555; font-size: 9.5pt; }
+  .edu-date { color: #888; font-size: 9pt; }
+  .summary-text { font-size: 10pt; color: #444; line-height: 1.7; margin-bottom: 4px; }
+  .cert-item { font-size: 9.5pt; color: #444; margin-bottom: 4px; padding-left: 16px; }
+  @media print { body { padding: 0; background: #fff; } .page { box-shadow: none; border-radius: 0; } }
+  @media (max-width: 700px) { .grid-2col { grid-template-columns: 1fr; } .left-col { border-right: none; padding-right: 0; } body { padding: 16px; } .header-section, .body-content { padding: 24px; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header-section">
+  <h1>Sarah Mitchell</h1>
+  <div class="subtitle">Product Designer &amp; UX Strategist</div>
+  <div class="contact-bar">
+    <span><i>&#9993;</i> sarah.mitchell@email.com</span>
+    <span><i>&#9742;</i> +1 (555) 234-5678</span>
+    <span><i>&#9906;</i> Brooklyn, NY</span>
+    <span><i>&#128279;</i> linkedin.com/in/sarahmitchell</span>
+    <span><i>&#127912;</i> behance.net/sarahmitchell</span>
+  </div>
+</div>
+
+<div class="body-content">
+  <div class="section-full">
+    <h2>Profile</h2>
+    <p class="summary-text">Innovative Product Designer with 6+ years of experience crafting user-centered digital experiences. Expert in end-to-end product design from research and wireframing to high-fidelity prototypes and design systems. Passionate about accessibility, data-driven design decisions, and bridging the gap between business goals and user needs.</p>
+  </div>
+
+  <div class="grid-2col">
+    <div class="left-col">
+      <div class="section">
+        <h2>Contact</h2>
+        <div class="contact-item"><i>&#9993;</i> sarah.mitchell@email.com</div>
+        <div class="contact-item"><i>&#9742;</i> +1 (555) 234-5678</div>
+        <div class="contact-item"><i>&#9906;</i> Brooklyn, NY 11201</div>
+      </div>
+
+      <div class="section">
+        <h2>Skills</h2>
+        <div class="skill-group"><h3>Design</h3><p>Figma, Sketch, Adobe XD, Framer, Principle, After Effects</p></div>
+        <div class="skill-group"><h3>Research</h3><p>User interviews, usability testing, A/B testing, analytics, surveys</p></div>
+        <div class="skill-group"><h3>Frontend</h3><p>HTML5, CSS3, JavaScript, React basics, Tailwind CSS</p></div>
+        <div class="skill-group"><h3>Tools</h3><p>Jira, Confluence, Notion, Miro, Storybook, Zeplin</p></div>
+      </div>
+
+      <div class="section">
+        <h2>Education</h2>
+        <div class="edu-item">
+          <div class="edu-degree">BFA in Interaction Design</div>
+          <div class="edu-school">Rhode Island School of Design</div>
+          <div class="edu-date">2014 &ndash; 2018 &bull; GPA: 3.7</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Certifications</h2>
+        <div class="cert-item">&#8226; Google UX Design Certificate (2022)</div>
+        <div class="cert-item">&#8226; Nielsen Norman Group UX Certified (2021)</div>
+      </div>
+
+      <div class="section">
+        <h2>Languages</h2>
+        <div class="skill-group"><p>English (Native), Spanish (Professional), French (Conversational)</p></div>
+      </div>
+    </div>
+
+    <div>
+      <h2>Experience</h2>
+
+      <div class="job">
+        <div class="job-header">
+          <span class="job-title">Senior Product Designer</span>
+          <span class="job-date">Mar 2021 &ndash; Present</span>
+        </div>
+        <div class="job-company">Lumina Health &bull; New York, NY</div>
+        <ul>
+          <li>Led redesign of patient portal serving 500K+ users, improving task completion rate by 45% and reducing support tickets by 30%</li>
+          <li>Established comprehensive design system with 200+ components, adopted across 3 product teams</li>
+          <li>Conducted 50+ user research sessions and usability tests, translating insights into actionable design improvements</li>
+          <li>Collaborated with engineering to implement design-to-code handoff process, reducing development cycles by 25%</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-header">
+          <span class="job-title">Product Designer</span>
+          <span class="job-date">Jan 2019 &ndash; Feb 2021</span>
+        </div>
+        <div class="job-company">Finova Financial &bull; New York, NY</div>
+        <ul>
+          <li>Designed mobile banking application from concept to launch, achieving 4.7-star rating and 100K+ downloads in first quarter</li>
+          <li>Created interactive prototypes and user flows for complex financial workflows, reducing onboarding friction by 40%</li>
+          <li>Established UX research framework and metrics dashboard, enabling data-informed design decisions across the organization</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-header">
+          <span class="job-title">Junior UX Designer</span>
+          <span class="job-date">Jun 2018 &ndash; Dec 2018</span>
+        </div>
+        <div class="job-company">CreativeLab Agency &bull; Boston, MA</div>
+        <ul>
+          <li>Supported senior designers in delivering wireframes, mockups, and prototypes for 10+ client projects</li>
+          <li>Conducted competitive analysis and heuristic evaluations to inform design strategy recommendations</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

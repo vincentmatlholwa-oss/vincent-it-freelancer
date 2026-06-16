@@ -62,6 +62,57 @@ const services = [
     }
 ];
 
+const cvTemplates = [
+    {
+        icon: 'fa-solid fa-file-lines', title: 'Classic Professional CV',
+        desc: 'Timeless serif design with traditional layout. Perfect for law, finance, academia, and conservative industries. ATS-friendly semantic HTML.',
+        features: ['Serif typography', 'Traditional layout', 'ATS-optimized', 'Print-ready CSS', 'Customizable colors'], id: 'cv-classic',
+        category: 'CV Template', price: 'R150', type: 'cv'
+    },
+    {
+        icon: 'fa-solid fa-pen-fancy', title: 'Modern Clean CV',
+        desc: 'Contemporary sans-serif design with accent color sidebar. Ideal for tech, creative, and marketing professionals. Two-column layout.',
+        features: ['Sans-serif modern', 'Two-column layout', 'ATS-friendly HTML', 'Gradient header', 'Print optimized'], id: 'cv-modern',
+        category: 'CV Template', price: 'R150', type: 'cv'
+    },
+    {
+        icon: 'fa-solid fa-crown', title: 'Executive Premium CV',
+        desc: 'Executive-grade CV with skill bars, dark header, and premium feel. Made for senior roles, C-level positions, and board members.',
+        features: ['Executive styling', 'Skill proficiency bars', 'Dark premium header', 'ATS semantic markup', 'Contact sidebar'], id: 'cv-executive',
+        category: 'CV Template', price: 'R200', type: 'cv'
+    },
+    {
+        icon: 'fa-solid fa-minus', title: 'Minimal ATS CV',
+        desc: 'Ultra-clean, maximum ATS compatibility. No columns, no tables, no complex CSS. Highest parser score guaranteed.',
+        features: ['Maximum ATS score', 'Single-column flow', 'No complex layouts', 'Plain semantic HTML', 'Fast parsing'], id: 'cv-minimal',
+        category: 'CV Template', price: 'R100', type: 'cv'
+    }
+];
+
+const templates = [
+    {
+        icon: 'fa-solid fa-bolt', title: 'Pulse — SaaS Landing Page',
+        desc: 'Modern SaaS/product landing page with dark mode, pricing tiers, testimonials accordion FAQ, and smooth scroll animations. Perfect for startups, AI tools, and tech products.',
+        features: ['Dark & light mode', '3 pricing tiers', 'Testimonials carousel', 'FAQ accordion', 'Scroll animations'],
+        demo: '/templates/pulse/', category: 'Landing Page',
+        price: 'From R500'
+    },
+    {
+        icon: 'fa-solid fa-dumbbell', title: 'FitForge — Fitness Coach',
+        desc: 'Config-driven fitness coach website with multi-niche theme system (fitness, restaurant, agency, course). Includes services, gallery, booking form, and testimonials carousel.',
+        features: ['Multi-niche themes', 'Config-driven content', 'Pricing toggle', 'Filterable gallery', 'WhatsApp integration', 'Cookie consent'],
+        demo: '/templates/fitforge/', category: 'Business',
+        price: 'From R700'
+    },
+    {
+        icon: 'fa-solid fa-user-astronaut', title: 'Interactive Portfolio',
+        desc: 'Personal portfolio with typewriter effect, filterable project gallery, skills showcase, and dark mode. Ideal for developers, designers, and creative professionals.',
+        features: ['Typing animation', 'Filterable projects', 'Skills grid', 'Dark mode', 'Testimonials', 'Contact form'],
+        demo: '/templates/portfolio/', category: 'Portfolio',
+        price: 'From R500'
+    }
+];
+
 const compareAttrs = ['Office', 'Windows', 'BSOD Fix', 'Data Recovery', 'Hardware', 'CV', 'Assignments', 'Website'];
 
 // ===== Render Services =====
@@ -134,6 +185,63 @@ function renderPricing() {
     grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
         btn.addEventListener('click', () => addToCart(parseInt(btn.dataset.index)));
     });
+}
+
+function renderTemplates() {
+    const grid = document.getElementById('templatesGrid');
+    if (!grid) return;
+    const allTemplates = [...cvTemplates, ...templates];
+    grid.innerHTML = allTemplates.map((t, i) => `
+        <div class="template-card fade-in" style="animation-delay:${0.1 * (i + 1)}s">
+            <div class="template-header">
+                <div class="template-icon"><i class="${t.icon}"></i></div>
+                <span class="template-category">${t.category}</span>
+            </div>
+            <h3>${t.title}</h3>
+            <p>${t.desc}</p>
+            <div class="template-features">
+                ${t.features.map(f => `<span class="template-tag"><i class="fas fa-check-circle"></i> ${f}</span>`).join('')}
+            </div>
+            <div class="template-footer">
+                <span class="template-price">${t.price}</span>
+                <div class="template-actions">
+                    ${t.type === 'cv'
+                        ? `<button class="btn btn-sm btn-primary" onclick="buyCVTemplate('${t.id}','${t.title}','${t.price}')"><i class="fas fa-shopping-cart"></i> Buy & Download</button>`
+                        : `<a href="${t.demo}" target="_blank" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i> Preview</a>
+                           <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%27m%20interested%20in%20the%20${encodeURIComponent(t.title)}.%20Can%20you%20customise%20it%20for%20my%20business%3F" target="_blank" class="btn btn-sm btn-whatsapp"><i class="fab fa-whatsapp"></i> Get This</a>`
+                    }
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function buyCVTemplate(id, title, price) {
+    const name = prompt('Enter your full name:');
+    if (!name) return;
+    const email = prompt('Enter your email address:');
+    if (!email || !email.includes('@')) { alert('Please enter a valid email.'); return; }
+    const phone = prompt('Enter your phone number (optional):');
+    if (navigator.onLine) {
+        fetch('/api/templates/purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_name: name, client_email: email, client_phone: phone || '', template_id: id })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nTo complete your purchase:\n1. Send R${price} via EFT/SnapScan\n2. WhatsApp us your Order ID\n3. We'll send your download link!\n\nPrice: ${price}\nProduct: ${title}`);
+                const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
+                window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+            } else {
+                alert('Error: ' + (data.error || 'Could not create order'));
+            }
+        })
+        .catch(() => alert('Server unavailable. Please contact us on WhatsApp.'));
+    } else {
+        alert('Please go online to purchase templates, or contact us on WhatsApp.');
+    }
 }
 
 // ===== Cart =====
@@ -579,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderServices();
     renderComparison();
     renderPricing();
+    renderTemplates();
     renderFAQ();
     loadCart();
     initCart();

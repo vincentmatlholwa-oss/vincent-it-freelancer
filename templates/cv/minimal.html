@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal ATS CV</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Arial', 'Helvetica', sans-serif; font-size: 11pt; line-height: 1.5; color: #222; background: #fff; padding: 36px; }
+  .page { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 24pt; font-weight: 700; color: #000; margin-bottom: 2px; }
+  .contact-line { font-size: 10pt; color: #444; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 4px 20px; }
+  .contact-line a { color: #222; text-decoration: none; }
+  .contact-line a:hover { text-decoration: underline; }
+  h2 { font-size: 12pt; font-weight: 700; color: #000; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 18px; margin-bottom: 8px; }
+  .section { margin-bottom: 2px; }
+  .item { margin-bottom: 12px; }
+  .item-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; }
+  .item-title { font-weight: 700; font-size: 11pt; color: #000; }
+  .item-date { color: #555; font-size: 10pt; white-space: nowrap; }
+  .item-sub { color: #444; font-size: 10pt; margin-bottom: 2px; }
+  ul { padding-left: 18px; margin-top: 2px; }
+  li { margin-bottom: 2px; font-size: 10.5pt; color: #333; }
+  .skills-line { font-size: 10.5pt; color: #333; line-height: 1.7; }
+  .skill-label { font-weight: 700; }
+  .summary { font-size: 10.5pt; color: #333; line-height: 1.6; }
+  .edu-degree { font-weight: 700; font-size: 11pt; }
+  .edu-school { color: #444; font-size: 10pt; }
+  .cert-line { font-size: 10.5pt; color: #333; margin-bottom: 2px; padding-left: 18px; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 2px 0; }
+  @media print { body { padding: 0; } }
+  @media (max-width: 600px) { body { padding: 18px; } .item-header { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Emily Rodriguez</h1>
+<div class="contact-line">
+  <span>emily.rodriguez@email.com</span>
+  <span>+1 (555) 456-7890</span>
+  <span>Chicago, IL</span>
+  <span>linkedin.com/in/emilyrodriguez</span>
+  <span>github.com/emilyrodriguez</span>
+</div>
+
+<section class="section">
+  <h2>Summary</h2>
+  <p class="summary">Data Engineer with 5+ years of experience designing and maintaining scalable data pipelines and analytics infrastructure. Proficient in Python, SQL, and cloud platforms with a strong background in ETL/ELT development, data warehousing, and real-time stream processing. Committed to building reliable, well-documented data systems that empower data-driven decision making.</p>
+</section>
+
+<section class="section">
+  <h2>Experience</h2>
+
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title">Data Engineer</span>
+      <span class="item-date">Jan 2022 &ndash; Present</span>
+    </div>
+    <div class="item-sub">Meridian Analytics &bull; Chicago, IL</div>
+    <ul>
+      <li>Designed and implemented scalable data pipeline processing 5TB+ daily using Apache Spark and Airflow</li>
+      <li>Built real-time streaming architecture with Kafka and Flink, reducing data latency from 2 hours to under 2 minutes</li>
+      <li>Developed dbt models and Looker dashboards used by 50+ analysts across the organization</li>
+      <li>Optimized Redshift data warehouse, improving query performance by 60% and reducing monthly costs by 25%</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title">Junior Data Engineer</span>
+      <span class="item-date">Jun 2020 &ndash; Dec 2021</span>
+    </div>
+    <div class="item-sub">Insight Data Solutions &bull; Chicago, IL</div>
+    <ul>
+      <li>Developed Python-based ETL pipelines for ingesting data from 20+ external APIs and databases</li>
+      <li>Created automated data quality monitoring system, reducing data incidents by 70%</li>
+      <li>Migrated legacy on-premise data warehouse to Snowflake, enabling elastic scaling and improved performance</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title">Data Analyst</span>
+      <span class="item-date">Sep 2018 &ndash; May 2020</span>
+    </div>
+    <div class="item-sub">MarketWise Consulting &bull; Evanston, IL</div>
+    <ul>
+      <li>Analyzed customer behavior data using SQL and Python, providing actionable insights to 3 business units</li>
+      <li>Built automated reporting dashboards in Tableau, reducing manual reporting effort by 15 hours per week</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Education</h2>
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title edu-degree">Master of Science in Data Science</span>
+      <span class="item-date">2016 &ndash; 2018</span>
+    </div>
+    <div class="item-sub edu-school">Northwestern University &bull; GPA: 3.9/4.0</div>
+  </div>
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title edu-degree">Bachelor of Science in Statistics</span>
+      <span class="item-date">2012 &ndash; 2016</span>
+    </div>
+    <div class="item-sub edu-school">University of Illinois at Urbana-Champaign &bull; Magna Cum Laude</div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Skills</h2>
+  <div class="skills-line">
+    <span class="skill-label">Languages:</span> Python, SQL, Scala, Bash<br>
+    <span class="skill-label">Big Data:</span> Apache Spark, Kafka, Flink, Airflow, dbt<br>
+    <span class="skill-label">Cloud:</span> AWS (S3, EMR, Redshift, Kinesis), GCP (BigQuery, Dataflow)<br>
+    <span class="skill-label">Databases:</span> PostgreSQL, Snowflake, BigQuery, MongoDB, Redis<br>
+    <span class="skill-label">Tools:</span> Docker, Terraform, Git, Jenkins, Tableau, Looker
+  </div>
+</section>
+
+<section class="section">
+  <h2>Certifications</h2>
+  <div class="cert-line">&#8226; AWS Certified Data Analytics &ndash; Specialty (2023)</div>
+  <div class="cert-line">&#8226; Google Professional Data Engineer (2022)</div>
+  <div class="cert-line">&#8226; Databricks Certified Associate Developer for Apache Spark (2021)</div>
+</section>
+
+</div>
+</body>
+</html>

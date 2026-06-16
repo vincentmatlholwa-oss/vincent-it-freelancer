@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Premium CV</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Calibri', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 10.5pt; line-height: 1.5; color: #1e1e1e; background: #e8ecf1; padding: 40px; }
+  .page { max-width: 800px; margin: 0 auto; background: #fff; box-shadow: 0 8px 40px rgba(0,0,0,0.12); }
+  .top-bar { background: #0f172a; height: 12px; }
+  .header-content { background: #0f172a; color: #fff; padding: 36px 44px 32px; }
+  .name-title { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; }
+  h1 { font-size: 32pt; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+  .title-block { text-align: right; }
+  .role { font-size: 14pt; font-weight: 300; color: #94a3b8; }
+  .badge { display: inline-block; background: #2563eb; color: #fff; font-size: 7.5pt; font-weight: 700; padding: 3px 10px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+  .contact-strip { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 9pt; color: #cbd5e1; }
+  .contact-strip span { display: inline-flex; align-items: center; gap: 6px; }
+  .body-content { padding: 32px 44px 40px; }
+  .grid-layout { display: grid; grid-template-columns: 1fr 2.2fr; gap: 36px; }
+  .side-col h2 { font-size: 10pt; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 2px solid #2563eb; }
+  .main-col h2 { font-size: 10pt; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 2px solid #0f172a; }
+  .side-section { margin-bottom: 24px; }
+  .main-section { margin-bottom: 24px; }
+  .contact-item { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 9pt; color: #555; }
+  .contact-item i { font-style: normal; width: 16px; color: #2563eb; font-weight: 700; }
+  .skill-block { margin-bottom: 12px; }
+  .skill-block h3 { font-size: 9pt; font-weight: 700; color: #333; margin-bottom: 2px; }
+  .skill-bar { height: 5px; background: #e5e7eb; border-radius: 3px; margin-top: 3px; overflow: hidden; }
+  .skill-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #3b82f6); border-radius: 3px; }
+  .skill-text { font-size: 8.5pt; color: #666; }
+  .exp-item { margin-bottom: 18px; }
+  .exp-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; }
+  .exp-title { font-weight: 700; font-size: 11pt; color: #0f172a; }
+  .exp-date { color: #888; font-size: 9pt; white-space: nowrap; }
+  .exp-company { color: #2563eb; font-weight: 600; font-size: 10pt; margin: 1px 0 4px; }
+  ul { padding-left: 16px; margin-top: 2px; }
+  li { margin-bottom: 3px; font-size: 9.5pt; color: #444; }
+  .edu-item { margin-bottom: 10px; }
+  .edu-degree { font-weight: 700; font-size: 10pt; }
+  .edu-school { color: #555; font-size: 9.5pt; }
+  .edu-detail { color: #777; font-size: 9pt; }
+  .summary { font-size: 9.5pt; color: #444; line-height: 1.7; }
+  .award-item { font-size: 9pt; color: #444; margin-bottom: 4px; padding-left: 16px; }
+  @media print { body { padding: 0; background: #fff; } .page { box-shadow: none; } }
+  @media (max-width: 700px) { .grid-layout { grid-template-columns: 1fr; } .name-title { flex-direction: column; align-items: flex-start; } .title-block { text-align: left; margin-top: 6px; } body { padding: 16px; } .header-content { padding: 24px; } .body-content { padding: 24px; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="top-bar"></div>
+
+<div class="header-content">
+  <div class="name-title">
+    <div>
+      <h1>Michael Chen</h1>
+      <div class="badge">MBA &bull; PMP</div>
+    </div>
+    <div class="title-block">
+      <div class="role">Chief Technology Officer</div>
+      <div style="font-size:9pt;color:#94a3b8;margin-top:2px;">Strategic Leader &bull; Digital Transformation</div>
+    </div>
+  </div>
+  <div class="contact-strip">
+    <span>&#9993; michael.chen@email.com</span>
+    <span>&#9742; +1 (555) 345-6789</span>
+    <span>&#9906; Seattle, WA</span>
+    <span>&#128279; linkedin.com/in/michaelchen</span>
+  </div>
+</div>
+
+<div class="body-content">
+
+  <div class="main-section" style="margin-bottom:28px;">
+    <h2 style="color:#2563eb;border-bottom-color:#2563eb;">Executive Profile</h2>
+    <p class="summary">Visionary technology executive with 15+ years of experience leading engineering organizations and driving digital transformation across Fortune 500 companies. Proven track record of scaling engineering teams from 10 to 200+, managing $50M+ technology budgets, and delivering innovative products that generate significant business value. Expert in cloud architecture, AI/ML strategy, and building high-performance engineering cultures.</p>
+  </div>
+
+  <div class="grid-layout">
+    <div class="side-col">
+
+      <div class="side-section">
+        <h2>Contact</h2>
+        <div class="contact-item"><i>&#9993;</i> michael.chen@email.com</div>
+        <div class="contact-item"><i>&#9742;</i> +1 (555) 345-6789</div>
+        <div class="contact-item"><i>&#9906;</i> Seattle, WA 98101</div>
+      </div>
+
+      <div class="side-section">
+        <h2>Core Skills</h2>
+        <div class="skill-block">
+          <h3>Technology Strategy</h3>
+          <div class="skill-bar"><div class="skill-fill" style="width:95%"></div></div>
+        </div>
+        <div class="skill-block">
+          <h3>Cloud Architecture</h3>
+          <div class="skill-bar"><div class="skill-fill" style="width:90%"></div></div>
+        </div>
+        <div class="skill-block">
+          <h3>Team Leadership</h3>
+          <div class="skill-bar"><div class="skill-fill" style="width:95%"></div></div>
+        </div>
+        <div class="skill-block">
+          <h3>AI/ML Strategy</h3>
+          <div class="skill-bar"><div class="skill-fill" style="width:80%"></div></div>
+        </div>
+        <div class="skill-block">
+          <h3>Agile &amp; DevOps</h3>
+          <div class="skill-bar"><div class="skill-fill" style="width:85%"></div></div>
+        </div>
+        <div class="skill-block">
+          <h3>Budget Management</h3>
+          <div class="skill-bar"><div class="skill-fill" style="width:90%"></div></div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h2>Education</h2>
+        <div class="edu-item">
+          <div class="edu-degree">MBA, Technology Management</div>
+          <div class="edu-school">MIT Sloan School of Management</div>
+          <div class="edu-detail">2010 &ndash; 2012 &bull; Dean&rsquo;s List</div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-degree">B.S. Computer Science</div>
+          <div class="edu-school">University of Washington</div>
+          <div class="edu-detail">2004 &ndash; 2008 &bull; Cum Laude &bull; GPA: 3.8</div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h2>Awards</h2>
+        <div class="award-item">&#8226; Forbes Tech Council Member (2024)</div>
+        <div class="award-item">&#8226; CTO of the Year &ndash; TechFutures Awards (2023)</div>
+        <div class="award-item">&#8226; AWS Community Builder (2022&ndash;2024)</div>
+      </div>
+
+      <div class="side-section">
+        <h2>Languages</h2>
+        <div class="skill-text">English (Native), Mandarin (Native), Japanese (Professional)</div>
+      </div>
+    </div>
+
+    <div class="main-col">
+
+      <h2>Experience</h2>
+
+      <div class="exp-item">
+        <div class="exp-header">
+          <span class="exp-title">Chief Technology Officer</span>
+          <span class="exp-date">Jan 2020 &ndash; Present</span>
+        </div>
+        <div class="exp-company">NexGen Technologies &bull; Seattle, WA</div>
+        <ul>
+          <li>Led technology strategy for $200M SaaS company, overseeing 200+ engineers across 8 product verticals</li>
+          <li>Drove cloud migration from on-premise to AWS, reducing infrastructure costs by 40% and improving platform scalability by 5x</li>
+          <li>Established AI/ML center of excellence, delivering 3 major AI-powered features that contributed $25M in new revenue</li>
+          <li>Built and mentored executive leadership team, achieving 95% employee retention rate and top-quartile engagement scores</li>
+        </ul>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-header">
+          <span class="exp-title">VP of Engineering</span>
+          <span class="exp-date">Jun 2015 &ndash; Dec 2019</span>
+        </div>
+        <div class="exp-company">CloudScale Inc. &bull; San Francisco, CA</div>
+        <ul>
+          <li>Scaled engineering team from 25 to 120 while maintaining agile culture and delivery velocity</li>
+          <li>Architected multi-tenant SaaS platform serving 10,000+ enterprise customers with 99.99% uptime SLA</li>
+          <li>Implemented OKR-driven engineering planning process, improving on-time delivery rate from 60% to 92%</li>
+          <li>Managed $35M annual engineering budget, optimizing resource allocation across 6 product teams</li>
+        </ul>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-header">
+          <span class="exp-title">Senior Engineering Manager</span>
+          <span class="exp-date">Mar 2012 &ndash; May 2015</span>
+        </div>
+        <div class="exp-company">DataStream Corp. &bull; San Francisco, CA</div>
+        <ul>
+          <li>Led 4 cross-functional teams building real-time analytics platform processing 1B+ events daily</li>
+          <li>Championed adoption of microservices architecture and containerization, reducing deployment failures by 80%</li>
+          <li>Established engineering hiring pipeline and onboarding program, reducing time-to-productivity by 40%</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="main-section" style="margin-top:8px;">
+    <h2>Board Memberships &amp; Publications</h2>
+    <ul>
+      <li>Board Advisor, StartupBoost Accelerator (2023&ndash;Present) &mdash; Mentoring 10+ early-stage tech startups annually</li>
+      <li>Published: &ldquo;Scaling Engineering Teams in the AI Era&rdquo; &mdash; Harvard Business Review, March 2024</li>
+      <li>Guest Lecturer, University of Washington &mdash; &ldquo;Building Resilient Technology Organizations&rdquo; (2022&ndash;2024)</li>
+    </ul>
+  </div>
+
+</div>
+
+</div>
+</body>
+</html>

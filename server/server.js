@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -163,6 +164,79 @@ app.post('/api/contact', validate([
 app.get('/api/contacts', authenticateToken, (req, res) => {
     const contacts = db.query('contacts', null);
     res.json(contacts.reverse());
+});
+
+// ===== Template Downloads =====
+const crypto = require('crypto');
+
+function generateToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+// Purchase a template - creates an order and generates download token
+const templatePrices = { 'cv-classic': 'R150', 'cv-modern': 'R150', 'cv-executive': 'R200', 'cv-minimal': 'R100' };
+
+app.post('/api/templates/purchase', validate([
+    { name: 'client_name', label: 'Client name', required: true, maxLength: 100 },
+    { name: 'client_email', label: 'Email', required: true, type: 'email', maxLength: 200 },
+    { name: 'template_id', label: 'Template ID', required: true, maxLength: 50 }
+]), (req, res) => {
+    const { client_name, client_email, client_phone, template_id } = req.body;
+    const price = templatePrices[template_id];
+    if (!price) return res.status(400).json({ error: 'Invalid template' });
+    const token = generateToken();
+    const id = uuidv4();
+    const order = {
+        id,
+        client_name: client_name.trim().replace(/<[^>]*>/g, ''),
+        client_email: client_email.trim().toLowerCase(),
+        client_phone: (client_phone || '').trim().replace(/[^0-9+\-\s]/g, ''),
+        service: 'CV Template - ' + template_id,
+        template_id,
+        download_token: token,
+        price,
+        status: 'pending',
+        payment_status: 'unpaid',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    db.insert('template_orders', order);
+    res.json({ success: true, order_id: id, download_token: token, price, message: 'Template order created! Share the order ID with admin on WhatsApp to get your download link after payment.' });
+});
+
+// Verify payment and get download link
+app.get('/api/templates/download/:token', (req, res) => {
+    const { token } = req.params;
+    const orders = db.query('template_orders', o => o.download_token === token);
+    if (!orders.length) return res.status(404).json({ error: 'Invalid or expired download link' });
+    const order = orders[0];
+    if (order.payment_status !== 'paid') return res.status(402).json({ error: 'Payment not confirmed yet. Please complete payment and share your Order ID with us on WhatsApp.', order_id: order.id });
+    const validFiles = {
+        'cv-classic': 'templates/cv/classic.html',
+        'cv-modern': 'templates/cv/modern.html',
+        'cv-executive': 'templates/cv/executive.html',
+        'cv-minimal': 'templates/cv/minimal.html'
+    };
+    const filePath = validFiles[order.template_id];
+    if (!filePath) return res.status(404).json({ error: 'Template file not found' });
+    const absPath = path.join(__dirname, '..', filePath);
+    if (!fs.existsSync(absPath)) return res.status(404).json({ error: 'Template file not found on server' });
+    const displayName = order.template_id.replace('cv-', '') + '-cv-template.html';
+    res.download(absPath, displayName);
+});
+
+// Admin: confirm payment and mark template as paid
+app.post('/api/admin/templates/confirm-payment', authenticateToken, (req, res) => {
+    const { order_id } = req.body;
+    const updated = db.update('template_orders', order_id, { payment_status: 'paid', status: 'completed', updated_at: new Date().toISOString() });
+    if (!updated) return res.status(404).json({ error: 'Order not found' });
+    res.json({ success: true, download_token: updated.download_token, message: 'Payment confirmed. Download link is now active.' });
+});
+
+// Admin: get all template orders
+app.get('/api/admin/template-orders', authenticateToken, (req, res) => {
+    const orders = db.query('template_orders', null);
+    res.json((orders || []).reverse());
 });
 
 // ===== Appointments =====
@@ -414,6 +488,14 @@ app.get('/api/admin/stats', authenticateToken, (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Custom 404 handler - serve static 404.html for unmatched HTML requests
+app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/') && req.accepts('html')) {
+        return res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
+    }
+    next();
 });
 
 // Global error handler

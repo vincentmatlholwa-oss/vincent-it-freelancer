@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classic Professional CV</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Georgia, serif; font-size: 11pt; line-height: 1.5; color: #1a1a1a; background: #fff; padding: 40px; }
+  .page { max-width: 800px; margin: 0 auto; }
+  header { border-bottom: 3px solid #2c3e50; padding-bottom: 16px; margin-bottom: 20px; }
+  h1 { font-size: 26pt; font-weight: 700; letter-spacing: 1px; color: #2c3e50; }
+  .subtitle { font-size: 12pt; color: #555; margin-top: 4px; }
+  .contact-row { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 10px; font-size: 10pt; color: #444; }
+  .contact-row span i { width: 14px; margin-right: 4px; }
+  h2 { font-size: 14pt; font-weight: 700; color: #2c3e50; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-top: 20px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1.5px; }
+  h3 { font-size: 12pt; font-weight: 700; margin-bottom: 2px; }
+  .item { margin-bottom: 14px; }
+  .item-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; }
+  .item-title { font-weight: 700; font-size: 11.5pt; }
+  .item-subtitle { font-style: italic; color: #555; font-size: 10.5pt; }
+  .item-date { color: #777; font-size: 10pt; white-space: nowrap; }
+  .item-location { color: #555; font-size: 10pt; }
+  ul { padding-left: 18px; margin-top: 4px; }
+  li { margin-bottom: 3px; }
+  .skills-grid { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .skill-cat { font-weight: 700; min-width: 100px; }
+  .skill-items { color: #444; }
+  .summary { color: #333; font-style: italic; margin-bottom: 4px; }
+  .section-item { margin-bottom: 14px; }
+  .degree { font-weight: 700; }
+  .school { color: #555; }
+  @media print { body { padding: 0; } .page { max-width: 100%; } }
+  @media (max-width: 600px) { body { padding: 20px; } .item-header { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>JOHN ANDERSON</h1>
+  <div class="subtitle">Senior Software Engineer</div>
+  <div class="contact-row">
+    <span>&#9993; john.anderson@email.com</span>
+    <span>&#9742; +1 (555) 123-4567</span>
+    <span>&#9906; San Francisco, CA</span>
+    <span>&#128279; linkedin.com/in/johnanderson</span>
+    <span>&#128187; github.com/johnanderson</span>
+  </div>
+</header>
+
+<section>
+  <h2>Professional Summary</h2>
+  <p class="summary">Results-driven Senior Software Engineer with 8+ years of experience architecting and building scalable web applications. Proven track record of leading engineering teams, delivering high-impact projects on time, and mentoring junior developers. Passionate about clean code, system design, and developer experience.</p>
+</section>
+
+<section>
+  <h2>Experience</h2>
+
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title">Senior Software Engineer</span>
+      <span class="item-date">Jan 2021 &ndash; Present</span>
+    </div>
+    <div class="item-subtitle">TechScale Inc. &bull; San Francisco, CA</div>
+    <ul>
+      <li>Architected and led migration of monolithic application to microservices, reducing deployment time by 70% and improving system reliability to 99.9% uptime</li>
+      <li>Designed and implemented RESTful APIs serving 2M+ daily requests using Node.js, Express, and PostgreSQL</li>
+      <li>Mentored team of 5 junior engineers through code reviews, pair programming, and weekly tech talks</li>
+      <li>Reduced AWS infrastructure costs by 35% through optimization of database queries and caching strategies</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title">Software Engineer</span>
+      <span class="item-date">Mar 2018 &ndash; Dec 2020</span>
+    </div>
+    <div class="item-subtitle">DataFlow Solutions &bull; Oakland, CA</div>
+    <ul>
+      <li>Built real-time data processing pipeline handling 500K+ events per minute using Kafka and Apache Spark</li>
+      <li>Developed interactive dashboards with React and D3.js, improving data visibility for 200+ stakeholders</li>
+      <li>Implemented CI/CD pipeline with GitHub Actions and Docker, reducing release cycle from 2 weeks to 2 days</li>
+    </ul>
+  </div>
+
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title">Junior Software Engineer</span>
+      <span class="item-date">Jun 2016 &ndash; Feb 2018</span>
+    </div>
+    <div class="item-subtitle">WebCraft Agency &bull; San Francisco, CA</div>
+    <ul>
+      <li>Developed responsive web applications for 15+ clients using React, Angular, and Vue.js</li>
+      <li>Created automated testing suite with Jest and Cypress, achieving 90% code coverage</li>
+      <li>Collaborated with design team to implement pixel-perfect UI components and animations</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Education</h2>
+  <div class="item">
+    <div class="item-header">
+      <span class="item-title degree">Bachelor of Science in Computer Science</span>
+      <span class="item-date">2012 &ndash; 2016</span>
+    </div>
+    <div class="school">University of California, Berkeley &bull; GPA: 3.8/4.0</div>
+    <ul>
+      <li>Dean&rsquo;s List all semesters &bull; Teaching Assistant for Data Structures and Algorithms</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Skills</h2>
+  <div class="skills-grid">
+    <div><span class="skill-cat">Languages:</span> <span class="skill-items">JavaScript, TypeScript, Python, Java, SQL</span></div>
+    <div><span class="skill-cat">Frontend:</span> <span class="skill-items">React, Angular, Vue.js, HTML5, CSS3, Tailwind</span></div>
+    <div><span class="skill-cat">Backend:</span> <span class="skill-items">Node.js, Express, Django, Spring Boot, GraphQL</span></div>
+    <div><span class="skill-cat">DevOps:</span> <span class="skill-items">AWS, Docker, Kubernetes, CI/CD, Terraform</span></div>
+    <div><span class="skill-cat">Databases:</span> <span class="skill-items">PostgreSQL, MongoDB, Redis, Elasticsearch</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Certifications</h2>
+  <ul>
+    <li>AWS Certified Solutions Architect &ndash; Associate (2023)</li>
+    <li>Google Cloud Professional Data Engineer (2022)</li>
+  </ul>
+</section>
+
+</div>
+</body>
+</html>
