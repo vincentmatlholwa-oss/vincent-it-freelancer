@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[YourName] — Portfolio</title>
+  <meta name="description" content="Professional portfolio of [YourName]" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans antialiased transition-colors duration-300">
+  <header class="fixed top-0 inset-x-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <nav class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="#" class="text-xl font-bold tracking-tight">[YourName]</a>
+      <div class="flex items-center gap-6">
+        <ul class="hidden md:flex items-center gap-6 text-sm font-medium">
+          <li><a href="#about" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</a></li>
+          <li><a href="#projects" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Projects</a></li>
+          <li><a href="#skills" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Skills</a></li>
+          <li><a href="#testimonials" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Testimonials</a></li>
+          <li><a href="#contact" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Contact</a></li>
+        </ul>
+        <button id="themeToggle" class="text-xl p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle dark mode">
+          <i id="themeIcon" class="fas fa-moon"></i>
+        </button>
+        <button id="menuToggle" class="md:hidden text-2xl p-2" aria-label="Open menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <div id="mobileMenu">
+    <div>
+      <button id="closeMenu" class="text-2xl mb-8 block ml-auto" aria-label="Close menu">
+        <i class="fas fa-times"></i>
+      </button>
+      <ul class="space-y-6 text-lg font-medium">
+        <li><a href="#about" class="block hover:text-indigo-600 transition-colors">About</a></li>
+        <li><a href="#projects" class="block hover:text-indigo-600 transition-colors">Projects</a></li>
+        <li><a href="#skills" class="block hover:text-indigo-600 transition-colors">Skills</a></li>
+        <li><a href="#testimonials" class="block hover:text-indigo-600 transition-colors">Testimonials</a></li>
+        <li><a href="#contact" class="block hover:text-indigo-600 transition-colors">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <main>
+    <section id="hero" class="min-h-screen flex items-center justify-center px-6 pt-16">
+      <div class="text-center max-w-3xl">
+        <p class="text-indigo-600 dark:text-indigo-400 font-semibold text-sm uppercase tracking-widest mb-4">Hello, I'm</p>
+        <h1 class="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+          <span id="typed-text"></span><span class="animate-pulse">|</span>
+        </h1>
+        <p class="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-xl mx-auto">
+          I build beautiful, fast, and accessible digital experiences.
+        </p>
+        <div class="flex items-center justify-center gap-4 flex-wrap">
+          <a href="#projects" class="px-8 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/25">
+            View My Work
+          </a>
+          <a href="#contact" class="px-8 py-3 rounded-xl border border-gray-300 dark:border-gray-700 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            Get in Touch
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="py-24 px-6">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">About Me</h2>
+        <div class="w-20 h-1 bg-indigo-600 rounded-full mb-8"></div>
+        <div class="grid md:grid-cols-[1fr_2fr] gap-12 items-start">
+          <div class="aspect-square rounded-2xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-400 text-6xl">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="space-y-4 text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>I'm a passionate developer and designer who loves crafting digital products that are both beautiful and functional. With years of experience building modern web applications, I bring ideas to life through clean code and thoughtful design.</p>
+            <p>When I'm not coding, you'll find me exploring design systems, contributing to open source, or experimenting with new technologies.</p>
+            <div class="flex gap-4 pt-4">
+              <a href="#" class="text-2xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"><i class="fab fa-github"></i></a>
+              <a href="#" class="text-2xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"><i class="fab fa-linkedin"></i></a>
+              <a href="#" class="text-2xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="text-2xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"><i class="fab fa-dribbble"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="py-24 px-6 bg-gray-50 dark:bg-gray-900/50">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Projects</h2>
+        <div class="w-20 h-1 bg-indigo-600 rounded-full mb-6"></div>
+        <p class="text-gray-600 dark:text-gray-400 mb-8 max-w-lg">A selection of things I've built recently.</p>
+        <div class="flex flex-wrap gap-3 mb-10" id="filterButtons">
+          <button class="filter-btn active" data-filter="all">All</button>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="projectsGrid"></div>
+      </div>
+    </section>
+
+    <section id="skills" class="py-24 px-6">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Skills & Tools</h2>
+        <div class="w-20 h-1 bg-indigo-600 rounded-full mb-10"></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="skillsGrid"></div>
+      </div>
+    </section>
+
+    <section id="testimonials" class="py-24 px-6 bg-gray-50 dark:bg-gray-900/50">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">What People Say</h2>
+        <div class="w-20 h-1 bg-indigo-600 rounded-full mb-10"></div>
+        <div class="grid md:grid-cols-2 gap-6" id="testimonialsGrid"></div>
+      </div>
+    </section>
+
+    <section id="contact" class="py-24 px-6">
+      <div class="max-w-2xl mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Get in Touch</h2>
+        <div class="w-20 h-1 bg-indigo-600 rounded-full mb-6 mx-auto"></div>
+        <p class="text-gray-600 dark:text-gray-400 mb-10">Have a project in mind? Let's work together.</p>
+        <form id="contactForm" class="space-y-5 text-left">
+          <div class="grid md:grid-cols-2 gap-5">
+            <input type="text" name="name" placeholder="Your Name" required class="w-full px-5 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" />
+            <input type="email" name="email" placeholder="Your Email" required class="w-full px-5 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" />
+          </div>
+          <input type="text" name="subject" placeholder="Subject" class="w-full px-5 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" />
+          <textarea name="message" placeholder="Your Message" rows="5" required class="w-full px-5 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all resize-none"></textarea>
+          <button type="submit" class="w-full px-8 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/25">
+            Send Message <i class="fas fa-paper-plane ml-2"></i>
+          </button>
+          <p id="formStatus" class="text-sm text-center hidden"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="py-8 px-6 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500">
+    <p>&copy; <span id="year"></span> [YourName]. Built with HTML, Tailwind & Vanilla JS.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

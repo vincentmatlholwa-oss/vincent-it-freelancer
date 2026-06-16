@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-replace="brand.name">FitForge - Fitness Coach</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="config.js"></script>
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-light: #fff7ed;
+      --primary-dark: #fb923c;
+      --dark-bg: #0f0f0f;
+      --dark-card: #1a1a1a;
+    }
+    * { scroll-behavior: smooth; }
+
+    /* Progress bar */
+    #progressBar { height: 3px; background: var(--primary); position: fixed; top: 0; left: 0; z-index: 100; transition: width 0.1s linear; }
+
+    /* Scroll animations */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* Gallery filter */
+    .gallery-item { transition: all 0.4s ease; }
+    .gallery-item.hidden { display: none; }
+
+    /* Pricing toggle */
+    .pricing-toggle { position: relative; width: 56px; height: 28px; background: #d1d5db; border-radius: 999px; cursor: pointer; transition: background 0.3s; }
+    .pricing-toggle.active { background: var(--primary); }
+    .pricing-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: transform 0.3s; }
+    .pricing-toggle.active::after { transform: translateX(28px); }
+    .price-yearly { display: none; }
+    .show-yearly .price-monthly { display: none; }
+    .show-yearly .price-yearly { display: inline; }
+
+    /* Dark mode overrides */
+    .dark { --dark-bg: #0f0f0f; --dark-card: #1a1a1a; }
+    .dark body, .dark .bg-white, .dark .bg-gray-50 { background-color: var(--dark-bg) !important; }
+    .dark .bg-gray-50 { background-color: var(--dark-bg) !important; }
+    .dark section.bg-white { background-color: var(--dark-bg) !important; }
+    .dark .text-gray-600, .dark .text-gray-700, .dark .text-gray-500, .dark .text-gray-400 { color: #a3a3a3 !important; }
+    .dark .text-gray-900 { color: #f5f5f5 !important; }
+    .dark .bg-white.shadow-sm, .dark nav, .dark footer { background-color: var(--dark-card) !important; }
+    .dark .bg-gray-50.rounded-2xl { background-color: #262626 !important; }
+    .dark .bg-orange-50 { background-color: #271a0a !important; }
+
+    /* Cookie banner */
+    #cookieBanner { transform: translateY(100%); transition: transform 0.4s ease; }
+    #cookieBanner.show { transform: translateY(0); }
+
+    /* Dark mode toggle animation */
+    .dark-toggle { transition: transform 0.3s; }
+    .dark-toggle:hover { transform: rotate(20deg); }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+
+  <!-- PROGRESS BAR -->
+  <div id="progressBar"></div>
+
+  <!-- NAVBAR -->
+  <nav class="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-40 transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      <a href="#" class="text-2xl font-bold tracking-tight" id="logoPlaceholder"></a>
+      <div class="hidden md:flex items-center space-x-8 font-medium">
+        <a href="#home" class="hover:text-[var(--primary)] transition">Home</a>
+        <a href="#about" class="hover:text-[var(--primary)] transition">About</a>
+        <a href="#services" class="hover:text-[var(--primary)] transition">Services</a>
+        <a href="#gallery" class="hover:text-[var(--primary)] transition">Gallery</a>
+        <a href="#faq" class="hover:text-[var(--primary)] transition">FAQ</a>
+        <a href="#contact" class="hover:text-[var(--primary)] transition">Contact</a>
+        <button id="darkToggle" class="dark-toggle text-xl text-gray-600 hover:text-[var(--primary)] transition" title="Toggle dark mode">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+      <div class="hidden md:flex items-center gap-3">
+        <a href="#booking" class="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-5 py-2 rounded-full text-sm font-semibold transition">Book a Session</a>
+      </div>
+      <div class="md:hidden flex items-center gap-2">
+        <button id="darkToggleMobile" class="dark-toggle text-xl text-gray-600 hover:text-[var(--primary)] transition" title="Toggle dark mode">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button id="menuBtn" class="text-2xl">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2 font-medium">
+      <a href="#home" class="block py-1">Home</a>
+      <a href="#about" class="block py-1">About</a>
+      <a href="#services" class="block py-1">Services</a>
+      <a href="#gallery" class="block py-1">Gallery</a>
+      <a href="#faq" class="block py-1">FAQ</a>
+      <a href="#contact" class="block py-1">Contact</a>
+      <a href="#booking" class="block text-[var(--primary)] font-semibold">Book a Session</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="home" class="relative bg-gradient-to-br from-gray-900 to-gray-800 text-white overflow-hidden">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-36">
+      <div class="max-w-2xl reveal">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight" id="heroTitle"></h1>
+        <p class="mt-6 text-lg sm:text-xl text-gray-300 leading-relaxed" id="heroSubtitle"></p>
+        <div class="mt-8 flex flex-wrap gap-4" id="heroCtas"></div>
+      </div>
+    </div>
+    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="py-20 bg-white transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-12 items-center">
+      <div class="reveal">
+        <img id="aboutImage" src="" alt="" class="rounded-2xl shadow-lg w-full h-auto object-cover" />
+      </div>
+      <div class="reveal">
+        <h2 class="text-3xl md:text-4xl font-bold" id="aboutTitle"></h2>
+        <p class="mt-4 text-gray-600 leading-relaxed" id="aboutDesc"></p>
+        <div class="mt-6 grid grid-cols-3 gap-4 text-center" id="aboutStats"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES + PRICING TOGGLE -->
+  <section id="services" class="py-20 bg-gray-50 transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-6 reveal">
+        <h2 class="text-3xl md:text-4xl font-bold" id="servicesTitle"></h2>
+        <p class="mt-3 text-gray-600 text-lg" id="servicesSubtitle"></p>
+      </div>
+      <!-- Pricing toggle -->
+      <div class="flex items-center justify-center gap-3 mb-10 reveal">
+        <span class="text-sm font-medium">Monthly</span>
+        <div id="pricingToggle" class="pricing-toggle"></div>
+        <span class="text-sm font-medium">Yearly <span class="text-xs text-[var(--primary)] font-semibold">Save 20%</span></span>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8" id="servicesGrid"></div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS CAROUSEL -->
+  <section id="testimonials" class="py-20 bg-white transition-colors">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="reveal">
+        <h2 class="text-3xl md:text-4xl font-bold" id="testimonialsTitle"></h2>
+        <p class="mt-3 text-gray-600 text-lg" id="testimonialsSubtitle"></p>
+      </div>
+      <div class="mt-10 relative reveal">
+        <div id="testimonialContainer" class="overflow-hidden">
+          <div id="testimonialTrack" class="flex transition-transform duration-500 ease-in-out"></div>
+        </div>
+        <button id="prevBtn" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 bg-white shadow-md rounded-full w-10 h-10 hover:bg-gray-100 transition"><i class="fas fa-chevron-left"></i></button>
+        <button id="nextBtn" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 bg-white shadow-md rounded-full w-10 h-10 hover:bg-gray-100 transition"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ ACCORDION -->
+  <section id="faq" class="py-20 bg-gray-50 transition-colors">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-10 reveal">
+        <h2 class="text-3xl md:text-4xl font-bold" id="faqTitle"></h2>
+        <p class="mt-3 text-gray-600 text-lg" id="faqSubtitle"></p>
+      </div>
+      <div id="faqList" class="space-y-3 reveal"></div>
+    </div>
+  </section>
+
+  <!-- GALLERY / PORTFOLIO -->
+  <section id="gallery" class="py-20 bg-white transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-8 reveal">
+        <h2 class="text-3xl md:text-4xl font-bold" id="galleryTitle"></h2>
+        <p class="mt-3 text-gray-600 text-lg" id="gallerySubtitle"></p>
+      </div>
+      <div class="flex flex-wrap justify-center gap-3 mb-8 reveal" id="galleryFilters"></div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="galleryGrid"></div>
+    </div>
+  </section>
+
+  <!-- BOOKING -->
+  <section id="booking" class="py-20" style="background: var(--primary);">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white reveal">
+      <h2 class="text-3xl md:text-4xl font-bold" id="bookingTitle"></h2>
+      <p class="mt-3 text-lg opacity-90" id="bookingSubtitle"></p>
+      <form class="mt-10 max-w-lg mx-auto space-y-4 text-left" id="bookingForm" method="POST">
+        <div class="grid sm:grid-cols-2 gap-4">
+          <input type="text" name="name" placeholder="Your Name" required class="w-full px-4 py-3 rounded-lg text-gray-900" />
+          <input type="email" name="email" placeholder="Your Email" required class="w-full px-4 py-3 rounded-lg text-gray-900" />
+        </div>
+        <input type="tel" name="phone" placeholder="Phone Number" class="w-full px-4 py-3 rounded-lg text-gray-900" />
+        <select name="service" id="serviceSelect" class="w-full px-4 py-3 rounded-lg text-gray-900"></select>
+        <textarea name="message" rows="3" placeholder="Tell me about your goals..." class="w-full px-4 py-3 rounded-lg text-gray-900"></textarea>
+        <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold transition">Send Booking Request</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- CONTACT + MAP -->
+  <section id="contact" class="py-20 bg-white transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 reveal">
+        <h2 class="text-3xl md:text-4xl font-bold" id="contactTitle"></h2>
+        <p class="mt-3 text-gray-600 text-lg" id="contactSubtitle"></p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-10 items-start reveal">
+        <div>
+          <div class="space-y-4 text-gray-700" id="contactDetails"></div>
+          <div class="mt-6 flex gap-3" id="contactSocial"></div>
+        </div>
+        <div class="rounded-2xl overflow-hidden shadow-lg">
+          <iframe id="mapEmbed" src="" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-900 text-gray-400 py-10 text-center text-sm">
+    <p class="font-bold text-white text-lg mb-2" id="footerLogo"></p>
+    <p id="footerCopyright"></p>
+  </footer>
+
+  <!-- WHATSAPP FLOATING BUTTON -->
+  <a id="whatsappBtn" href="#" target="_blank" class="fixed bottom-6 right-6 z-50 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all" style="background: #25D366;">
+    <i class="fab fa-whatsapp text-2xl"></i>
+  </a>
+
+  <!-- COOKIE CONSENT BANNER -->
+  <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white px-4 py-4 shadow-lg show">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-sm text-gray-300" id="cookieMessage"></p>
+      <button id="cookieAccept" class="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-6 py-2 rounded-full text-sm font-semibold transition whitespace-nowrap"></button>
+    </div>
+  </div>
+
+  <!-- JSON-LD FAQ SCHEMA -->
+  <script type="application/ld+json" id="faqSchema">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": []
+  }
+  </script>
+
+  <script>
+    function applyConfig() {
+      var c = CONFIG;
+      var theme = c.themes[c.niche] || c.themes.fitness;
+      var root = document.documentElement;
+
+      // Apply theme CSS variables
+      root.style.setProperty('--primary', theme.primary);
+      root.style.setProperty('--primary-hover', theme.primaryHover);
+      root.style.setProperty('--primary-light', theme.primaryLight);
+      root.style.setProperty('--primary-dark', theme.primaryDark);
+      root.style.setProperty('--dark-bg', theme.darkBg);
+      root.style.setProperty('--dark-card', theme.darkCard);
+
+      // Dark mode
+      if (c.darkMode || localStorage.getItem('darkMode') === 'true') {
+        root.classList.add('dark');
+      }
+      if (localStorage.getItem('darkMode') === 'false') {
+        root.classList.remove('dark');
+      }
+
+      // Page title
+      document.title = c.brand.name + ' - ' + c.brand.tagline.split('.')[0];
+
+      // Logo
+      document.getElementById('logoPlaceholder').innerHTML = c.brand.logoHtml;
+
+      // Hero
+      document.getElementById('heroTitle').innerHTML = c.hero.title + '<span class="text-[var(--primary)]">' + c.hero.titleAccent + '</span>';
+      document.getElementById('heroSubtitle').textContent = c.hero.subtitle;
+      document.getElementById('heroCtas').innerHTML =
+        '<a href="' + c.hero.primaryCta.link + '" class="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-8 py-3 rounded-full font-semibold transition">' + c.hero.primaryCta.text + '</a>' +
+        '<a href="' + c.hero.secondaryCta.link + '" class="border border-white/30 hover:border-white text-white px-8 py-3 rounded-full font-semibold transition">' + c.hero.secondaryCta.text + '</a>';
+
+      // About
+      document.getElementById('aboutImage').src = c.about.image;
+      document.getElementById('aboutImage').alt = c.about.title;
+      document.getElementById('aboutTitle').textContent = c.about.title;
+      document.getElementById('aboutDesc').textContent = c.brand.description;
+      document.getElementById('aboutStats').innerHTML = c.about.stats.map(function(s) {
+        return '<div class="bg-[var(--primary-light)] rounded-xl p-4 dark:bg-gray-800"><p class="text-2xl font-bold" style="color:var(--primary)">' + s.number + '</p><p class="text-sm text-gray-500">' + s.label + '</p></div>';
+      }).join('');
+
+      // Services
+      var svc = c.services;
+      document.getElementById('servicesTitle').textContent = svc.title;
+      document.getElementById('servicesSubtitle').textContent = svc.subtitle;
+      document.getElementById('servicesGrid').innerHTML = svc.items.map(function(s) {
+        var popularBadge = s.popular ? '<span class="absolute -top-3 right-4 bg-[var(--primary)] text-white text-xs px-3 py-1 rounded-full font-semibold">Popular</span>' : '';
+        return '<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition p-6 flex flex-col relative ' + (s.popular ? 'ring-2 ring-[var(--primary)]' : '') + '">' + popularBadge +
+          '<div class="text-4xl mb-4" style="color:var(--primary)"><i class="fas ' + s.icon + '"></i></div>' +
+          '<h3 class="text-xl font-bold">' + s.title + '</h3>' +
+          '<p class="mt-2 text-gray-600 flex-1">' + s.description + '</p>' +
+          '<p class="mt-4 text-2xl font-bold" style="color:var(--primary)">' +
+            '<span class="price-monthly">$' + s.monthlyPrice + '</span>' +
+            '<span class="price-yearly">$' + s.yearlyPrice + '</span>' +
+            '<span class="text-sm text-gray-400 font-normal">/mo</span>' +
+          '</p>' +
+          '<a href="#booking" class="mt-4 block text-center border-2 px-4 py-2 rounded-full font-semibold transition" style="border-color:var(--primary);color:var(--primary)" onmouseover="this.style.background=this.style.color;this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=getComputedStyle(this).getPropertyValue(\'--primary\').trim()">' + s.buttonText + '</a>' +
+        '</div>';
+      }).join('');
+
+      // Testimonials
+      var t = c.testimonials;
+      document.getElementById('testimonialsTitle').textContent = t.title;
+      document.getElementById('testimonialsSubtitle').textContent = t.subtitle;
+      var track = document.getElementById('testimonialTrack');
+      track.innerHTML = t.items.map(function(item) {
+        var stars = '';
+        for (var i = 0; i < item.rating; i++) stars += '<i class="fas fa-star"></i>';
+        return '<div class="min-w-full px-4"><div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 md:p-10 max-w-2xl mx-auto"><div class="text-4xl mb-4" style="color:var(--primary)"><i class="fas fa-quote-left"></i></div><p class="text-lg text-gray-700 dark:text-gray-300 italic leading-relaxed">"' + item.quote + '"</p><div class="mt-6 flex items-center justify-center gap-4"><img src="' + item.image + '" alt="' + item.name + '" class="w-12 h-12 rounded-full object-cover" /><div class="text-left"><p class="font-semibold">' + item.name + '</p><div class="text-yellow-400 text-sm">' + stars + '</div></div></div></div></div>';
+      }).join('');
+
+      // FAQ
+      var faq = c.faq;
+      document.getElementById('faqTitle').textContent = faq.title;
+      document.getElementById('faqSubtitle').textContent = faq.subtitle;
+      document.getElementById('faqList').innerHTML = faq.items.map(function(item, i) {
+        return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"><button class="faq-question w-full flex items-center justify-between px-6 py-4 text-left font-semibold text-lg hover:text-[var(--primary)] transition" data-index="' + i + '"><span>' + item.question + '</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="faq-answer px-6 pb-4 hidden text-gray-600 dark:text-gray-400 leading-relaxed">' + item.answer + '</div></div>';
+      }).join('');
+
+      // FAQ accordion
+      document.querySelectorAll('.faq-question').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var answer = this.nextElementSibling;
+          var icon = this.querySelector('i');
+          var isOpen = !answer.classList.contains('hidden');
+          document.querySelectorAll('.faq-answer').forEach(function(a) { a.classList.add('hidden'); });
+          document.querySelectorAll('.faq-question i').forEach(function(ic) { ic.style.transform = 'rotate(0deg)'; });
+          if (!isOpen) {
+            answer.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+          }
+        });
+      });
+
+      // FAQ JSON-LD Schema
+      var schema = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        'mainEntity': faq.items.map(function(item) {
+          return { '@type': 'Question', 'name': item.question, 'acceptedAnswer': { '@type': 'Answer', 'text': item.answer } };
+        })
+      };
+      document.getElementById('faqSchema').textContent = JSON.stringify(schema);
+
+      // Gallery
+      var gal = c.gallery;
+      document.getElementById('galleryTitle').textContent = gal.title;
+      document.getElementById('gallerySubtitle').textContent = gal.subtitle;
+
+      var categories = [];
+      gal.items.forEach(function(item) {
+        if (categories.indexOf(item.category) === -1) categories.push(item.category);
+      });
+      var filterHtml = '<button class="gallery-filter active px-5 py-2 rounded-full text-sm font-semibold transition text-white" data-filter="all" style="background:var(--primary)">All</button>';
+      categories.forEach(function(cat) {
+        filterHtml += '<button class="gallery-filter px-5 py-2 rounded-full text-sm font-semibold transition border border-gray-300 dark:border-gray-600 hover:text-white" data-filter="' + cat + '" style="color:var(--primary);border-color:var(--primary)">' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</button>';
+      });
+      document.getElementById('galleryFilters').innerHTML = filterHtml;
+
+      document.getElementById('galleryGrid').innerHTML = gal.items.map(function(item, i) {
+        return '<div class="gallery-item rounded-xl overflow-hidden shadow-sm relative group cursor-pointer" data-category="' + item.category + '"><img src="' + item.image + '" alt="' + item.title + '" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" /><div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="text-white font-semibold text-lg">' + item.title + '</span></div></div>';
+      }).join('');
+
+      // Gallery filter logic
+      document.querySelectorAll('.gallery-filter').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.gallery-filter').forEach(function(b) {
+            b.style.background = 'transparent';
+            b.style.color = 'var(--primary)';
+            b.style.borderColor = 'var(--primary)';
+          });
+          this.style.background = 'var(--primary)';
+          this.style.color = 'white';
+          this.style.borderColor = 'var(--primary)';
+          var filter = this.getAttribute('data-filter');
+          document.querySelectorAll('.gallery-item').forEach(function(item) {
+            if (filter === 'all' || item.getAttribute('data-category') === filter) {
+              item.classList.remove('hidden');
+            } else {
+              item.classList.add('hidden');
+            }
+          });
+        });
+      });
+
+      // Booking
+      document.getElementById('bookingTitle').textContent = c.booking.title;
+      document.getElementById('bookingSubtitle').textContent = c.booking.subtitle;
+      document.getElementById('bookingForm').action = c.booking.formAction;
+      document.getElementById('serviceSelect').innerHTML =
+        '<option value="">Select a program</option>' +
+        c.booking.serviceOptions.map(function(s) { return '<option>' + s + '</option>'; }).join('');
+
+      // Contact
+      document.getElementById('contactTitle').textContent = c.contact.title;
+      document.getElementById('contactSubtitle').textContent = c.contact.subtitle;
+      document.getElementById('contactDetails').innerHTML =
+        '<p class="flex items-start gap-3"><i class="fas fa-map-marker-alt mt-1" style="color:var(--primary)"></i> ' + c.contact.address + '</p>' +
+        '<p class="flex items-center gap-3"><i class="fas fa-phone" style="color:var(--primary)"></i> ' + c.contact.phone + '</p>' +
+        '<p class="flex items-center gap-3"><i class="fas fa-envelope" style="color:var(--primary)"></i> ' + c.contact.email + '</p>' +
+        '<p class="flex items-center gap-3"><i class="far fa-clock" style="color:var(--primary)"></i> ' + c.contact.hours + '</p>';
+      document.getElementById('mapEmbed').src = c.contact.mapEmbed;
+
+      var socialHtml = '';
+      if (c.socialLinks.instagram !== '#') socialHtml += '<a href="' + c.socialLinks.instagram + '" class="w-10 h-10 rounded-full flex items-center justify-center text-white transition" style="background:var(--primary)" target="_blank"><i class="fab fa-instagram"></i></a>';
+      if (c.socialLinks.facebook !== '#') socialHtml += '<a href="' + c.socialLinks.facebook + '" class="w-10 h-10 rounded-full flex items-center justify-center text-white transition" style="background:var(--primary)" target="_blank"><i class="fab fa-facebook-f"></i></a>';
+      if (c.socialLinks.twitter !== '#') socialHtml += '<a href="' + c.socialLinks.twitter + '" class="w-10 h-10 rounded-full flex items-center justify-center text-white transition" style="background:var(--primary)" target="_blank"><i class="fab fa-twitter"></i></a>';
+      if (c.socialLinks.youtube !== '#') socialHtml += '<a href="' + c.socialLinks.youtube + '" class="w-10 h-10 rounded-full flex items-center justify-center text-white transition" style="background:var(--primary)" target="_blank"><i class="fab fa-youtube"></i></a>';
+      if (socialHtml) {
+        document.getElementById('contactSocial').innerHTML = socialHtml;
+      }
+
+      // Footer
+      document.getElementById('footerLogo').innerHTML = c.brand.logoHtml;
+      document.getElementById('footerCopyright').textContent = '\u00A9 ' + new Date().getFullYear() + ' ' + c.brand.name + '. All rights reserved.';
+
+      // WhatsApp
+      var wa = c.whatsapp;
+      document.getElementById('whatsappBtn').href = 'https://wa.me/' + wa.number + '?text=' + encodeURIComponent(wa.message);
+
+      // Cookie consent
+      var cc = c.cookieConsent;
+      if (cc.enabled && localStorage.getItem('cookieConsent') !== 'accepted') {
+        document.getElementById('cookieBanner').classList.add('show');
+      } else {
+        document.getElementById('cookieBanner').style.display = 'none';
+      }
+      document.getElementById('cookieMessage').textContent = cc.message;
+      document.getElementById('cookieAccept').textContent = cc.buttonText;
+      document.getElementById('cookieAccept').addEventListener('click', function() {
+        localStorage.setItem('cookieConsent', 'accepted');
+        document.getElementById('cookieBanner').classList.remove('show');
+        setTimeout(function() { document.getElementById('cookieBanner').style.display = 'none'; }, 400);
+      });
+    }
+
+    // PRICING TOGGLE
+    var showYearly = false;
+    document.getElementById('pricingToggle').addEventListener('click', function() {
+      showYearly = !showYearly;
+      this.classList.toggle('active');
+      document.getElementById('servicesGrid').classList.toggle('show-yearly');
+    });
+
+    // TESTIMONIALS CAROUSEL
+    var track = document.getElementById('testimonialTrack');
+    var slides = track.children;
+    var totalSlides = slides.length;
+    var carouselIndex = 0;
+
+    function updateCarousel() {
+      if (slides.length) track.style.transform = 'translateX(-' + (carouselIndex * 100) + '%)';
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', function() {
+      if (totalSlides === 0) return;
+      carouselIndex = (carouselIndex + 1) % totalSlides;
+      updateCarousel();
+    });
+    document.getElementById('prevBtn').addEventListener('click', function() {
+      if (totalSlides === 0) return;
+      carouselIndex = (carouselIndex - 1 + totalSlides) % totalSlides;
+      updateCarousel();
+    });
+    // Auto-advance
+    setInterval(function() {
+      if (totalSlides > 0) {
+        carouselIndex = (carouselIndex + 1) % totalSlides;
+        updateCarousel();
+      }
+    }, 5000);
+
+    // MOBILE MENU
+    document.getElementById('menuBtn').addEventListener('click', function() {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    });
+
+    // DARK MODE TOGGLE
+    function toggleDark() {
+      var html = document.documentElement;
+      html.classList.toggle('dark');
+      var isDark = html.classList.contains('dark');
+      localStorage.setItem('darkMode', isDark);
+      var icons = document.querySelectorAll('.dark-toggle i');
+      icons.forEach(function(icon) {
+        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      });
+    }
+
+    document.getElementById('darkToggle').addEventListener('click', toggleDark);
+    document.getElementById('darkToggleMobile').addEventListener('click', toggleDark);
+
+    // Init dark mode icon state
+    (function() {
+      var isDark = document.documentElement.classList.contains('dark');
+      document.querySelectorAll('.dark-toggle i').forEach(function(icon) {
+        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      });
+    })();
+
+    // SCROLL REVEAL (Intersection Observer)
+    (function() {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.15 });
+
+      document.querySelectorAll('.reveal').forEach(function(el) {
+        observer.observe(el);
+      });
+    })();
+
+    // PROGRESS BAR
+    (function() {
+      var bar = document.getElementById('progressBar');
+      window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        bar.style.width = progress + '%';
+      });
+    })();
+
+    // INIT — run after config is loaded
+    if (typeof CONFIG !== 'undefined') {
+      applyConfig();
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        var check = setInterval(function() {
+          if (typeof CONFIG !== 'undefined') {
+            clearInterval(check);
+            applyConfig();
+          }
+        }, 50);
+      });
+    }
+  </script>
+</body>
+</html>

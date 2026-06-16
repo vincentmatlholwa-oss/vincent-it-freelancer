@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse — Modern SaaS Landing Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            pulse: {
+              50:  '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          },
+          animation: {
+            'fade-up': 'fadeUp 0.6s ease-out forwards',
+            'fade-in': 'fadeIn 0.8s ease-out forwards',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(24px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .section-hidden { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .section-visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      <a href="#" class="text-2xl font-bold text-pulse-600">Pulse</a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="#features" class="hover:text-pulse-600 transition-colors">Features</a>
+        <a href="#pricing" class="hover:text-pulse-600 transition-colors">Pricing</a>
+        <a href="#testimonials" class="hover:text-pulse-600 transition-colors">Testimonials</a>
+        <a href="#faq" class="hover:text-pulse-600 transition-colors">FAQ</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" aria-label="Toggle theme">
+          <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </button>
+        <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+      <div class="px-4 py-4 space-y-3 text-sm font-medium">
+        <a href="#features" class="block hover:text-pulse-600">Features</a>
+        <a href="#pricing" class="block hover:text-pulse-600">Pricing</a>
+        <a href="#testimonials" class="block hover:text-pulse-600">Testimonials</a>
+        <a href="#faq" class="block hover:text-pulse-600">FAQ</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 pb-20 md:pt-40 md:pb-28 text-center px-4">
+    <div class="max-w-4xl mx-auto">
+      <span class="inline-block px-3 py-1 text-xs font-semibold text-pulse-600 bg-pulse-50 dark:bg-pulse-900/30 rounded-full mb-6">Now in Public Beta</span>
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
+        Build Faster.<br>
+        <span class="text-pulse-600">Ship Smarter.</span>
+      </h1>
+      <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8">
+        Pulse gives you everything you need to launch your SaaS — beautiful components, dark mode, and smooth animations out of the box.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#" class="w-full sm:w-auto px-8 py-3 bg-pulse-600 hover:bg-pulse-700 text-white font-semibold rounded-lg transition-colors">Get Started Free</a>
+        <a href="#features" class="w-full sm:w-auto px-8 py-3 border border-gray-300 dark:border-gray-700 hover:border-pulse-600 font-semibold rounded-lg transition-colors">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-20 md:py-28 px-4 bg-gray-50 dark:bg-gray-900/50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Everything you need</h2>
+        <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">Ship a production-ready landing page in minutes, not days.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <div class="w-10 h-10 rounded-lg bg-pulse-100 dark:bg-pulse-900/30 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-pulse-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">Dark & Light Mode</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Seamless theme switching with system preference detection and persistent state.</p>
+        </div>
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <div class="w-10 h-10 rounded-lg bg-pulse-100 dark:bg-pulse-900/30 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-pulse-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">Fully Responsive</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Looks perfect on every device — mobile, tablet, and desktop — right out of the box.</p>
+        </div>
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <div class="w-10 h-10 rounded-lg bg-pulse-100 dark:bg-pulse-900/30 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-pulse-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">Smooth Animations</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Scroll-triggered animations using Intersection Observer for a polished, modern feel.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="py-20 md:py-28 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Simple, transparent pricing</h2>
+        <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">No hidden fees. No surprises. Upgrade anytime.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-800">
+          <h3 class="text-lg font-semibold mb-1">Starter</h3>
+          <p class="text-sm text-gray-500 mb-4">Perfect for side projects</p>
+          <p class="text-4xl font-bold mb-6">$29<span class="text-lg font-normal text-gray-500">/once</span></p>
+          <ul class="space-y-3 mb-8 text-sm">
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>1 template</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Basic customization</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Email support</li>
+          </ul>
+          <a href="#" class="block text-center py-2.5 border border-gray-300 dark:border-gray-700 hover:border-pulse-600 font-medium rounded-lg transition-colors">Get Starter</a>
+        </div>
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-8 shadow-md border-2 border-pulse-600 relative">
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-pulse-600 text-white text-xs font-semibold rounded-full">Popular</span>
+          <h3 class="text-lg font-semibold mb-1">Pro</h3>
+          <p class="text-sm text-gray-500 mb-4">Best for growing startups</p>
+          <p class="text-4xl font-bold mb-6">$49<span class="text-lg font-normal text-gray-500">/once</span></p>
+          <ul class="space-y-3 mb-8 text-sm">
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>All templates</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Full customization</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Priority support</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Lifetime updates</li>
+          </ul>
+          <a href="#" class="block text-center py-2.5 bg-pulse-600 hover:bg-pulse-700 text-white font-medium rounded-lg transition-colors">Get Pro</a>
+        </div>
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-800">
+          <h3 class="text-lg font-semibold mb-1">Enterprise</h3>
+          <p class="text-sm text-gray-500 mb-4">For large teams</p>
+          <p class="text-4xl font-bold mb-6">Custom</p>
+          <ul class="space-y-3 mb-8 text-sm">
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Everything in Pro</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Custom integrations</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-pulse-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Dedicated support</li>
+          </ul>
+          <a href="#" class="block text-center py-2.5 border border-gray-300 dark:border-gray-700 hover:border-pulse-600 font-medium rounded-lg transition-colors">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials" class="py-20 md:py-28 px-4 bg-gray-50 dark:bg-gray-900/50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Loved by founders</h2>
+        <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">Hear from people who shipped faster with Pulse.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <div class="flex gap-1 mb-4">
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">"Pulse saved us weeks of design work. The dark mode and animations are gorgeous out of the box."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-pulse-100 dark:bg-pulse-900/30 flex items-center justify-center text-xs font-bold text-pulse-600">SK</div>
+            <div><p class="text-sm font-semibold">Sarah Kim</p><p class="text-xs text-gray-500">Founder, Dash</p></div>
+          </div>
+        </div>
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <div class="flex gap-1 mb-4">
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">"Launched our MVP in two days thanks to Pulse. The responsiveness is flawless across every device."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-pulse-100 dark:bg-pulse-900/30 flex items-center justify-center text-xs font-bold text-pulse-600">MR</div>
+            <div><p class="text-sm font-semibold">Marcus Rivera</p><p class="text-xs text-gray-500">CTO, SyncLabs</p></div>
+          </div>
+        </div>
+        <div class="section-hidden bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <div class="flex gap-1 mb-4">
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">"The pricing section alone is worth it. Clean, conversion-focused, and dead simple to customize."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-pulse-100 dark:bg-pulse-900/30 flex items-center justify-center text-xs font-bold text-pulse-600">AL</div>
+            <div><p class="text-sm font-semibold">Aiko Tanaka</p><p class="text-xs text-gray-500">Product Lead, Kite</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-20 md:py-28 px-4">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Frequently asked questions</h2>
+      </div>
+      <div class="space-y-4">
+        <div class="section-hidden border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <button class="faq-btn w-full flex items-center justify-between px-6 py-4 text-left font-medium bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <span>Can I use Pulse for commercial projects?</span>
+            <svg class="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+            <div class="px-6 pb-4 text-sm text-gray-600 dark:text-gray-400">Yes, absolutely. All templates come with a commercial license so you can use them in client projects and your own products.</div>
+          </div>
+        </div>
+        <div class="section-hidden border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <button class="faq-btn w-full flex items-center justify-between px-6 py-4 text-left font-medium bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <span>Do I need to know JavaScript to customize it?</span>
+            <svg class="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+            <div class="px-6 pb-4 text-sm text-gray-600 dark:text-gray-400">Not really. You can edit all the text and colors in the HTML file. Basic HTML knowledge is enough to make most changes.</div>
+          </div>
+        </div>
+        <div class="section-hidden border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <button class="faq-btn w-full flex items-center justify-between px-6 py-4 text-left font-medium bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <span>Can I get a refund?</span>
+            <svg class="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+            <div class="px-6 pb-4 text-sm text-gray-600 dark:text-gray-400">Absolutely. If you're not satisfied, we offer a full refund within 14 days of purchase. No questions asked.</div>
+          </div>
+        </div>
+        <div class="section-hidden border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <button class="faq-btn w-full flex items-center justify-between px-6 py-4 text-left font-medium bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <span>Will I get updates?</span>
+            <svg class="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+            <div class="px-6 pb-4 text-sm text-gray-600 dark:text-gray-400">Yes, Pro and Enterprise customers receive lifetime updates including new sections, components, and improvements.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 px-4 border-t border-gray-200 dark:border-gray-800">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+      <p>&copy; <span id="year"></span> Pulse. All rights reserved.</p>
+      <div class="flex items-center gap-6">
+        <a href="#" class="hover:text-pulse-600 transition-colors">Twitter</a>
+        <a href="#" class="hover:text-pulse-600 transition-colors">GitHub</a>
+        <a href="#" class="hover:text-pulse-600 transition-colors">Privacy</a>
+        <a href="#" class="hover:text-pulse-600 transition-colors">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    const stored = localStorage.getItem('theme');
+    if (stored) html.className = stored;
+    else html.className = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+    themeToggle.addEventListener('click', () => {
+      html.className = html.className === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('theme', html.className);
+    });
+
+    // Mobile menu
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    menuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+    // Close mobile menu on link click
+    mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+
+    // Intersection Observer animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('section-visible'); });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.section-hidden').forEach(el => observer.observe(el));
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const answer = btn.nextElementSibling;
+        const isOpen = answer.style.maxHeight !== '0px' && answer.style.maxHeight !== '';
+        answer.style.maxHeight = isOpen ? '0px' : answer.scrollHeight + 'px';
+        btn.querySelector('svg').style.transform = isOpen ? '' : 'rotate(180deg)';
+      });
+    });
+
+    // Year for footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

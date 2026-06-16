@@ -174,7 +174,7 @@ function generateToken() {
 }
 
 // Purchase a template - creates an order and generates download token
-const templatePrices = { 'cv-classic': 'R150', 'cv-modern': 'R150', 'cv-executive': 'R200', 'cv-minimal': 'R100' };
+const templatePrices = { 'cv-classic': 'R150', 'cv-modern': 'R150', 'cv-executive': 'R200', 'cv-minimal': 'R100', 'pulse': 'R500', 'fitforge': 'R700', 'portfolio': 'R500' };
 
 app.post('/api/templates/purchase', validate([
     { name: 'client_name', label: 'Client name', required: true, maxLength: 100 },
@@ -212,17 +212,19 @@ app.get('/api/templates/download/:token', (req, res) => {
     const order = orders[0];
     if (order.payment_status !== 'paid') return res.status(402).json({ error: 'Payment not confirmed yet. Please complete payment and share your Order ID with us on WhatsApp.', order_id: order.id });
     const validFiles = {
-        'cv-classic': 'templates/cv/classic.html',
-        'cv-modern': 'templates/cv/modern.html',
-        'cv-executive': 'templates/cv/executive.html',
-        'cv-minimal': 'templates/cv/minimal.html'
+        'cv-classic': { path: 'templates/cv/classic.html', name: 'classic-cv-template.html' },
+        'cv-modern': { path: 'templates/cv/modern.html', name: 'modern-cv-template.html' },
+        'cv-executive': { path: 'templates/cv/executive.html', name: 'executive-cv-template.html' },
+        'cv-minimal': { path: 'templates/cv/minimal.html', name: 'minimal-cv-template.html' },
+        'pulse': { path: 'templates/pulse.zip', name: 'pulse-saas-landing-page.zip' },
+        'fitforge': { path: 'templates/fitforge.zip', name: 'fitforge-fitness-coach-template.zip' },
+        'portfolio': { path: 'templates/portfolio.zip', name: 'interactive-portfolio-template.zip' }
     };
-    const filePath = validFiles[order.template_id];
-    if (!filePath) return res.status(404).json({ error: 'Template file not found' });
-    const absPath = path.join(__dirname, '..', filePath);
+    const fileInfo = validFiles[order.template_id];
+    if (!fileInfo) return res.status(404).json({ error: 'Template file not found' });
+    const absPath = path.join(__dirname, '..', fileInfo.path);
     if (!fs.existsSync(absPath)) return res.status(404).json({ error: 'Template file not found on server' });
-    const displayName = order.template_id.replace('cv-', '') + '-cv-template.html';
-    res.download(absPath, displayName);
+    res.download(absPath, fileInfo.name);
 });
 
 // Admin: confirm payment and mark template as paid
