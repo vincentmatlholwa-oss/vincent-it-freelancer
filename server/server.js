@@ -62,6 +62,34 @@ const authLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
+// ===== Visitor Tracking =====
+app.post('/api/visit', (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const ua = req.headers['user-agent'] || 'unknown';
+    const referrer = req.headers['referer'] || '';
+    const path = req.body.path || '/';
+    db.insert('visitors', {
+        id: uuidv4(),
+        ip,
+        user_agent: ua.substring(0, 300),
+        referrer: referrer.substring(0, 500),
+        path: path.substring(0, 200),
+        created_at: new Date().toISOString()
+    });
+    res.json({ success: true });
+});
+
+app.get('/api/visitors', authenticateToken, (req, res) => {
+    const visitors = db.query('visitors', null);
+    const unique = new Set(visitors.map(v => v.ip));
+    res.json({
+        total: visitors.length,
+        unique: unique.size,
+        today: visitors.filter(v => new Date(v.created_at).toDateString() === new Date().toDateString()).length,
+        recent: visitors.slice(-100).reverse()
+    });
+});
+
 // Static files
 app.use(express.static(path.join(__dirname, '..')));
 
@@ -369,13 +397,17 @@ app.get('/api/admin/stats', authenticateToken, (req, res) => {
     const orders = db.query('orders', null);
     const reviews = db.query('reviews', null);
     const appointments = db.query('appointments', null);
+    const visitors = db.query('visitors', null);
+    const uniqueVisitors = new Set(visitors.map(v => v.ip));
     const pendingOrders = orders.filter(o => o.status === 'pending').length;
     const pendingReviews = reviews.filter(r => !r.approved).length;
     const recentContacts = contacts.slice(-5).reverse();
+    const todayVisits = visitors.filter(v => new Date(v.created_at).toDateString() === new Date().toDateString()).length;
     res.json({
         contactCount: contacts.length, orderCount: orders.length,
         reviewCount: reviews.length, appointmentCount: appointments.length,
-        pendingOrders, pendingReviews, recentContacts
+        pendingOrders, pendingReviews, recentContacts,
+        visitorCount: visitors.length, uniqueVisitors: uniqueVisitors.size, todayVisits
     });
 });
 

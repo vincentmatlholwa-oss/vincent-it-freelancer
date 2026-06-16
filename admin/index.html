@@ -92,6 +92,7 @@
             <button class="tab-btn" data-tab="reviews"><i class="fas fa-star"></i> Reviews</button>
             <button class="tab-btn" data-tab="chat"><i class="fas fa-comments"></i> Chat</button>
             <button class="tab-btn" data-tab="blog"><i class="fas fa-blog"></i> Blog</button>
+            <button class="tab-btn" data-tab="visitors"><i class="fas fa-users"></i> Visitors</button>
         </div>
 
         <div id="panel-contacts" class="panel active"></div>
@@ -100,6 +101,7 @@
         <div id="panel-reviews" class="panel"></div>
         <div id="panel-chat" class="panel"></div>
         <div id="panel-blog" class="panel"></div>
+        <div id="panel-visitors" class="panel"></div>
     </div>
 
     <script>
@@ -154,6 +156,7 @@
                 else if (name === 'appointments') { const d = await fetch(API+'/api/appointments', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderAppointments(d); }
                 else if (name === 'reviews') { const d = await fetch(API+'/api/reviews', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderReviews(d); }
                 else if (name === 'chat') { const d = await fetch(API+'/api/chat', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderChat(d); }
+                else if (name === 'visitors') { const d = await fetch(API+'/api/visitors', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderVisitors(d); }
             } catch(e) { document.getElementById('panel-'+name).innerHTML = '<p style="color:#ff6b35">Error loading data. Make sure the server is running.</p>'; }
         }
 
@@ -161,12 +164,12 @@
             try {
                 const s = await fetch(API+'/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json());
                 document.getElementById('statsContainer').innerHTML = `
+                    <div class="stat-card"><div class="stat-num">${s.visitorCount||0}</div><div class="stat-label">Page Views</div></div>
+                    <div class="stat-card"><div class="stat-num">${s.uniqueVisitors||0}</div><div class="stat-label">Unique Visitors</div></div>
+                    <div class="stat-card"><div class="stat-num">${s.todayVisits||0}</div><div class="stat-label">Today</div></div>
                     <div class="stat-card"><div class="stat-num">${s.contactCount}</div><div class="stat-label">Messages</div></div>
                     <div class="stat-card"><div class="stat-num">${s.orderCount}</div><div class="stat-label">Orders</div></div>
-                    <div class="stat-card"><div class="stat-num">${s.reviewCount}</div><div class="stat-label">Reviews</div></div>
                     <div class="stat-card"><div class="stat-num">${s.appointmentCount}</div><div class="stat-label">Appointments</div></div>
-                    <div class="stat-card"><div class="stat-num">${s.pendingOrders}</div><div class="stat-label">Pending Orders</div></div>
-                    <div class="stat-card"><div class="stat-num">${s.pendingReviews}</div><div class="stat-label">Pending Reviews</div></div>
                 `;
             } catch {}
         }
@@ -261,6 +264,27 @@
                 <input type="text" id="adminChatInput" style="flex:1;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit" placeholder="Reply as admin...">
                 <button onclick="sendAdminReply()" style="padding:0.7rem 1.2rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));border:none;border-radius:8px;color:#fff;cursor:pointer"><i class="fas fa-paper-plane"></i></button>
             </div>`;
+        }
+
+        function renderVisitors(data) {
+            document.getElementById('panel-visitors').innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem">
+                    <div class="stat-card"><div class="stat-num">${data.total}</div><div class="stat-label">Total Views</div></div>
+                    <div class="stat-card"><div class="stat-num">${data.unique}</div><div class="stat-label">Unique Visitors</div></div>
+                    <div class="stat-card"><div class="stat-num">${data.today}</div><div class="stat-label">Today</div></div>
+                </div>
+                <h4 style="color:var(--accent-1);margin-bottom:1rem"><i class="fas fa-clock"></i> Recent 100 visits</h4>
+                <table><thead><tr><th>Time</th><th>IP</th><th>Path</th><th>Referrer</th></tr></thead><tbody>
+                ${data.recent.length ? data.recent.map(v => `
+                    <tr>
+                        <td>${new Date(v.created_at).toLocaleString()}</td>
+                        <td style="font-family:monospace;font-size:0.75rem">${v.ip}</td>
+                        <td>${v.path}</td>
+                        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${v.referrer || '-'}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-sec)">No visits yet</td></tr>'}
+                </tbody></table>
+            `;
         }
 
         async function sendAdminReply() {

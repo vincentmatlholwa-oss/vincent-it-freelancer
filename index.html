@@ -16,6 +16,28 @@
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Vincent IT Freelancer - Professional Tech Services">
     <meta name="twitter:description" content="Professional IT services in Mahikeng, North West - Office activation, PC repair, CV creation, website templates and more.">
+    <link rel="canonical" href="https://vincent-it-freelancer.onrender.com">
+    <meta name="robots" content="index, follow">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Vincent IT Freelancer",
+        "description": "Professional IT services in Mahikeng, North West - Office activation, PC repair, CV creation, website templates and more.",
+        "url": "https://vincent-it-freelancer.onrender.com",
+        "telephone": "+27677834591",
+        "email": "codingpredators@gmail.com",
+        "areaServed": "Mahikeng, North West, South Africa",
+        "priceRange": "R300-R1500",
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+27677834591",
+            "contactType": "customer service",
+            "availableLanguage": ["English", "Afrikaans", "Xitsonga"]
+        },
+        "sameAs": ["https://wa.me/27677834591"]
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -51,7 +73,6 @@
                 <a href="#services" class="nav-link">Services</a>
                 <a href="#pricing" class="nav-link">Pricing</a>
                 <a href="#compare" class="nav-link">Compare</a>
-                <a href="#portfolio" class="nav-link">Portfolio</a>
                 <a href="#faq" class="nav-link">FAQ</a>
                 <a href="#contract" class="nav-link">Contract</a>
                 <a href="#booking" class="nav-link">Booking</a>
@@ -118,6 +139,7 @@
             <p class="hero-desc">
                 Professional tech solutions — from Microsoft Office activation to hardware upgrades,
                 CV creation, and academic assistance. Based in <strong>Mahikeng, North West</strong>.
+                Reliable, affordable, and dedicated to getting your tech working.
             </p>
             <div class="hero-buttons">
                 <a href="#services" class="btn btn-primary">
@@ -129,16 +151,16 @@
             </div>
             <div class="hero-stats">
                 <div class="hero-stat">
-                    <span class="hero-stat-num" data-count="50">0</span><span>+</span>
-                    <span class="hero-stat-label">Clients Served</span>
+                    <span class="hero-stat-num" data-count="10">0</span><span>+</span>
+                    <span class="hero-stat-label">Services Offered</span>
                 </div>
                 <div class="hero-stat">
-                    <span class="hero-stat-num" data-count="100">0</span><span>%</span>
-                    <span class="hero-stat-label">Satisfaction</span>
+                    <span class="hero-stat-num" data-count="3">0</span><span>+</span>
+                    <span class="hero-stat-label">Years Experience</span>
                 </div>
                 <div class="hero-stat">
-                    <span class="hero-stat-num" data-count="24">0</span><span>/7</span>
-                    <span class="hero-stat-label">Support</span>
+                    <span class="hero-stat-num" data-count="1">0</span><span> hr</span>
+                    <span class="hero-stat-label">Avg. Response Time</span>
                 </div>
             </div>
         </div>
@@ -174,45 +196,6 @@
             <p class="section-desc">No hidden fees — quality service at fair rates</p>
         </div>
         <div class="pricing-grid" id="pricingGrid"></div>
-    </section>
-
-    <!-- Portfolio Section -->
-    <section class="section" id="portfolio">
-        <div class="section-header">
-            <span class="section-badge">Portfolio</span>
-            <h2 class="section-title">Recent Work</h2>
-            <p class="section-desc">A glimpse of projects I've delivered</p>
-        </div>
-        <div class="portfolio-grid" id="portfolioGrid"></div>
-    </section>
-
-    <!-- Testimonials -->
-    <section class="section" id="testimonials">
-        <div class="section-header">
-            <span class="section-badge">Testimonials</span>
-            <h2 class="section-title">What Clients Say</h2>
-            <p class="section-desc">Trusted by clients across Mahikeng and beyond</p>
-        </div>
-        <div class="testimonials-carousel" id="testimonialsCarousel"></div>
-        <div class="testimonial-dots" id="testimonialDots"></div>
-    </section>
-
-    <!-- Referral Section -->
-    <section class="section" id="referral">
-        <div class="section-header">
-            <span class="section-badge">Refer & Earn</span>
-            <h2 class="section-title">Refer a Friend</h2>
-            <p class="section-desc">Share the love — you both get 10% off your next service</p>
-        </div>
-        <div class="referral-card">
-            <div class="referral-icon"><i class="fas fa-gift"></i></div>
-            <p class="referral-info">Your unique referral code:</p>
-            <div class="referral-code-wrapper">
-                <span class="referral-code" id="referralCode">VIN-XXXX</span>
-                <button class="btn btn-primary" id="referralCopy"><i class="fas fa-copy"></i> Copy</button>
-            </div>
-            <button class="btn btn-whatsapp" id="referralShare"><i class="fab fa-whatsapp"></i> Share on WhatsApp</button>
-        </div>
     </section>
 
     <!-- FAQ Section -->
@@ -447,7 +430,7 @@
                 <i class="fas fa-code"></i>
                 <span>Vincent IT Freelancer</span>
             </div>
-            <p class="footer-copy">&copy; 2025-2026 viincent it freelancer. All rights reserved.</p>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved.</p>
             <div class="footer-social">
                 <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
@@ -468,7 +451,6 @@
     <script src="js/search-filter.js"></script>
     <script src="js/quiz.js"></script>
     <script src="js/chat.js"></script>
-    <script src="js/reviews.js"></script>
     <script src="js/booking.js"></script>
     <script src="js/portal.js"></script>
     <script>
@@ -479,7 +461,7 @@
             window.initExtras = () => {
                 initLazyLoad();
                 initSearchFilter();
-                setTimeout(() => { renderQuiz(); initGallery(); initReviews(); initBooking(); initPortal(); initOrderTracking(); }, 100);
+                setTimeout(() => { renderQuiz(); initBooking(); initPortal(); initOrderTracking(); }, 100);
                 initChat();
                 loadBlogPreview();
                 initContactForm();
@@ -495,6 +477,15 @@
             // Register service worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+            }
+
+            // Visitor tracking
+            if (navigator.onLine) {
+                fetch('/api/visit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: window.location.pathname })
+                }).catch(() => {});
             }
         });
 
@@ -512,10 +503,12 @@
                     message: document.getElementById('cfMessage').value.trim()
                 };
                 const msg = document.getElementById('contactFormMsg');
+                const btn = form.querySelector('button[type="submit"]');
                 if (!data.name || !data.email || !data.message) {
                     msg.innerHTML = '<span style="color:#ff6b35">Please fill in required fields</span>'; return;
                 }
                 if (navigator.onLine) {
+                    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                     try {
                         const res = await fetch('/api/contact', {
                             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
@@ -525,7 +518,7 @@
                         form.reset();
                     } catch {
                         msg.innerHTML = '<span style="color:#ff6b35">Server unavailable. Please use WhatsApp.</span>';
-                    }
+                    } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message'; }
                 } else {
                     msg.innerHTML = '<span style="color:#ff6b35">You are offline. Please use WhatsApp.</span>';
                 }

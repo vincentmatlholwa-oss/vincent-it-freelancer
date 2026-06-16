@@ -141,11 +141,23 @@ let cart = [];
 const COUPONS = { STUDENT10: 10, VIP5: 5, REFER10: 10 };
 let appliedCoupon = null;
 
+function saveCart() {
+    try { localStorage.setItem('vit_cart', JSON.stringify(cart)); } catch {}
+}
+
+function loadCart() {
+    try {
+        const saved = localStorage.getItem('vit_cart');
+        if (saved) { cart = JSON.parse(saved); updateCartUI(); }
+    } catch {}
+}
+
 function addToCart(idx) {
     const s = services[idx];
     const existing = cart.find(c => c.index === idx);
     if (existing) { existing.qty++; }
     else { cart.push({ index: idx, qty: 1 }); }
+    saveCart();
     updateCartUI();
     document.getElementById('cartSidebar').classList.add('open');
     document.getElementById('cartOverlay').classList.add('open');
@@ -153,6 +165,7 @@ function addToCart(idx) {
 
 function removeFromCart(idx) {
     cart = cart.filter(c => c.index !== idx);
+    saveCart();
     updateCartUI();
 }
 
@@ -231,91 +244,6 @@ function initCart() {
         const final = total - discount;
         document.getElementById('additionalInfo').value =
             `Cart Order:\n${msg}\nTotal: R${total}${discount ? ` (Coupon: -R${discount})` : ''}\nFinal: R${final}`;
-    });
-}
-
-// ===== Portfolio =====
-const portfolioItems = [
-    { title: 'CV Transformation', cat: 'CV', icon: 'fa-solid fa-file-pen', desc: 'Professional CV revamp for a graduate — landed interview within a week.' },
-    { title: 'BSOD Recovery', cat: 'Repair', icon: 'fa-solid fa-triangle-exclamation', desc: 'Critical blue screen fixed, 50GB of family photos recovered.' },
-    { title: 'Office 365 Setup', cat: 'Software', icon: 'fa-brands fa-microsoft', desc: 'Full Office 365 deployment for a small business of 10 workstations.' },
-    { title: 'PC Hardware Upgrade', cat: 'Hardware', icon: 'fa-solid fa-microchip', desc: 'SSD + RAM upgrade on a 2015 laptop. Boot time: 3 min → 15 sec.' },
-    { title: 'Business Website', cat: 'Website', icon: 'fa-solid fa-laptop-code', desc: 'Custom template + branding for a local Mahikeng restaurant.' },
-    { title: 'Assignment Support', cat: 'Academic', icon: 'fa-solid fa-graduation-cap', desc: 'Research paper assistance — 85% pass rate on submitted work.' }
-];
-
-function renderPortfolio() {
-    const grid = document.getElementById('portfolioGrid');
-    grid.innerHTML = portfolioItems.map((p, i) => `
-        <div class="portfolio-card fade-in" style="animation-delay:${0.15 * (i + 1)}s">
-            <div class="portfolio-icon"><i class="${p.icon}"></i></div>
-            <span class="portfolio-cat">${p.cat}</span>
-            <h4>${p.title}</h4>
-            <p>${p.desc}</p>
-        </div>
-    `).join('');
-}
-
-// ===== Testimonials =====
-const testimonials = [
-    { name: 'Thabo M.', role: 'Student, Mahikeng', text: 'Vincent helped me activate Office on my laptop in under 20 minutes. Super fast and professional!', rating: 5 },
-    { name: 'Lerato K.', role: 'Small Business Owner', text: 'My PC had a nasty blue screen and I thought all my data was gone. Vincent recovered everything and fixed the issue.', rating: 5 },
-    { name: 'Karabo S.', role: 'Graduate, NWU', text: 'The CV revamp was incredible. I started getting interview calls within days. Highly recommended!', rating: 5 },
-    { name: 'Mpho D.', role: 'Returning Client', text: 'Second time using Vincent\'s services. Got a discount as an existing client and the work was just as good as the first time.', rating: 5 },
-    { name: 'Refilwe N.', role: 'Freelancer', text: 'Needed a website template done quickly. Vincent delivered in 3 days and it looks amazing. Will definitely refer friends.', rating: 5 }
-];
-
-let testimonialIdx = 0;
-
-function renderTestimonials() {
-    const container = document.getElementById('testimonialsCarousel');
-    const dots = document.getElementById('testimonialDots');
-    container.innerHTML = testimonials.map((t, i) => `
-        <div class="testimonial-card ${i === 0 ? 'active' : ''}" data-index="${i}">
-            <div class="testimonial-stars">${'<i class="fas fa-star"></i>'.repeat(t.rating)}</div>
-            <p class="testimonial-text">"${t.text}"</p>
-            <div class="testimonial-author">
-                <div class="testimonial-avatar">${t.name.charAt(0)}</div>
-                <div><strong>${t.name}</strong><small>${t.role}</small></div>
-            </div>
-        </div>
-    `).join('');
-    dots.innerHTML = testimonials.map((_, i) =>
-        `<span class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`
-    ).join('');
-    dots.querySelectorAll('.dot').forEach(d => {
-        d.addEventListener('click', () => goToTestimonial(parseInt(d.dataset.index)));
-    });
-    setInterval(() => {
-        goToTestimonial((testimonialIdx + 1) % testimonials.length);
-    }, 5000);
-}
-
-function goToTestimonial(idx) {
-    testimonialIdx = idx;
-    document.querySelectorAll('.testimonial-card').forEach((c, i) => c.classList.toggle('active', i === idx));
-    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
-}
-
-// ===== Referral =====
-function initReferral() {
-    let code = localStorage.getItem('vit_ref_code');
-    if (!code) {
-        code = 'VIN-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-        localStorage.setItem('vit_ref_code', code);
-    }
-    document.getElementById('referralCode').textContent = code;
-    document.getElementById('referralCopy').addEventListener('click', () => {
-        navigator.clipboard.writeText(code).then(() => {
-            document.getElementById('referralCopy').innerHTML = '<i class="fas fa-check"></i> Copied!';
-            setTimeout(() => { document.getElementById('referralCopy').innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
-        });
-    });
-    document.getElementById('referralShare').addEventListener('click', () => {
-        const msg = encodeURIComponent(
-            `Hey! Get 10% off your next IT service with Vincent IT Freelancer. Use my referral code: ${code}\n\nChat on WhatsApp: https://wa.me/27677834591`
-        );
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
     });
 }
 
@@ -470,7 +398,7 @@ function generateContractPDF(isClientCopy) {
     doc.text('Contract ID: VIT-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase(), 15, yPos);
     doc.setFillColor(...dark); doc.rect(0, 283, 210, 14, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(8);
-    doc.text('Vincent IT Freelancer | viincent IT freelancer', 105, 291, { align: 'center' });
+    doc.text('Vincent IT Freelancer', 105, 291, { align: 'center' });
     doc.text('© ' + new Date().getFullYear() + ' All rights reserved', 105, 297, { align: 'center' });
     return doc;
 }
@@ -520,7 +448,7 @@ function generateInvoice() {
     doc.text('Thank you for your business!', 15, yPos);
     doc.setFillColor(...dark); doc.rect(0, 283, 210, 14, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(8);
-    doc.text('Vincent IT Freelancer | viincent IT freelancer', 105, 291, { align: 'center' });
+    doc.text('Vincent IT Freelancer', 105, 291, { align: 'center' });
     doc.text('© ' + new Date().getFullYear(), 105, 297, { align: 'center' });
     return doc;
 }
@@ -651,10 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderServices();
     renderComparison();
     renderPricing();
-    renderPortfolio();
-    renderTestimonials();
     renderFAQ();
-    initReferral();
+    loadCart();
     initCart();
     initSignaturePad();
     initContractForm();

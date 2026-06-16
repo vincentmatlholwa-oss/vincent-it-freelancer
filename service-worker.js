@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vincent-it-v2';
+const CACHE_NAME = 'vincent-it-v3';
 const ASSETS = [
     '/',
     '/index.html',
@@ -10,7 +10,6 @@ const ASSETS = [
     '/js/quiz.js',
     '/js/lazy-load.js',
     '/js/chat.js',
-    '/js/reviews.js',
     '/js/booking.js',
     '/js/portal.js',
     '/blog/index.html',
