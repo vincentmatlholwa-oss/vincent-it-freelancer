@@ -89,6 +89,23 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
+// CSRF origin check for state-changing requests
+app.use((req, res, next) => {
+    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) && !req.path.startsWith('/api/payfast/') && !req.path.startsWith('/api/clients/')) {
+        const origin = req.headers['origin'] || '';
+        const referer = req.headers['referer'] || '';
+        if (origin || referer) {
+            const allowed = (CORS_ORIGIN === '*' ? '' : CORS_ORIGIN).split(',').map(s => s.trim());
+            const source = origin || referer.replace(/\/+$/, '');
+            const match = allowed.some(a => a && source.startsWith(a));
+            if (!allowed.includes('*') && !match) {
+                return res.status(403).json({ error: 'CSRF check failed' });
+            }
+        }
+    }
+    next();
+});
+
 // Health check (before rate limiter to avoid 429)
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 app.get('/health', (req, res) => res.status(200).send('ok'));
@@ -357,9 +374,19 @@ app.post('/api/orders', validate([
     { name: 'service', label: 'Service', required: true, maxLength: 500 }
 ]), (req, res) => {
     const { client_name, client_email, client_phone, service, price, cart_items } = req.body;
+    if (price) {
+        const priceNum = parseFloat(String(price).replace(/[^0-9.]/g, ''));
+        if (isNaN(priceNum) || priceNum <= 0) return res.status(400).json({ error: 'Invalid price' });
+        if (priceNum > 999999) return res.status(400).json({ error: 'Price exceeds maximum allowed (R999,999)' });
+    }
     const id = uuidv4();
     let items = [];
     try { if (cart_items) items = typeof cart_items === 'string' ? JSON.parse(cart_items) : cart_items; } catch {}
+    if (items.length) {
+        for (const item of items) {
+            if (!item.title || !item.price || item.price <= 0) return res.status(400).json({ error: 'Invalid cart item data' });
+        }
+    }
     db.insert('orders', {
         id,
         client_name: client_name.trim().replace(/<[^>]*>/g, ''),
@@ -391,8 +418,17 @@ app.post('/api/orders', validate([
 app.get('/api/orders', (req, res) => {
     const { email } = req.query;
     if (email) {
-        const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
-        return res.json(orders.reverse());
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) return res.status(401).json({ error: 'Authentication required' });
+        const token = authHeader.split(' ')[1];
+        return jwt.verify(token, JWT_SECRET, (err, decoded) => {
+            if (err) return res.status(403).json({ error: 'Invalid token' });
+            if (decoded.email && decoded.email.toLowerCase() !== email.toLowerCase()) {
+                return res.status(403).json({ error: 'Email mismatch' });
+            }
+            const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
+            res.json(orders.reverse());
+        });
     }
     const authHeader = req.headers['authorization'];
     if (!authHeader) return res.status(401).json({ error: 'Authentication required for all orders' });
@@ -763,7 +799,8 @@ app.post('/api/clients/register', validate([
             referral_code: refCode,
             created_at: new Date().toISOString()
         });
-        res.json({ success: true, client: { id, name: name.trim(), email: emailLower, referral_code: refCode } });
+        const token = jwt.sign({ email: emailLower, role: 'client', clientId: id }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ success: true, token, client: { id, name: name.trim(), email: emailLower, referral_code: refCode } });
     } catch {
         res.status(500).json({ error: 'Registration failed' });
     }
@@ -778,9 +815,46 @@ app.post('/api/clients/login', authLimiter, async (req, res) => {
         const valid = await bcrypt.compare(password, clients[0].password);
         if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
         const client = clients[0];
-        res.json({ success: true, client: { id: client.id, name: client.name, email: client.email, phone: client.phone, referral_code: client.referral_code } });
+        const token = jwt.sign({ email: client.email, role: 'client', clientId: client.id }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ success: true, token, client: { id: client.id, name: client.name, email: client.email, phone: client.phone, referral_code: client.referral_code } });
     } catch {
         res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+// ===== Password Reset =====
+app.post('/api/clients/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const clients = db.query('clients', c => c.email.toLowerCase() === email.toLowerCase());
+    if (!clients.length) return res.json({ success: true, message: 'If the email exists, a reset link has been sent.' });
+    const token = uuidv4() + '-' + Math.random().toString(36).substr(2, 8);
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    db.update('clients', clients[0].id, { reset_token: token, reset_token_expires: expires });
+    const resetUrl = (process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com') + '/client/portal.html?reset_token=' + token + '&email=' + encodeURIComponent(email);
+    sendEmailAlert({
+        to: email,
+        subject: 'Password Reset – Vincent IT',
+        html: `<h2>Password Reset</h2><p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you did not request this, please ignore this email.</p><p>– Vincent IT Freelancer</p>`
+    });
+    res.json({ success: true, message: 'If the email exists, a reset link has been sent.' });
+});
+
+app.post('/api/clients/reset-password', async (req, res) => {
+    const { email, token, password } = req.body;
+    if (!email || !token || !password) return res.status(400).json({ error: 'Email, token, and new password required' });
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const clients = db.query('clients', c => c.email.toLowerCase() === email.toLowerCase());
+    if (!clients.length) return res.status(400).json({ error: 'Invalid request' });
+    const client = clients[0];
+    if (client.reset_token !== token) return res.status(400).json({ error: 'Invalid or expired reset token' });
+    if (new Date(client.reset_token_expires) < new Date()) return res.status(400).json({ error: 'Reset token has expired' });
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        db.update('clients', client.id, { password: hashedPassword, reset_token: null, reset_token_expires: null });
+        res.json({ success: true, message: 'Password updated successfully' });
+    } catch {
+        res.status(500).json({ error: 'Password reset failed' });
     }
 });
 
@@ -837,6 +911,31 @@ app.post('/api/blog', authenticateToken, validate([
         updated_at: new Date().toISOString()
     });
     res.json({ success: true, message: 'Post created!' });
+});
+
+app.put('/api/blog/:slug', authenticateToken, (req, res) => {
+    const { slug } = req.params;
+    const { title, excerpt, content, author, tags } = req.body;
+    const posts = db.query('blog_posts', p => p.slug === slug);
+    if (!posts.length) return res.status(404).json({ error: 'Post not found' });
+    db.update('blog_posts', posts[0].id, {
+        title: (title || posts[0].title).trim(),
+        slug: slug,
+        excerpt: (excerpt !== undefined ? excerpt : posts[0].excerpt || '').trim(),
+        content: content || posts[0].content,
+        author: (author || posts[0].author || 'Vincent IT').trim(),
+        tags: (tags !== undefined ? tags : posts[0].tags || '').trim(),
+        updated_at: new Date().toISOString()
+    });
+    res.json({ success: true, message: 'Post updated!' });
+});
+
+app.delete('/api/blog/:slug', authenticateToken, (req, res) => {
+    const { slug } = req.params;
+    const posts = db.query('blog_posts', p => p.slug === slug);
+    if (!posts.length) return res.status(404).json({ error: 'Post not found' });
+    db.update('blog_posts', posts[0].id, { published: 0, updated_at: new Date().toISOString() });
+    res.json({ success: true, message: 'Post deleted!' });
 });
 
 // ===== Dashboard stats =====

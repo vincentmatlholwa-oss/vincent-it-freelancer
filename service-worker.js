@@ -61,6 +61,25 @@ self.addEventListener('fetch', event => {
     );
 });
 
+// Background Sync for offline contract submissions
+self.addEventListener('sync', event => {
+    if (event.tag === 'sync-contracts') {
+        event.waitUntil(
+            caches.open(CACHE_NAME).then(cache =>
+                cache.keys().then(keys =>
+                    Promise.all(keys.filter(k => k.url.includes('/api/orders')).map(k =>
+                        cache.match(k).then(res => res.json()).then(data =>
+                            fetch(k.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+                                .then(() => cache.delete(k))
+                                .catch(() => {})
+                        )
+                    ))
+                )
+            )
+        );
+    }
+});
+
 // Push notifications
 self.addEventListener('push', event => {
     if (!event.data) return;

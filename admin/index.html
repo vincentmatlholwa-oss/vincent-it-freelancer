@@ -115,6 +115,11 @@
         function getHeaders() {
             return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
         }
+        function filterTable(inputId, tableId) {
+            var q = document.getElementById(inputId).value.toLowerCase();
+            var rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+            rows.forEach(function(r) { r.style.display = q ? (r.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none') : ''; });
+        }
 
         function showLogin() { document.getElementById('loginPage').style.display = 'flex'; document.getElementById('dashboard').style.display = 'none'; }
         function showDashboard() { document.getElementById('loginPage').style.display = 'none'; document.getElementById('dashboard').style.display = 'block'; }
@@ -182,14 +187,14 @@
 
         function renderContacts(data) {
             if (!data.length) { document.getElementById('panel-contacts').innerHTML = '<p style="color:var(--text-sec)">No messages yet</p>'; return; }
-            document.getElementById('panel-contacts').innerHTML = `<table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Subject</th><th>Message</th></tr></thead><tbody>
+            document.getElementById('panel-contacts').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-contacts" placeholder="Search contacts..." oninput="filterTable('filter-contacts','table-contacts')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-contacts"><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Subject</th><th>Message</th></tr></thead><tbody>
                 ${data.map(c => `<tr><td>${new Date(c.created_at).toLocaleDateString()}</td><td>${c.name}</td><td>${c.email}</td><td>${c.phone||'-'}</td><td>${c.subject||'-'}</td><td><div class="msg">${c.message}</div></td></tr>`).join('')}
             </tbody></table>`;
         }
 
         function renderOrders(data) {
             if (!data.length) { document.getElementById('panel-orders').innerHTML = '<p style="color:var(--text-sec)">No orders yet</p>'; return; }
-            document.getElementById('panel-orders').innerHTML = `<table><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Status</th><th>Payment</th><th>Deposit</th><th>Actions</th></tr></thead><tbody>
+            document.getElementById('panel-orders').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-orders" placeholder="Search orders..." oninput="filterTable('filter-orders','table-orders')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-orders"><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Status</th><th>Payment</th><th>Deposit</th><th>Actions</th></tr></thead><tbody>
                 ${data.map(o => `<tr>
                     <td>${new Date(o.created_at).toLocaleDateString()}</td>
                     <td>${o.client_name}<br><small>${o.client_email}</small></td>
@@ -219,7 +224,7 @@
 
         function renderAppointments(data) {
             if (!data.length) { document.getElementById('panel-appointments').innerHTML = '<p style="color:var(--text-sec)">No appointments yet</p>'; return; }
-            document.getElementById('panel-appointments').innerHTML = `<table><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+            document.getElementById('panel-appointments').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-appointments" placeholder="Search appointments..." oninput="filterTable('filter-appointments','table-appointments')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-appointments"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead><tbody>
                 ${data.map(a => `<tr>
                     <td>${a.date}</td><td>${a.time}</td>
                     <td>${a.client_name}<br><small>${a.client_email}</small></td>
@@ -241,7 +246,7 @@
 
         function renderReviews(data) {
             if (!data.length) { document.getElementById('panel-reviews').innerHTML = '<p style="color:var(--text-sec)">No reviews yet</p>'; return; }
-            document.getElementById('panel-reviews').innerHTML = `<table><thead><tr><th>Date</th><th>Client</th><th>Rating</th><th>Service</th><th>Review</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+            document.getElementById('panel-reviews').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-reviews" placeholder="Search reviews..." oninput="filterTable('filter-reviews','table-reviews')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-reviews"><thead><tr><th>Date</th><th>Client</th><th>Rating</th><th>Service</th><th>Review</th><th>Status</th><th>Actions</th></tr></thead><tbody>
                 ${data.map(r => `<tr>
                     <td>${new Date(r.created_at).toLocaleDateString()}</td>
                     <td>${r.client_name}</td>
@@ -279,7 +284,7 @@
 
         function renderTemplateOrders(data) {
             if (!data || !data.length) { document.getElementById('panel-templates').innerHTML = '<p style="color:var(--text-sec)">No template orders yet</p>'; return; }
-            document.getElementById('panel-templates').innerHTML = `<table><thead><tr><th>Date</th><th>Client</th><th>Template</th><th>Price</th><th>Payment</th><th>Status</th><th>Download Token</th><th>Actions</th></tr></thead><tbody>
+            document.getElementById('panel-templates').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-templates" placeholder="Search template orders..." oninput="filterTable('filter-templates','table-templates')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-templates"><thead><tr><th>Date</th><th>Client</th><th>Template</th><th>Price</th><th>Payment</th><th>Status</th><th>Download Token</th><th>Actions</th></tr></thead><tbody>
                 ${data.map(o => `<tr>
                     <td>${new Date(o.created_at).toLocaleDateString()}</td>
                     <td>${o.client_name}<br><small>${o.client_email}</small></td>
@@ -315,7 +320,7 @@
 
         function renderUploads(data) {
             if (!data || !data.length) { document.getElementById('panel-uploads').innerHTML = '<p style="color:var(--text-sec)">No client file uploads yet</p>'; return; }
-            document.getElementById('panel-uploads').innerHTML = `<table><thead><tr><th>Date</th><th>Client</th><th>Files</th></tr></thead><tbody>
+            document.getElementById('panel-uploads').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-uploads" placeholder="Search uploads..." oninput="filterTable('filter-uploads','table-uploads')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-uploads"><thead><tr><th>Date</th><th>Client</th><th>Files</th></tr></thead><tbody>
                 ${data.map(u => `<tr>
                     <td>${new Date(u.created_at).toLocaleDateString()}</td>
                     <td>${u.client_name || u.client_email || 'Unknown'}</td>
@@ -374,7 +379,10 @@
         `;
 
         async function createBlogPost() {
-            const data = {
+            var btn = document.querySelector('#panel-blog .blog-form button');
+            var editSlug = btn.dataset.editSlug;
+            var isEdit = !!editSlug;
+            var data = {
                 title: document.getElementById('blogTitle').value.trim(),
                 slug: document.getElementById('blogSlug').value.trim(),
                 excerpt: document.getElementById('blogExcerpt').value.trim(),
@@ -382,24 +390,52 @@
                 author: document.getElementById('blogAuthor').value.trim() || 'Vincent IT',
                 tags: document.getElementById('blogTags').value.trim()
             };
-            const msg = document.getElementById('blogMsg');
+            var msg = document.getElementById('blogMsg');
             if (!data.title || !data.slug || !data.content) { msg.innerHTML = '<span style="color:#ff6b35">Title, slug and content required</span>'; return; }
             try {
-                const res = await fetch(API + '/api/blog', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
-                const result = await res.json();
-                msg.innerHTML = '<span style="color:var(--accent-1)">Post published!</span>';
-                ['blogTitle','blogSlug','blogExcerpt','blogContent','blogTags'].forEach(id => document.getElementById(id).value = '');
+                var url, method;
+                if (isEdit) { url = API + '/api/blog/' + editSlug; method = 'PUT'; }
+                else { url = API + '/api/blog'; method = 'POST'; }
+                var res = await fetch(url, { method: method, headers: getHeaders(), body: JSON.stringify(data) });
+                await res.json();
+                msg.innerHTML = '<span style="color:var(--accent-1)">' + (isEdit ? 'Post updated!' : 'Post published!') + '</span>';
+                ['blogTitle','blogSlug','blogExcerpt','blogContent','blogTags'].forEach(function(id) { document.getElementById(id).value = ''; });
+                btn.innerHTML = '<i class="fas fa-plus-circle"></i> Publish Post';
+                delete btn.dataset.editSlug;
                 loadBlogList();
-            } catch { msg.innerHTML = '<span style="color:#ff6b35">Error creating post</span>'; }
+            } catch { msg.innerHTML = '<span style="color:#ff6b35">Error ' + (isEdit ? 'updating' : 'creating') + ' post</span>'; }
         }
 
+        async function deleteBlogPost(slug) {
+            if (!confirm('Delete this blog post?')) return;
+            try {
+                await fetch(API + '/api/blog/' + slug, { method: 'DELETE', headers: getHeaders() });
+                loadBlogList();
+            } catch { alert('Delete failed'); }
+        }
+        function editBlogPost(p) {
+            document.getElementById('blogTitle').value = p.title;
+            document.getElementById('blogSlug').value = p.slug;
+            document.getElementById('blogExcerpt').value = p.excerpt || '';
+            document.getElementById('blogAuthor').value = p.author || 'Vincent IT';
+            document.getElementById('blogTags').value = p.tags || '';
+            document.getElementById('blogContent').value = p.content || '';
+            var btn = document.querySelector('#panel-blog .blog-form button');
+            btn.innerHTML = '<i class="fas fa-save"></i> Update Post';
+            btn.dataset.editSlug = p.slug;
+            document.getElementById('blogMsg').innerHTML = '<span style="color:var(--accent-1)">Editing: ' + p.title + '</span>';
+        }
         async function loadBlogList() {
             try {
                 const posts = await fetch(API + '/api/blog').then(r => r.json());
                 document.getElementById('blogList').innerHTML = posts.length ? posts.map(p => `
                     <div style="padding:0.7rem;border:1px solid var(--border);border-radius:8px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">
                         <div><strong>${p.title}</strong><br><small style="color:var(--text-sec)">${new Date(p.created_at).toLocaleDateString()} — ${p.tags||''}</small></div>
-                        <a href="/blog/?slug=${p.slug}" target="_blank" class="action-btn" style="text-decoration:none">View</a>
+                        <div style="display:flex;gap:0.3rem">
+                            <button class="action-btn" onclick="editBlogPost(${JSON.stringify(p).replace(/"/g,'&quot;')})">Edit</button>
+                            <button class="action-btn" onclick="deleteBlogPost('${p.slug}')">Delete</button>
+                            <a href="/blog/?slug=${p.slug}" target="_blank" class="action-btn" style="text-decoration:none">View</a>
+                        </div>
                     </div>
                 `).join('') : '<p style="color:var(--text-sec)">No posts yet</p>';
             } catch {}

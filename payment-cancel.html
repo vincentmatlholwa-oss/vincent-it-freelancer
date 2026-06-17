@@ -76,6 +76,9 @@
             </ul>
         </div>
         <div style="margin-top:1rem">
+            <a href="/" id="retryPayBtn" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Retry Payment
+            </a>
             <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20want%20to%20complete%20my%20payment%20for%20order." target="_blank" class="btn btn-whatsapp">
                 <i class="fab fa-whatsapp"></i> Pay via WhatsApp
             </a>
@@ -84,5 +87,16 @@
             </a>
         </div>
     </div>
+    <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var oid = params.get('order_id');
+            if (oid) {
+                var btn = document.getElementById('retryPayBtn');
+                btn.href = '/?retry_pay=' + encodeURIComponent(oid);
+                btn.innerHTML = '<i class="fas fa-redo"></i> Retry Payment for Order';
+            }
+        })();
+    </script>
 </body>
 </html>

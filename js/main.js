@@ -213,7 +213,7 @@ function renderTemplates() {
                         ? `<button class="btn btn-sm btn-primary" onclick="buyTemplate('${t.id}','${t.title}','${t.price}')"><i class="fas fa-shopping-cart"></i> Buy & Download</button>
                            <a href="${t.demo}" target="_blank" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i> Preview</a>`
                         : `<a href="${t.demo}" target="_blank" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i> Preview</a>
-                           <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%27m%20interested%20in%20the%20${encodeURIComponent(t.title)}.%20Can%20you%20customise%20it%20for%20my%20business%3F" target="_blank" class="btn btn-sm btn-whatsapp"><i class="fab fa-whatsapp"></i> Get This</a>`
+                           <a href="https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=Hi%20Vincent%20IT!%20I%27m%20interested%20in%20the%20${encodeURIComponent(t.title)}.%20Can%20you%20customise%20it%20for%20my%20business%3F" target="_blank" class="btn btn-sm btn-whatsapp"><i class="fab fa-whatsapp"></i> Get This</a>`
                     }
                 </div>
             </div>
@@ -259,17 +259,17 @@ function buyTemplate(id, title, price) {
                             }
                         } else {
                             const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
-                            window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                            window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
                         }
                     } else {
                         const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
-                        window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                        window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
                         alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nPay online unavailable. Please pay via EFT/SnapScan and WhatsApp us your Order ID.\n\nPrice: ${price}\nProduct: ${title}`);
                     }
                 }).catch(() => {
                     alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nPay online unavailable. Please pay via EFT/SnapScan and WhatsApp us your Order ID.`);
                     const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay.`);
-                    window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                    window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
                 });
             } else {
                 alert('Error: ' + (data.error || 'Could not create order'));
@@ -704,7 +704,7 @@ function initContractForm() {
         } else {
             msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nPlease proceed with my service.`);
         }
-        window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+        window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
     });
     function initiatePayment(depositOnly, btn) {
         const d = window.__contractData;
@@ -734,6 +734,14 @@ function initContractForm() {
     }
     document.getElementById('payNowBtn').addEventListener('click', function() { initiatePayment(false, this); });
     document.getElementById('payDepositBtn').addEventListener('click', function() { initiatePayment(true, this); });
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var retryId = params.get('retry_pay');
+        if (retryId && window.__contractData) {
+            window.__contractData.orderId = retryId;
+            document.getElementById('payDepositBtn').click();
+        }
+    })();
     document.getElementById('resetContract').addEventListener('click', () => {
         contractContainer.style.display = 'block'; resultDiv.style.display = 'none';
         form.reset();
@@ -804,6 +812,54 @@ function initCounters() {
         }, 25);
     });
 }
+
+// ===== App Config =====
+var APP_CONFIG = {
+    WHATSAPP_NUMBER: '27677834591',
+    SITE_NAME: 'Vincent IT Freelancer',
+    CURRENCY: 'R',
+    ADMIN_EMAIL: 'info@vincentit.co.za'
+};
+
+// ===== PWA Install Prompt =====
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    var banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'flex';
+});
+window.addEventListener('appinstalled', function() {
+    deferredPrompt = null;
+    var banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+});
+function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() { deferredPrompt = null; });
+}
+
+// ===== Offline Banner =====
+(function() {
+    var banner = document.createElement('div');
+    banner.id = 'offlineBanner';
+    banner.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#ff6b35;color:#fff;text-align:center;padding:0.5rem;font-size:0.85rem;font-family:Inter,sans-serif';
+    banner.textContent = 'You are offline. Some features may be unavailable.';
+    document.body.prepend(banner);
+    window.addEventListener('offline', function() { banner.style.display = 'block'; });
+    window.addEventListener('online', function() { banner.style.display = 'none'; });
+    if (!navigator.onLine) banner.style.display = 'block';
+})();
+
+// ===== Background Sync for Contract Submissions =====
+(function() {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        navigator.serviceWorker.ready.then(function(reg) {
+            reg.sync.register('sync-contracts').catch(function() {});
+        });
+    }
+})();
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', () => {

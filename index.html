@@ -462,6 +462,13 @@
         </div>
     </footer>
 
+    <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:1rem;right:1rem;z-index:9999;background:linear-gradient(135deg,#12122a,#1a0a2e);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1rem;box-shadow:0 10px 40px rgba(0,0,0,0.5);max-width:300px;font-family:Inter,sans-serif;align-items:center;gap:0.8rem;flex-direction:column;text-align:center">
+        <div><strong style="color:#00d4ff">Install Vincent IT</strong><p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem">Install for quick access and offline support</p></div>
+        <div style="display:flex;gap:0.5rem">
+            <button onclick="installPWA()" style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.8rem">Install</button>
+            <button onclick="this.closest('#pwaInstallBanner').style.display='none'" style="padding:0.5rem 1.2rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-sec);cursor:pointer;font-family:inherit;font-size:0.8rem">Not now</button>
+        </div>
+    </div>
     <button class="scroll-top" id="scrollTop">
         <i class="fas fa-arrow-up"></i>
     </button>
