@@ -292,7 +292,17 @@
         async function loadOrders() {
             const c = document.getElementById('portalOrders');
             try {
-                const orders = await fetch(API+'/api/orders?email='+encodeURIComponent(client.email), { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('vit_client_token') || '') } }).then(r=>r.json());
+                var tok = localStorage.getItem('vit_client_token');
+                if (!tok) {
+                    c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Session expired — <a href="#" onclick="location.reload()" style="color:var(--accent-1)">please log in again</a></p>';
+                    return;
+                }
+                const res = await fetch(API+'/api/orders?email='+encodeURIComponent(client.email), { headers: { 'Authorization': 'Bearer ' + tok } });
+                if (res.status === 401 || res.status === 403) {
+                    c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Session expired — <a href="#" onclick="localStorage.clear();location.reload()" style="color:var(--accent-1)">please log in again</a></p>';
+                    return;
+                }
+                const orders = await res.json();
                 c.innerHTML = orders.length ? orders.map(o => `
                     <div class="portal-card">
                         <div class="portal-card-header"><strong>${o.service}</strong><span class="status-badge status-${o.status}">${formatStatus(o.status)}</span></div>

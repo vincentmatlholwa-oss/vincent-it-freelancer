@@ -423,7 +423,7 @@ app.get('/api/orders', (req, res) => {
         const token = authHeader.split(' ')[1];
         return jwt.verify(token, JWT_SECRET, (err, decoded) => {
             if (err) return res.status(403).json({ error: 'Invalid token' });
-            if (decoded.email && decoded.email.toLowerCase() !== email.toLowerCase()) {
+            if (decoded.role !== 'admin' && decoded.email && decoded.email.toLowerCase() !== email.toLowerCase()) {
                 return res.status(403).json({ error: 'Email mismatch' });
             }
             const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
