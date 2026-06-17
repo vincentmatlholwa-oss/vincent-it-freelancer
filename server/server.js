@@ -89,6 +89,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
+// Health check (MUST be first route — Render uses this before any middleware)
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
+app.get('/health', (req, res) => res.status(200).send('ok'));
+
 // CSRF origin check for state-changing requests
 app.use((req, res, next) => {
     if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) && !req.path.startsWith('/api/payfast/') && !req.path.startsWith('/api/clients/')) {
@@ -104,10 +108,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
-// Health check (before rate limiter to avoid 429)
-app.get('/healthz', (req, res) => res.status(200).send('ok'));
-app.get('/health', (req, res) => res.status(200).send('ok'));
 
 // Rate limiting
 const apiLimiter = rateLimit({
