@@ -644,14 +644,21 @@ function initContractForm() {
         const additionalInfo = document.getElementById('additionalInfo').value.trim();
         let orderId = null;
         try {
+            const cartItems = cart.map(c => ({
+                index: c.index,
+                title: services[c.index].title,
+                qty: c.qty,
+                price: parsePrice(services[c.index].price)
+            }));
             const payload = {
                 client_name: clientName,
                 client_email: clientEmail,
                 client_phone: clientPhone,
                 service: additionalInfo ? `${serviceLabel} — ${additionalInfo}` : serviceLabel,
-                price: ''
+                price: '',
+                cart_items: JSON.stringify(cartItems)
             };
-            const cartTotal = cart.reduce((s, c) => s + parsePrice(services[c.index].price) * c.qty, 0);
+            const cartTotal = cartItems.reduce((s, c) => s + c.price * c.qty, 0);
             const discount = appliedCoupon ? Math.round(cartTotal * (COUPONS[appliedCoupon] / 100)) : 0;
             const finalTotal = cartTotal - discount;
             if (cart.length > 0) payload.price = `R${finalTotal}`;
@@ -699,6 +706,34 @@ function initContractForm() {
         }
         window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
     });
+    function initiatePayment(depositOnly, btn) {
+        const d = window.__contractData;
+        if (!d || !d.orderId) { alert('No order ID found. Please submit the contract first.'); return; }
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting...';
+        fetch('/api/payfast/pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: d.orderId, deposit_only: depositOnly })
+        }).then(r => r.json()).then(payData => {
+            if (payData.success && payData.pay_url) {
+                if (payData.form_html) {
+                    const w = window.open('', 'payfast', 'width=800,height=700');
+                    w.document.write(`<html><head><title>PayFast Payment</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:sans-serif}</style></head><body>${payData.form_html}<script>document.getElementById('payfast_form').submit();<\/script></body></html>`);
+                    w.document.close();
+                } else {
+                    window.open(payData.pay_url, '_blank');
+                }
+            } else {
+                alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
+            }
+        }).catch(() => {
+            alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
+        }).finally(() => {
+            btn.disabled = false; btn.innerHTML = depositOnly ? '<i class="fas fa-coins"></i> Pay 50% Deposit' : '<i class="fas fa-credit-card"></i> Pay Full Amount';
+        });
+    }
+    document.getElementById('payNowBtn').addEventListener('click', function() { initiatePayment(false, this); });
+    document.getElementById('payDepositBtn').addEventListener('click', function() { initiatePayment(true, this); });
     document.getElementById('resetContract').addEventListener('click', () => {
         contractContainer.style.display = 'block'; resultDiv.style.display = 'none';
         form.reset();

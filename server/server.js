@@ -51,19 +51,17 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-function sendEmailAlert({ subject, html }) {
+function sendEmailAlert({ subject, html, to }) {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+    const recipients = to || ADMIN_EMAIL;
+    const prefix = to ? '' : '[Vincent IT] ';
     transporter.sendMail({
         from: `"Vincent IT" <${process.env.SMTP_USER}>`,
-        to: ADMIN_EMAIL,
-        subject: `[Vincent IT] ${subject}`,
+        to: recipients,
+        subject: `${prefix}${subject}`,
         html
     }).catch(err => console.error('Email alert failed:', err.message));
 }
-
-// VAPID keys for push notifications (auto-generated if missing)
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BPX6J8kGqzrnPmZbH0cYFdMOQ-NTGaLfQlCgHzSJZ7vK5LxR9w2y3t4V5n6m7o8p9q0r1s2t3u4v5w6x7y8z9A0B';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'dev-placeholder-key';
 
 // Security middleware
 app.use(helmet({
@@ -356,10 +354,12 @@ app.patch('/api/appointments/:id', authenticateToken, (req, res) => {
 app.post('/api/orders', validate([
     { name: 'client_name', label: 'Client name', required: true, maxLength: 100 },
     { name: 'client_email', label: 'Email', required: true, type: 'email', maxLength: 200 },
-    { name: 'service', label: 'Service', required: true, maxLength: 100 }
+    { name: 'service', label: 'Service', required: true, maxLength: 500 }
 ]), (req, res) => {
-    const { client_name, client_email, client_phone, service, price } = req.body;
+    const { client_name, client_email, client_phone, service, price, cart_items } = req.body;
     const id = uuidv4();
+    let items = [];
+    try { if (cart_items) items = typeof cart_items === 'string' ? JSON.parse(cart_items) : cart_items; } catch {}
     db.insert('orders', {
         id,
         client_name: client_name.trim().replace(/<[^>]*>/g, ''),
@@ -367,6 +367,7 @@ app.post('/api/orders', validate([
         client_phone: (client_phone || '').trim().replace(/[^0-9+\-\s]/g, ''),
         service: service.trim(),
         price: (price || '').trim(),
+        cart_items: items.length ? JSON.stringify(items) : '',
         status: 'pending',
         payment_status: 'unpaid',
         deposit_paid: 0,
@@ -375,8 +376,15 @@ app.post('/api/orders', validate([
     });
     sendEmailAlert({
         subject: `New Order from ${client_name}`,
-        html: `<h2>New Service Order</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p><strong>Order ID:</strong> ${id}</p>`
+        html: `<h2>New Service Order</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p><strong>Order ID:</strong> ${id}</p>${items.length ? '<h3>Items:</h3><ul>' + items.map(function(i) { return '<li>' + (i.title || 'Item') + ' x' + (i.qty || 1) + (i.price ? ' @ R' + i.price : ''); }).join('') + '</ul>' : ''}`
     });
+    if (client_email) {
+        sendEmailAlert({
+            to: client_email,
+            subject: `Order Confirmation – ${id}`,
+            html: `<h2>Thank you for your order, ${client_name}!</h2><p>Your order <strong>${id}</strong> has been received.</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p>We will contact you shortly via WhatsApp.</p><p>– Vincent IT Freelancer</p>`
+        });
+    }
     res.json({ success: true, order_id: id, message: 'Order created!' });
 });
 
@@ -451,35 +459,60 @@ app.get('/api/uploads', authenticateToken, (req, res) => {
     res.json(uploads.reverse());
 });
 
+app.get('/api/client/uploads', (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const uploads = db.query('uploads', null);
+    const filtered = uploads.filter(u => u.client_email && u.client_email.toLowerCase() === email.toLowerCase());
+    res.json(filtered.reverse());
+});
+
 // ===== Push Notifications =====
-let pushSubscriptions = [];
+const webpush = require('web-push');
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BPX6J8kGqzrnPmZbH0cYFdMOQ-NTGaLfQlCgHzSJZ7vK5LxR9w2y3t4V5n6m7o8p9q0r1s2t3u4v5w6x7y8z9A0B';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'dev-placeholder-key';
+webpush.setVapidDetails('mailto:' + (process.env.ADMIN_EMAIL || 'admin@vincentit.com'), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+function loadPushSubscriptions() {
+    return db.query('push_subscriptions', null);
+}
+
+function savePushSubscription(sub) {
+    const existing = db.query('push_subscriptions', s => s.endpoint === sub.endpoint);
+    if (existing.length) return;
+    db.insert('push_subscriptions', { id: sub.endpoint.replace(/[^a-zA-Z0-9_-]/g, ''), ...sub });
+}
+
+function removePushSubscription(endpoint) {
+    const id = endpoint.replace(/[^a-zA-Z0-9_-]/g, '');
+    db.run('DELETE FROM data WHERE collection = ? AND id = ?', ['push_subscriptions', id]);
+    db.save();
+}
 
 app.post('/api/push/subscribe', (req, res) => {
     const sub = req.body;
     if (!sub || !sub.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
-    pushSubscriptions = pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
-    pushSubscriptions.push(sub);
-    if (pushSubscriptions.length > 100) pushSubscriptions = pushSubscriptions.slice(-100);
+    savePushSubscription(sub);
     res.json({ success: true });
 });
 
+const STATUS_LABELS = {
+    pending: 'Order Received', in_progress: 'In Progress',
+    completed: 'Completed', cancelled: 'Cancelled',
+    paid: 'Payment Confirmed', unpaid: 'Payment Pending'
+};
+
 function notifyClient(orderId, status) {
-    if (!pushSubscriptions.length) return;
-    const statusLabels = {
-        pending: 'Order Received', in_progress: 'In Progress',
-        completed: 'Completed', cancelled: 'Cancelled',
-        paid: 'Payment Confirmed', unpaid: 'Payment Pending'
-    };
+    const subs = loadPushSubscriptions();
+    if (!subs.length) return;
     const title = 'Order Update';
-    const body = `Order ${orderId.slice(0, 8)}… — ${statusLabels[status] || status}`;
-    pushSubscriptions.forEach(sub => {
-        fetch(sub.endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, body, icon: '/img/icon-192.png' })
-        }).catch(() => {
-            pushSubscriptions = pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
-        });
+    const body = `Order ${orderId.slice(0, 8)}… — ${STATUS_LABELS[status] || status}`;
+    subs.forEach(sub => {
+        webpush.sendNotification(sub, JSON.stringify({ title, body, icon: '/img/icon-192.png', vibrate: [200, 100, 200] }))
+            .catch(err => {
+                if (err.statusCode === 410 || err.statusCode === 404) removePushSubscription(sub.endpoint);
+                else console.error('Push notification error:', err.message);
+            });
     });
 }
 
@@ -531,7 +564,7 @@ app.get('/api/qr/svg', (req, res) => {
 const payfast = require('./payfast');
 
 app.post('/api/payfast/pay', (req, res) => {
-    const { order_id } = req.body;
+    const { order_id, deposit_only } = req.body;
     if (!order_id) return res.status(400).json({ error: 'Order ID required' });
 
     let order = null;
@@ -546,22 +579,26 @@ app.post('/api/payfast/pay', (req, res) => {
     if (!order) return res.status(404).json({ error: 'Order not found' });
     if (order.payment_status === 'paid') return res.json({ success: true, message: 'Already paid', paid: true });
 
-    const priceNum = parseFloat(String(order.price || '0').replace(/[^0-9.]/g, ''));
+    let priceNum = parseFloat(String(order.price || '0').replace(/[^0-9.]/g, ''));
     if (!priceNum || priceNum <= 0) return res.status(400).json({ error: 'Invalid price' });
+
+    if (deposit_only) {
+        priceNum = Math.round((priceNum / 2) * 100) / 100;
+    }
 
     const pfOrder = {
         id: order.id,
         client_name: order.client_name,
         client_email: order.client_email,
         amount: priceNum,
-        description: order.service || order.template_id || 'Vincent IT Service',
+        description: (deposit_only ? '50% Deposit — ' : '') + (order.service || order.template_id || 'Vincent IT Service'),
         type: order.template_id ? 'template' : 'service'
     };
 
     if (payfast.isSandbox()) {
-        res.json({ success: true, pay_url: payfast.getPaymentUrl(pfOrder), sandbox: true });
+        res.json({ success: true, pay_url: payfast.getPaymentUrl(pfOrder), sandbox: true, deposit_only });
     } else {
-        res.json({ success: true, form_html: payfast.getPaymentFormHtml(pfOrder), pay_url: payfast.getPaymentUrl(pfOrder) });
+        res.json({ success: true, form_html: payfast.getPaymentFormHtml(pfOrder), pay_url: payfast.getPaymentUrl(pfOrder), deposit_only });
     }
 });
 
@@ -569,13 +606,27 @@ app.post('/api/payfast/itn', (req, res) => {
     const data = req.body;
     payfast.validateItn(data).then(result => {
         if (result.valid && (result.paymentStatus === 'COMPLETE' || result.paymentStatus === 'SUCCESS')) {
-            const updated = db.update('orders', result.orderId, {
-                payment_status: 'paid',
-                status: 'processing',
-                pf_payment_id: result.pfPaymentId,
-                payment_method: 'payfast',
-                updated_at: new Date().toISOString()
-            });
+            const itemName = data.item_name || '';
+            const isDeposit = itemName.includes('50% Deposit') || itemName.includes('deposit');
+            let updated = null;
+            if (isDeposit) {
+                updated = db.update('orders', result.orderId, {
+                    payment_status: 'deposit_paid',
+                    deposit_paid: 1,
+                    status: 'in_progress',
+                    pf_payment_id: result.pfPaymentId,
+                    payment_method: 'payfast',
+                    updated_at: new Date().toISOString()
+                });
+            } else {
+                updated = db.update('orders', result.orderId, {
+                    payment_status: 'paid',
+                    status: 'processing',
+                    pf_payment_id: result.pfPaymentId,
+                    payment_method: 'payfast',
+                    updated_at: new Date().toISOString()
+                });
+            }
             if (!updated) {
                 db.update('template_orders', result.orderId, {
                     payment_status: 'paid',

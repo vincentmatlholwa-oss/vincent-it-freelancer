@@ -76,4 +76,4 @@ function getCollection(name) {
     return query(name, null);
 }
 
-module.exports = { getCollection, insert, update, query, load };
+module.exports = { getCollection, insert, update, query, load, run: (sql, params) => { const d = getDb(); d.run(sql, params); }, save };

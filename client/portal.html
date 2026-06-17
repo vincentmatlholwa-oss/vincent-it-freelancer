@@ -413,9 +413,9 @@
             const c = document.getElementById('uploadHistory');
             if (!c) return;
             try {
-                const uploads = await fetch(API+'/api/uploads').then(r => r.json());
+                const uploads = await fetch(API+'/api/client/uploads?email='+encodeURIComponent(client.email)).then(r => r.json());
                 if (uploads.length) {
-                    const clientUploads = uploads.filter(u => u.client_email === client.email);
+                    const clientUploads = Array.isArray(uploads) ? uploads : [];
                     c.innerHTML = clientUploads.length ? clientUploads.map(u => `
                         <div class="upload-item">
                             <i class="fas fa-cloud-upload-alt" style="color:var(--accent-1)"></i>
