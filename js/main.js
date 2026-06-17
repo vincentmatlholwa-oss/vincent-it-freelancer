@@ -401,12 +401,12 @@ function initCart() {
         document.getElementById('cartSidebar').classList.remove('open');
         document.getElementById('cartOverlay').classList.remove('open');
         document.getElementById('contract').scrollIntoView({ behavior: 'smooth' });
-        const msg = cart.map(c => `- ${services[c.index].title} x${c.qty}`).join('\n');
+        const msg = cart.map(c => `- ${services[c.index].title} x${c.qty} @ ${services[c.index].price}`).join('\n');
         const total = cart.reduce((s, c) => s + parsePrice(services[c.index].price) * c.qty, 0);
         const discount = appliedCoupon ? Math.round(total * (COUPONS[appliedCoupon] / 100)) : 0;
         const final = total - discount;
         document.getElementById('additionalInfo').value =
-            `Cart Order:\n${msg}\nTotal: R${total}${discount ? ` (Coupon: -R${discount})` : ''}\nFinal: R${final}`;
+            `Cart Order:\n${msg}\nTotal: R${total}${discount ? `\nCoupon (${appliedCoupon}): -R${discount}` : ''}\nFinal: R${final}`;
     });
 }
 
@@ -636,12 +636,43 @@ function initContractForm() {
             if (!confirm('Remote Installation requires a 50% deposit.\n\nAfter signing you will be redirected to WhatsApp.\n\nClick OK to proceed.')) return;
         }
         const submitBtn = document.getElementById('submitContract');
-        submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        const clientName = document.getElementById('clientName').value.trim();
+        const clientEmail = document.getElementById('clientEmail').value.trim();
+        const clientPhone = document.getElementById('clientPhone').value.trim();
+        const serviceLabel = document.getElementById('serviceType').options[document.getElementById('serviceType').selectedIndex].text;
+        const additionalInfo = document.getElementById('additionalInfo').value.trim();
+        let orderId = null;
+        try {
+            const payload = {
+                client_name: clientName,
+                client_email: clientEmail,
+                client_phone: clientPhone,
+                service: additionalInfo ? `${serviceLabel} — ${additionalInfo}` : serviceLabel,
+                price: ''
+            };
+            const cartTotal = cart.reduce((s, c) => s + parsePrice(services[c.index].price) * c.qty, 0);
+            const discount = appliedCoupon ? Math.round(cartTotal * (COUPONS[appliedCoupon] / 100)) : 0;
+            const finalTotal = cartTotal - discount;
+            if (cart.length > 0) payload.price = `R${finalTotal}`;
+            if (navigator.onLine) {
+                const res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) orderId = data.order_id;
+            }
+        } catch (err) { console.error('Order save error:', err); }
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
         try {
             await new Promise(r => setTimeout(r, 800));
             contractContainer.style.display = 'none';
             resultDiv.style.display = 'block';
-            window.__contractData = { clientName: document.getElementById('clientName').value.trim(), isRemote: selectedService === 'remote-installation' };
+            window.__contractData = { clientName, isRemote: selectedService === 'remote-installation', orderId };
+            const orderIdEl = document.getElementById('resultOrderId');
+            if (orderIdEl) orderIdEl.textContent = orderId ? `Order ID: ${orderId}` : '';
         } catch (err) { alert('Error generating contract.'); console.error(err); }
         finally { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Sign & Generate Contract'; }
     });
@@ -658,12 +689,13 @@ function initContractForm() {
         doc.save(`Invoice_${document.getElementById('clientName').value.trim().replace(/\s+/g, '_')}.pdf`);
     });
     document.getElementById('proceedWhatsApp').addEventListener('click', function(e) {
-        const isRemote = window.__contractData?.isRemote;
+        const d = window.__contractData || {};
+        const orderRef = d.orderId ? `\nOrder ID: ${d.orderId}` : '';
         let msg;
-        if (isRemote) {
-            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract for REMOTE INSTALLATION.\n\nName: ${window.__contractData?.clientName || 'Client'}\n\nI am ready to pay the 50% deposit. Please send payment details.`);
+        if (d.isRemote) {
+            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract for REMOTE INSTALLATION.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nI am ready to pay the 50% deposit. Please send payment details.`);
         } else {
-            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract.\n\nName: ${window.__contractData?.clientName || 'Client'}\n\nPlease proceed with my service.`);
+            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nPlease proceed with my service.`);
         }
         window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
     });
@@ -673,6 +705,8 @@ function initContractForm() {
         const pad = document.getElementById('signaturePad');
         pad.getContext('2d').clearRect(0, 0, pad.width, pad.height);
         document.getElementById('signatureData').value = ''; window.__contractData = null;
+        const oid = document.getElementById('resultOrderId');
+        if (oid) oid.textContent = '';
         document.getElementById('contract').scrollIntoView({ behavior: 'smooth' });
     });
 }
