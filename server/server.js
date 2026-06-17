@@ -870,6 +870,64 @@ app.post('/api/clients/reset-password', async (req, res) => {
     }
 });
 
+// ===== Account Deletion Requests =====
+app.post('/api/clients/delete-request', async (req, res) => {
+    const { email, reason } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const clients = db.query('clients', c => c.email.toLowerCase() === email.toLowerCase());
+    if (!clients.length) return res.status(404).json({ error: 'Account not found' });
+    const existing = db.query('delete_requests', r => r.client_email.toLowerCase() === email.toLowerCase() && r.status === 'pending');
+    if (existing.length) return res.json({ success: true, message: 'Deletion already requested. Admin will review it.' });
+    db.insert('delete_requests', {
+        id: uuidv4(),
+        client_id: clients[0].id,
+        client_name: clients[0].name,
+        client_email: email.toLowerCase(),
+        reason: (reason || '').trim(),
+        status: 'pending',
+        created_at: new Date().toISOString()
+    });
+    sendEmailAlert({
+        subject: `Account Deletion Request from ${clients[0].name}`,
+        html: `<h2>Deletion Request</h2><p><strong>Client:</strong> ${clients[0].name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Reason:</strong> ${reason || 'Not provided'}</p><p>Review in the admin dashboard.</p>`
+    });
+    res.json({ success: true, message: 'Deletion request submitted. Admin will review it.' });
+});
+
+app.get('/api/admin/delete-requests', authenticateToken, (req, res) => {
+    const requests = db.query('delete_requests', r => r.status === 'pending');
+    res.json(requests.reverse());
+});
+
+app.post('/api/admin/delete-client/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const requests = db.query('delete_requests', r => r.id === id);
+    if (!requests.length) return res.status(404).json({ error: 'Request not found' });
+    const reqData = requests[0];
+    const action = req.body.action || 'approve';
+    if (action === 'approve') {
+        const clients = db.query('clients', c => c.id === reqData.client_id);
+        if (clients.length) {
+            db.update('clients', reqData.client_id, { deleted: 1, deleted_at: new Date().toISOString() });
+            sendEmailAlert({
+                to: reqData.client_email,
+                subject: 'Account Deletion – Vincent IT',
+                html: `<h2>Account Deletion Confirmed</h2><p>Your account and personal data have been deleted as requested.</p><p>If this was a mistake, contact us via WhatsApp.</p><p>– Vincent IT Freelancer</p>`
+            });
+        }
+        db.update('delete_requests', id, { status: 'approved', reviewed_at: new Date().toISOString() });
+        res.json({ success: true, message: 'Account deleted' });
+    } else {
+        db.update('delete_requests', id, { status: 'denied', reviewed_at: new Date().toISOString() });
+        sendEmailAlert({
+            to: reqData.client_email,
+            subject: 'Account Deletion Request Denied – Vincent IT',
+            html: `<h2>Deletion Request Denied</h2><p>Your request to delete your account has been denied. Contact us via WhatsApp for more information.</p><p>– Vincent IT Freelancer</p>`
+        });
+        res.json({ success: true, message: 'Request denied' });
+    }
+});
+
 // ===== Chat =====
 app.post('/api/chat', validate([
     { name: 'sender', label: 'Sender', required: true, maxLength: 100 },

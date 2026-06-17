@@ -95,6 +95,7 @@
             <button class="tab-btn" data-tab="templates"><i class="fas fa-file-download"></i> Templates</button>
             <button class="tab-btn" data-tab="uploads"><i class="fas fa-upload"></i> Uploads</button>
             <button class="tab-btn" data-tab="visitors"><i class="fas fa-users"></i> Visitors</button>
+            <button class="tab-btn" data-tab="deletions"><i class="fas fa-user-slash"></i> Deletions</button>
         </div>
 
         <div id="panel-contacts" class="panel active"></div>
@@ -106,6 +107,7 @@
         <div id="panel-templates" class="panel"></div>
         <div id="panel-uploads" class="panel"></div>
         <div id="panel-visitors" class="panel"></div>
+        <div id="panel-deletions" class="panel"></div>
     </div>
 
     <script>
@@ -168,6 +170,7 @@
                 else if (name === 'templates') { const d = await fetch(API+'/api/admin/template-orders', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderTemplateOrders(d); }
                 else if (name === 'uploads') { const d = await fetch(API+'/api/uploads', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderUploads(d); }
                 else if (name === 'visitors') { const d = await fetch(API+'/api/visitors', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderVisitors(d); }
+                else if (name === 'deletions') { const d = await fetch(API+'/api/admin/delete-requests', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderDeletions(d); }
             } catch(e) { document.getElementById('panel-'+name).innerHTML = '<p style="color:#ff6b35">Error loading data. Make sure the server is running.</p>'; }
         }
 
@@ -358,6 +361,28 @@
             await fetch(API + '/api/chat', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ sender: 'Vincent IT (Admin)', message: msg, is_admin: true }) });
             input.value = '';
             loadPanel('chat');
+        }
+
+        async function handleDeletion(id, action) {
+            if (action === 'approve' && !confirm('Delete this account permanently?')) return;
+            await fetch(API + '/api/admin/delete-client/' + id, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ action }) });
+            loadPanel('deletions');
+        }
+
+        function renderDeletions(data) {
+            if (!data.length) { document.getElementById('panel-deletions').innerHTML = '<p style="color:var(--text-sec)">No pending deletion requests</p>'; return; }
+            document.getElementById('panel-deletions').innerHTML = `<table><thead><tr><th>Date</th><th>Client</th><th>Email</th><th>Reason</th><th>Actions</th></tr></thead><tbody>
+                ${data.map(r => `<tr>
+                    <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                    <td>${r.client_name}</td>
+                    <td>${r.client_email}</td>
+                    <td><div class="msg">${r.reason || '-'}</div></td>
+                    <td>
+                        <button class="action-btn" onclick="handleDeletion('${r.id}','approve')" style="color:#ff4444;border-color:#ff4444">Delete</button>
+                        <button class="action-btn" onclick="handleDeletion('${r.id}','deny')">Deny</button>
+                    </td>
+                </tr>`).join('')}
+            </tbody></table>`;
         }
 
         document.getElementById('panel-blog').innerHTML = `
