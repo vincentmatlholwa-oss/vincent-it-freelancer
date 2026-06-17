@@ -20,3 +20,7 @@ services:
         value: "*"
       - key: WHATSAPP_NUMBER
         value: "27677834591"
+      - key: WHATSAPP_INSTANCE_ID
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false

@@ -63,6 +63,35 @@ function sendEmailAlert({ subject, html, to }) {
     }).catch(err => console.error('Email alert failed:', err.message));
 }
 
+// WhatsApp notification via UltraMsg (free, no template approval needed)
+function sendWhatsApp({ to, message }) {
+    const instanceId = process.env.WHATSAPP_INSTANCE_ID;
+    const token = process.env.WHATSAPP_TOKEN;
+    if (!instanceId || !token) return;
+    const https = require('https');
+    const data = `token=${encodeURIComponent(token)}&to=${encodeURIComponent(to)}&body=${encodeURIComponent(message)}`;
+    const req = https.request({
+        hostname: 'api.ultramsg.com',
+        port: 443,
+        path: `/${instanceId}/messages/chat`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) }
+    });
+    req.on('error', err => console.error('WhatsApp send failed:', err.message));
+    req.write(data);
+    req.end();
+}
+
+function notifyCustomer({ name, email, phone, message }) {
+    if (phone) sendWhatsApp({ to: phone.replace(/[^0-9]/g, ''), message });
+    if (email) sendEmailAlert({ to: email, subject: 'Vincent IT Freelancer', html: `<p>${message.replace(/\n/g, '<br>')}</p>` });
+}
+
+function notifyAdminWhatsApp(message) {
+    const adminPhone = process.env.WHATSAPP_NUMBER;
+    if (adminPhone) sendWhatsApp({ to: adminPhone.replace(/[^0-9]/g, ''), message });
+}
+
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
@@ -227,6 +256,7 @@ app.post('/api/contact', validate([
         subject: `New Contact from ${sanitized.name}`,
         html: `<h2>New Contact Message</h2><p><strong>Name:</strong> ${sanitized.name}</p><p><strong>Email:</strong> ${sanitized.email}</p><p><strong>Phone:</strong> ${sanitized.phone || 'N/A'}</p><p><strong>Subject:</strong> ${sanitized.subject || 'N/A'}</p><p><strong>Message:</strong> ${sanitized.message}</p>`
     });
+    notifyAdminWhatsApp(`New Contact!\n${sanitized.name}\n${sanitized.email}\n${sanitized.message.slice(0,100)}`);
     res.json({ success: true, message: 'Message received! We will get back to you shortly.' });
 });
 
@@ -268,6 +298,11 @@ app.post('/api/templates/purchase', validate([
         updated_at: new Date().toISOString()
     };
     db.insert('template_orders', order);
+    notifyAdminWhatsApp(`New Template Order!\n${order.client_name}\n${template_id}\n${price}\nOrder: ${id.slice(0,8)}...`);
+    notifyCustomer({
+        name: order.client_name, email: order.client_email, phone: order.client_phone,
+        message: `Hi ${order.client_name},\n\nYour template order (${template_id}) for ${price} is received!\nOrder ID: ${id}\n\nPay via the link provided or contact us on WhatsApp to complete payment.\n\n- Vincent IT Freelancer`
+    });
     res.json({ success: true, order_id: id, download_token: token, price, message: 'Template order created! Share the order ID with admin on WhatsApp to get your download link after payment.' });
 });
 
@@ -353,6 +388,11 @@ app.post('/api/appointments', validate([
         subject: `New Appointment: ${client_name}`,
         html: `<h2>New Appointment Booking</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Date:</strong> ${date}</p><p><strong>Time:</strong> ${time}</p><p><strong>Notes:</strong> ${notes || 'N/A'}</p>`
     });
+    notifyAdminWhatsApp(`New Appointment!\n${client_name}\n${service}\n${date} at ${time}`);
+    notifyCustomer({
+        name: client_name, email: client_email, phone: client_phone,
+        message: `Hi ${client_name},\n\nYour appointment is booked!\nService: ${service}\nDate: ${date}\nTime: ${time}\n\nWe will confirm shortly. Stay tuned!\n\n- Vincent IT Freelancer`
+    });
     res.json({ success: true, message: 'Appointment booked! We will confirm shortly.' });
 });
 
@@ -405,6 +445,7 @@ app.post('/api/orders', validate([
         subject: `New Order from ${client_name}`,
         html: `<h2>New Service Order</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p><strong>Order ID:</strong> ${id}</p>${items.length ? '<h3>Items:</h3><ul>' + items.map(function(i) { return '<li>' + (i.title || 'Item') + ' x' + (i.qty || 1) + (i.price ? ' @ R' + i.price : ''); }).join('') + '</ul>' : ''}`
     });
+    notifyAdminWhatsApp(`New Order!\n${client_name}\n${service}\nR${price || 'N/A'}\nOrder: ${id.slice(0,8)}...`);
     if (client_email) {
         sendEmailAlert({
             to: client_email,
@@ -412,6 +453,10 @@ app.post('/api/orders', validate([
             html: `<h2>Thank you for your order, ${client_name}!</h2><p>Your order <strong>${id}</strong> has been received.</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p>We will contact you shortly via WhatsApp.</p><p>– Vincent IT Freelancer</p>`
         });
     }
+    notifyCustomer({
+        name: client_name, email: client_email, phone: client_phone,
+        message: `Hi ${client_name},\n\nYour order is confirmed!\nOrder ID: ${id}\nService: ${service}\nPrice: ${price || 'N/A'}\n\nWe will contact you shortly. Track your order in the Client Portal.\n\n- Vincent IT Freelancer`
+    });
     res.json({ success: true, order_id: id, message: 'Order created!' });
 });
 
