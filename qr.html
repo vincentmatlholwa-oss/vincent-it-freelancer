@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .qr-card {
+            background: #12122a;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .qr-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7, #00d4ff);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 0%; } }
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #b0b0d0;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        .qr-container {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            box-shadow: 0 8px 32px rgba(0,212,255,0.1);
+        }
+        .qr-container img, .qr-container canvas {
+            display: block;
+            width: 280px;
+            height: 280px;
+            max-width: 100%;
+            image-rendering: pixelated;
+        }
+        .scan-label {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 1rem 0 0.3rem;
+        }
+        .url-text {
+            color: #00d4ff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            word-break: break-all;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+        .actions {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.9rem 1.8rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+            border: none;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,212,255,0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            color: #b0b0d0;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .btn-outline:hover { border-color: #00d4ff; color: #00d4ff; }
+        .btn-success {
+            background: linear-gradient(135deg, #00c853, #00e676);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,200,83,0.3);
+        }
+        .whatsapp-link {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .whatsapp-link a {
+            color: #25D366;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .whatsapp-link a:hover { text-decoration: underline; }
+        @media (max-width: 600px) {
+            .qr-card { padding: 1.5rem; }
+            .qr-container img, .qr-container canvas { width: 220px; height: 220px; }
+            .scan-label { font-size: 1.8rem; letter-spacing: 4px; }
+            .btn { padding: 0.7rem 1.2rem; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-card" id="qrCard">
+        <div class="brand">VINCENT IT</div>
+        <div class="subtitle">Scan to visit our website</div>
+        <div class="qr-container" id="qrContainer">
+            <canvas id="qrCanvas" width="280" height="280"></canvas>
+        </div>
+        <div class="scan-label">Scan Me</div>
+        <div class="url-text">https://vincent-it-freelancer.onrender.com</div>
+        <div class="actions">
+            <button class="btn btn-success" id="downloadBtn">
+                <i class="fas fa-download"></i> Download
+            </button>
+            <a href="/" class="btn btn-outline">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+        <div class="whatsapp-link">
+            <a href="https://wa.me/27677834591" target="_blank">
+                <i class="fab fa-whatsapp"></i> Need help? WhatsApp us
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const siteUrl = 'https://vincent-it-freelancer.onrender.com';
+        const canvas = document.getElementById('qrCanvas');
+
+        function generateQR() {
+            const qr = new QRCode(canvas, {
+                text: siteUrl,
+                width: 280,
+                height: 280,
+                colorDark: '#0a0a1a',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        generateQR();
+
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            try {
+                const card = document.getElementById('qrCard');
+                const originalOverflow = card.style.overflow;
+                card.style.overflow = 'visible';
+
+                const originalBg = card.style.background;
+                card.style.background = '#12122a';
+
+                const canvasEl = await html2canvas(card, {
+                    scale: 2,
+                    backgroundColor: '#12122a',
+                    allowTaint: false,
+                    useCORS: true,
+                    logging: false
+                });
+
+                card.style.overflow = originalOverflow;
+                card.style.background = originalBg;
+
+                const link = document.createElement('a');
+                link.download = 'vincent-it-qr-code.png';
+                link.href = canvasEl.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                alert('Download failed. Please take a screenshot instead.');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> Download';
+        });
+    </script>
+</body>
+</html>

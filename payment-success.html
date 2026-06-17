@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Vincent IT</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: #12122a;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .icon { font-size: 4rem; margin-bottom: 1.5rem; }
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        p { color: #b0b0d0; line-height: 1.7; margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .order-id {
+            background: rgba(0,212,255,0.08);
+            border: 1px solid rgba(0,212,255,0.15);
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            margin: 1.5rem 0;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #00d4ff;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.9rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+            border: none;
+            margin: 0.4rem;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: #fff;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #b0b0d0;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .btn-outline:hover { border-color: #00d4ff; color: #00d4ff; }
+        .btn-whatsapp { background: #25D366; color: #fff; }
+        .steps { text-align: left; margin: 1.5rem 0; padding: 0; list-style: none; }
+        .steps li {
+            color: #b0b0d0;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        .steps li i { color: #00d4ff; width: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#9989;</div>
+        <h1>Payment Successful!</h1>
+        <p>Thank you for your payment. Your order is now being processed.</p>
+        <div class="order-id" id="orderDisplay">Order ID: loading...</div>
+        <ul class="steps">
+            <li><i class="fas fa-check-circle"></i> Payment confirmed automatically</li>
+            <li><i class="fas fa-cogs"></i> We will start working on your order</li>
+            <li><i class="fab fa-whatsapp"></i> You will be contacted via WhatsApp</li>
+        </ul>
+        <div style="margin-top:1.5rem">
+            <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20just%20paid%20for%20my%20order.%20Please%20proceed." target="_blank" class="btn btn-whatsapp">
+                <i class="fab fa-whatsapp"></i> WhatsApp Us
+            </a>
+            <a href="/" class="btn btn-outline">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('order_id');
+        if (orderId) {
+            document.getElementById('orderDisplay').textContent = 'Order ID: ' + orderId;
+        }
+    </script>
+</body>
+</html>

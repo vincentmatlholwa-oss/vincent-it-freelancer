@@ -32,9 +32,12 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "cdn.tailwindcss.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "cdn.tailwindcss.com"],
-            fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"],
-            imgSrc: ["'self'", "data:"],
-            connectSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.tailwindcss.com"]
+            fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https:", "www.payfast.co.za", "sandbox.payfast.co.za", "cdnjs.cloudflare.com"],
+            connectSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.tailwindcss.com", "www.payfast.co.za", "sandbox.payfast.co.za"],
+            formAction: ["'self'", "https://www.payfast.co.za", "https://sandbox.payfast.co.za"],
+            frameSrc: ["'self'", "https://www.google.com"],
+            frameAncestors: ["'self'"]
         }
     }
 }));
@@ -94,6 +97,11 @@ app.get('/api/visitors', authenticateToken, (req, res) => {
 
 // Static files
 app.use(express.static(path.join(__dirname, '..')));
+
+// Serve favicon.ico from SVG icon
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'img', 'icon-192.svg'));
+});
 
 // JWT auth middleware
 function authenticateToken(req, res, next) {
@@ -321,9 +329,161 @@ app.patch('/api/orders/:id', authenticateToken, (req, res) => {
     if (req.body.status) updates.status = req.body.status;
     if (req.body.payment_status) updates.payment_status = req.body.payment_status;
     if (req.body.deposit_paid !== undefined) updates.deposit_paid = req.body.deposit_paid ? 1 : 0;
+    if (req.body.pf_payment_id) updates.pf_payment_id = req.body.pf_payment_id;
+    if (req.body.payment_method) updates.payment_method = req.body.payment_method;
     updates.updated_at = new Date().toISOString();
     db.update('orders', req.params.id, updates);
     res.json({ success: true });
+});
+
+// ===== QR Code =====
+const QRCode = require('qrcode');
+
+app.get('/api/qr', (req, res) => {
+    const url = req.query.url || 'https://vincent-it-freelancer.onrender.com';
+    const size = parseInt(req.query.size) || 300;
+    QRCode.toDataURL(url, { width: size, margin: 2, color: { dark: '#0a0a1a', light: '#ffffff' } })
+        .then(dataUrl => {
+            const base64 = dataUrl.split(',')[1];
+            const img = Buffer.from(base64, 'base64');
+            res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Content-Length': img.length,
+                'Cache-Control': 'public, max-age=86400'
+            });
+            res.end(img);
+        })
+        .catch(() => res.status(500).json({ error: 'Failed to generate QR code' }));
+});
+
+app.get('/api/qr/svg', (req, res) => {
+    const url = req.query.url || 'https://vincent-it-freelancer.onrender.com';
+    QRCode.toString(url, { type: 'svg', width: 400, margin: 2, color: { dark: '#0a0a1a', light: '#ffffff' } })
+        .then(svg => {
+            const styled = svg.replace('<svg', '<svg style="display:block;margin:auto;max-width:100%;height:auto"');
+            res.setHeader('Content-Type', 'image/svg+xml');
+            res.send(styled);
+        })
+        .catch(() => res.status(500).json({ error: 'Failed to generate QR code' }));
+});
+
+// ===== PayFast Automated Payments =====
+const payfast = require('./payfast');
+
+app.post('/api/payfast/pay', (req, res) => {
+    const { order_id } = req.body;
+    if (!order_id) return res.status(400).json({ error: 'Order ID required' });
+
+    let order = null;
+    const serviceOrders = db.query('orders', o => o.id === order_id);
+    if (serviceOrders.length) order = serviceOrders[0];
+
+    if (!order) {
+        const templateOrders = db.query('template_orders', o => o.id === order_id);
+        if (templateOrders.length) order = templateOrders[0];
+    }
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.payment_status === 'paid') return res.json({ success: true, message: 'Already paid', paid: true });
+
+    const priceNum = parseFloat(String(order.price || '0').replace(/[^0-9.]/g, ''));
+    if (!priceNum || priceNum <= 0) return res.status(400).json({ error: 'Invalid price' });
+
+    const pfOrder = {
+        id: order.id,
+        client_name: order.client_name,
+        client_email: order.client_email,
+        amount: priceNum,
+        description: order.service || order.template_id || 'Vincent IT Service',
+        type: order.template_id ? 'template' : 'service'
+    };
+
+    if (payfast.isSandbox()) {
+        res.json({ success: true, pay_url: payfast.getPaymentUrl(pfOrder), sandbox: true });
+    } else {
+        res.json({ success: true, form_html: payfast.getPaymentFormHtml(pfOrder), pay_url: payfast.getPaymentUrl(pfOrder) });
+    }
+});
+
+app.post('/api/payfast/itn', (req, res) => {
+    const data = req.body;
+    payfast.validateItn(data).then(result => {
+        if (result.valid && (result.paymentStatus === 'COMPLETE' || result.paymentStatus === 'SUCCESS')) {
+            const updated = db.update('orders', result.orderId, {
+                payment_status: 'paid',
+                status: 'processing',
+                pf_payment_id: result.pfPaymentId,
+                payment_method: 'payfast',
+                updated_at: new Date().toISOString()
+            });
+            if (!updated) {
+                db.update('template_orders', result.orderId, {
+                    payment_status: 'paid',
+                    status: 'completed',
+                    pf_payment_id: result.pfPaymentId,
+                    payment_method: 'payfast',
+                    updated_at: new Date().toISOString()
+                });
+            }
+            res.status(200).send('OK');
+        } else {
+            res.status(200).send('IGNORED');
+        }
+    }).catch(() => res.status(200).send('ERROR'));
+});
+
+app.get('/payment/success', (req, res) => {
+    const orderId = req.query.order_id || '';
+    const filePath = path.join(__dirname, '..', 'payment-success.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.send(`
+            <html><head><title>Payment Successful</title><style>
+                body{font-family:Inter,sans-serif;background:#0a0a1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:2rem}
+                .card{background:#12122a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:3rem;max-width:500px}
+                h1{color:#00d4ff;margin-bottom:1rem}
+                p{color:#b0b0d0;line-height:1.6}
+                .btn{display:inline-block;margin-top:1.5rem;padding:0.8rem 2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;text-decoration:none;font-family:inherit}
+                .icon{font-size:4rem;margin-bottom:1rem}
+            </style></head><body>
+                <div class="card">
+                    <div class="icon">&#10004;&#65039;</div>
+                    <h1>Payment Successful!</h1>
+                    <p>Thank you for your payment. Your order <strong>${orderId}</strong> is now being processed.</p>
+                    <p>We will contact you shortly via WhatsApp with updates.</p>
+                    <a href="/" class="btn">Return to Home</a>
+                </div>
+            </body></html>
+        `);
+    }
+});
+
+app.get('/payment/cancel', (req, res) => {
+    const orderId = req.query.order_id || '';
+    const filePath = path.join(__dirname, '..', 'payment-cancel.html');
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.send(`
+            <html><head><title>Payment Cancelled</title><style>
+                body{font-family:Inter,sans-serif;background:#0a0a1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:2rem}
+                .card{background:#12122a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:3rem;max-width:500px}
+                h1{color:#ff6b35;margin-bottom:1rem}
+                p{color:#b0b0d0;line-height:1.6}
+                .btn{display:inline-block;margin-top:1.5rem;padding:0.8rem 2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;text-decoration:none;font-family:inherit}
+                .icon{font-size:4rem;margin-bottom:1rem}
+            </style></head><body>
+                <div class="card">
+                    <div class="icon">&#10060;</div>
+                    <h1>Payment Cancelled</h1>
+                    <p>Your payment for order <strong>${orderId}</strong> was cancelled.</p>
+                    <p>If you would like to try again, please contact us on WhatsApp.</p>
+                    <a href="/" class="btn">Return to Home</a>
+                </div>
+            </body></html>
+        `);
+    }
 });
 
 // ===== Reviews =====

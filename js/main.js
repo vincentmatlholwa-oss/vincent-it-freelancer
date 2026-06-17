@@ -221,6 +221,14 @@ function renderTemplates() {
     `).join('');
 }
 
+function payWithPayFast(orderId) {
+    return fetch('/api/payfast/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId })
+    }).then(r => r.json());
+}
+
 function buyTemplate(id, title, price) {
     const name = prompt('Enter your full name:');
     if (!name) return;
@@ -236,9 +244,33 @@ function buyTemplate(id, title, price) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nTo complete your purchase:\n1. Send R${price} via EFT/SnapScan\n2. WhatsApp us your Order ID\n3. We'll send your download link!\n\nPrice: ${price}\nProduct: ${title}`);
-                const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
-                window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                payWithPayFast(data.order_id).then(payData => {
+                    if (payData.success && payData.pay_url) {
+                        const choice = confirm(
+                            `Order created!\n\nOrder ID: ${data.order_id}\nPrice: ${price}\nProduct: ${title}\n\nClick OK to pay online with PayFast (secure card/banking).\nClick Cancel to pay via EFT/WhatsApp instead.`
+                        );
+                        if (choice) {
+                            if (payData.form_html) {
+                                const w = window.open('', 'payfast', 'width=800,height=700');
+                                w.document.write(`<html><head><title>PayFast Payment</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:sans-serif}</style></head><body>${payData.form_html}<script>document.getElementById('payfast_form').submit();<\/script></body></html>`);
+                                w.document.close();
+                            } else {
+                                window.open(payData.pay_url, '_blank');
+                            }
+                        } else {
+                            const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
+                            window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                        }
+                    } else {
+                        const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
+                        window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                        alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nPay online unavailable. Please pay via EFT/SnapScan and WhatsApp us your Order ID.\n\nPrice: ${price}\nProduct: ${title}`);
+                    }
+                }).catch(() => {
+                    alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nPay online unavailable. Please pay via EFT/SnapScan and WhatsApp us your Order ID.`);
+                    const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay.`);
+                    window.open(`https://wa.me/27677834591?text=${msg}`, '_blank');
+                });
             } else {
                 alert('Error: ' + (data.error || 'Could not create order'));
             }
@@ -247,6 +279,24 @@ function buyTemplate(id, title, price) {
     } else {
         alert('Please go online to purchase templates, or contact us on WhatsApp.');
     }
+}
+
+function openPayFastPayment(orderId) {
+    payWithPayFast(orderId).then(data => {
+        if (data.success && data.pay_url) {
+            if (data.form_html) {
+                const w = window.open('', 'payfast', 'width=800,height=700');
+                w.document.write(`<html><head><title>PayFast Payment</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:sans-serif}</style></head><body>${data.form_html}<script>document.getElementById('payfast_form').submit();<\/script></body></html>`);
+                w.document.close();
+            } else {
+                window.open(data.pay_url, '_blank');
+            }
+        } else {
+            alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
+        }
+    }).catch(() => {
+        alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
+    });
 }
 
 // ===== Cart =====

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled - Vincent IT</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: #12122a;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .icon { font-size: 4rem; margin-bottom: 1.5rem; }
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ff6b35;
+            margin-bottom: 1rem;
+        }
+        p { color: #b0b0d0; line-height: 1.7; margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.9rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+            border: none;
+            margin: 0.4rem;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: #fff;
+        }
+        .btn-whatsapp { background: #25D366; color: #fff; }
+        .payment-options { margin: 1.5rem 0; text-align: left; }
+        .payment-options h3 { color: #00d4ff; font-size: 0.95rem; margin-bottom: 0.8rem; }
+        .payment-options li { color: #b0b0d0; padding: 0.3rem 0; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#10060;</div>
+        <h1>Payment Cancelled</h1>
+        <p>Your payment was not completed. No charges have been made.</p>
+        <div class="payment-options">
+            <h3><i class="fas fa-info-circle"></i> Other payment options:</h3>
+            <ul style="list-style:none;padding:0">
+                <li><i class="fab fa-whatsapp"></i> Pay via EFT / SnapScan — WhatsApp us for details</li>
+                <li><i class="fas fa-phone"></i> Call us: +27 67 783 4591</li>
+            </ul>
+        </div>
+        <div style="margin-top:1rem">
+            <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20want%20to%20complete%20my%20payment%20for%20order." target="_blank" class="btn btn-whatsapp">
+                <i class="fab fa-whatsapp"></i> Pay via WhatsApp
+            </a>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+</body>
+</html>
