@@ -3,7 +3,7 @@ function initBooking() {
     if (!section) return;
     const bookingSection = document.createElement('div');
     bookingSection.className = 'booking-section';
-    bookingSection.id = 'bookingSection';
+    bookingSection.id = 'booking';
     bookingSection.innerHTML = `
         <div class="section-header">
             <span class="section-badge" data-i18n="booking.title">Booking</span>
