@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vincent-it-v3';
+const CACHE_NAME = 'vincent-it-v4';
 const ASSETS = [
     '/',
     '/index.html',
@@ -58,5 +58,36 @@ self.addEventListener('fetch', event => {
             }
             return response;
         }))
+    );
+});
+
+// Push notifications
+self.addEventListener('push', event => {
+    if (!event.data) return;
+    try {
+        const data = event.data.json();
+        const options = {
+            body: data.body || '',
+            icon: data.icon || '/img/icon-192.png',
+            badge: '/img/icon-192.png',
+            vibrate: [200, 100, 200],
+            data: { url: data.url || '/' }
+        };
+        event.waitUntil(
+            self.registration.showNotification(data.title || 'Vincent IT', options)
+        );
+    } catch {}
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const url = event.notification.data?.url || '/client/portal.html';
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then(clientList => {
+            for (const client of clientList) {
+                if (client.url === url && 'focus' in client) return client.focus();
+            }
+            if (clients.openWindow) return clients.openWindow(url);
+        })
     );
 });

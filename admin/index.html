@@ -93,6 +93,7 @@
             <button class="tab-btn" data-tab="chat"><i class="fas fa-comments"></i> Chat</button>
             <button class="tab-btn" data-tab="blog"><i class="fas fa-blog"></i> Blog</button>
             <button class="tab-btn" data-tab="templates"><i class="fas fa-file-download"></i> Templates</button>
+            <button class="tab-btn" data-tab="uploads"><i class="fas fa-upload"></i> Uploads</button>
             <button class="tab-btn" data-tab="visitors"><i class="fas fa-users"></i> Visitors</button>
         </div>
 
@@ -103,6 +104,7 @@
         <div id="panel-chat" class="panel"></div>
         <div id="panel-blog" class="panel"></div>
         <div id="panel-templates" class="panel"></div>
+        <div id="panel-uploads" class="panel"></div>
         <div id="panel-visitors" class="panel"></div>
     </div>
 
@@ -159,6 +161,7 @@
                 else if (name === 'reviews') { const d = await fetch(API+'/api/reviews', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderReviews(d); }
                 else if (name === 'chat') { const d = await fetch(API+'/api/chat', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderChat(d); }
                 else if (name === 'templates') { const d = await fetch(API+'/api/admin/template-orders', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderTemplateOrders(d); }
+                else if (name === 'uploads') { const d = await fetch(API+'/api/uploads', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderUploads(d); }
                 else if (name === 'visitors') { const d = await fetch(API+'/api/visitors', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderVisitors(d); }
             } catch(e) { document.getElementById('panel-'+name).innerHTML = '<p style="color:#ff6b35">Error loading data. Make sure the server is running.</p>'; }
         }
@@ -308,6 +311,18 @@
             } else {
                 prompt('Copy this download link:', link);
             }
+        }
+
+        function renderUploads(data) {
+            if (!data || !data.length) { document.getElementById('panel-uploads').innerHTML = '<p style="color:var(--text-sec)">No client file uploads yet</p>'; return; }
+            document.getElementById('panel-uploads').innerHTML = `<table><thead><tr><th>Date</th><th>Client</th><th>Files</th></tr></thead><tbody>
+                ${data.map(u => `<tr>
+                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                    <td>${u.client_name || u.client_email || 'Unknown'}</td>
+                    <td>${u.files.map(f => `${f.original} (${(f.size/1024).toFixed(0)} KB)`).join('<br>')}</td>
+                </tr>`).join('')}
+            </tbody></table>
+            <p style="color:var(--text-sec);font-size:0.8rem;margin-top:0.5rem">Files are stored on the server. Download via SFTP or server file manager.</p>`;
         }
 
         function renderVisitors(data) {

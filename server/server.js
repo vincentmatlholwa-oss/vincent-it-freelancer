@@ -10,6 +10,9 @@ const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const db = require('./database');
 
 const app = express();
@@ -23,6 +26,44 @@ if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
     console.error('FATAL: JWT_SECRET must be set in production');
     process.exit(1);
 }
+
+// Multer file upload config
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+const upload = multer({
+    dest: uploadsDir,
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.pdf', '.doc', '.docx', '.txt', '.zip', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.pptx', '.ppt'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, allowed.includes(ext) || !ext);
+    }
+});
+
+// Email transporter
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+    }
+});
+
+function sendEmailAlert({ subject, html }) {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+    transporter.sendMail({
+        from: `"Vincent IT" <${process.env.SMTP_USER}>`,
+        to: ADMIN_EMAIL,
+        subject: `[Vincent IT] ${subject}`,
+        html
+    }).catch(err => console.error('Email alert failed:', err.message));
+}
+
+// VAPID keys for push notifications (auto-generated if missing)
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BPX6J8kGqzrnPmZbH0cYFdMOQ-NTGaLfQlCgHzSJZ7vK5LxR9w2y3t4V5n6m7o8p9q0r1s2t3u4v5w6x7y8z9A0B';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'dev-placeholder-key';
 
 // Security middleware
 app.use(helmet({
@@ -167,6 +208,10 @@ app.post('/api/contact', validate([
         message: message.trim().replace(/<[^>]*>/g, '')
     };
     db.insert('contacts', { id: uuidv4(), ...sanitized, created_at: new Date().toISOString() });
+    sendEmailAlert({
+        subject: `New Contact from ${sanitized.name}`,
+        html: `<h2>New Contact Message</h2><p><strong>Name:</strong> ${sanitized.name}</p><p><strong>Email:</strong> ${sanitized.email}</p><p><strong>Phone:</strong> ${sanitized.phone || 'N/A'}</p><p><strong>Subject:</strong> ${sanitized.subject || 'N/A'}</p><p><strong>Message:</strong> ${sanitized.message}</p>`
+    });
     res.json({ success: true, message: 'Message received! We will get back to you shortly.' });
 });
 
@@ -176,8 +221,6 @@ app.get('/api/contacts', authenticateToken, (req, res) => {
 });
 
 // ===== Template Downloads =====
-const crypto = require('crypto');
-
 function generateToken() {
     return crypto.randomBytes(32).toString('hex');
 }
@@ -241,7 +284,28 @@ app.post('/api/admin/templates/confirm-payment', authenticateToken, (req, res) =
     const { order_id } = req.body;
     const updated = db.update('template_orders', order_id, { payment_status: 'paid', status: 'completed', updated_at: new Date().toISOString() });
     if (!updated) return res.status(404).json({ error: 'Order not found' });
+    notifyClient(order_id, 'paid');
     res.json({ success: true, download_token: updated.download_token, message: 'Payment confirmed. Download link is now active.' });
+});
+
+// Admin: confirm deposit paid for service orders
+app.post('/api/admin/orders/confirm-deposit', authenticateToken, (req, res) => {
+    const { order_id } = req.body;
+    if (!order_id) return res.status(400).json({ error: 'Order ID required' });
+    const updated = db.update('orders', order_id, { deposit_paid: 1, payment_status: 'deposit_paid', status: 'in_progress', updated_at: new Date().toISOString() });
+    if (!updated) return res.status(404).json({ error: 'Order not found' });
+    notifyClient(order_id, 'in_progress');
+    res.json({ success: true, message: 'Deposit confirmed. Order is now in progress.' });
+});
+
+// Admin: mark service order as completed
+app.post('/api/admin/orders/complete', authenticateToken, (req, res) => {
+    const { order_id } = req.body;
+    if (!order_id) return res.status(400).json({ error: 'Order ID required' });
+    const updated = db.update('orders', order_id, { status: 'completed', payment_status: 'paid', updated_at: new Date().toISOString() });
+    if (!updated) return res.status(404).json({ error: 'Order not found' });
+    notifyClient(order_id, 'completed');
+    res.json({ success: true, message: 'Order marked as completed.' });
 });
 
 // Admin: get all template orders
@@ -269,6 +333,10 @@ app.post('/api/appointments', validate([
         notes: (notes || '').trim().replace(/<[^>]*>/g, ''),
         status: 'pending',
         created_at: new Date().toISOString()
+    });
+    sendEmailAlert({
+        subject: `New Appointment: ${client_name}`,
+        html: `<h2>New Appointment Booking</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Date:</strong> ${date}</p><p><strong>Time:</strong> ${time}</p><p><strong>Notes:</strong> ${notes || 'N/A'}</p>`
     });
     res.json({ success: true, message: 'Appointment booked! We will confirm shortly.' });
 });
@@ -305,6 +373,10 @@ app.post('/api/orders', validate([
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     });
+    sendEmailAlert({
+        subject: `New Order from ${client_name}`,
+        html: `<h2>New Service Order</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p><strong>Order ID:</strong> ${id}</p>`
+    });
     res.json({ success: true, order_id: id, message: 'Order created!' });
 });
 
@@ -333,7 +405,95 @@ app.patch('/api/orders/:id', authenticateToken, (req, res) => {
     if (req.body.payment_method) updates.payment_method = req.body.payment_method;
     updates.updated_at = new Date().toISOString();
     db.update('orders', req.params.id, updates);
+    // Notify client via push if status changed
+    if (updates.status || updates.payment_status) {
+        notifyClient(req.params.id, updates.status || updates.payment_status);
+    }
     res.json({ success: true });
+});
+
+// ===== File Upload =====
+app.post('/api/upload', authenticateToken, upload.array('files', 5), (req, res) => {
+    const files = req.files.map(f => ({
+        original: f.originalname,
+        size: f.size,
+        path: f.filename,
+        uploaded_at: new Date().toISOString()
+    }));
+    db.insert('uploads', { id: uuidv4(), client_name: req.body.client_name || 'Unknown', files, created_at: new Date().toISOString() });
+    res.json({ success: true, files: files.map(f => ({ name: f.original, size: f.size })) });
+});
+
+app.post('/api/client/upload', (req, res) => {
+    const { client_name, client_email } = req.body;
+    if (!client_name || !client_email) return res.status(400).json({ error: 'Name and email required' });
+    const uploadMiddleware = upload.array('files', 5);
+    uploadMiddleware(req, res, (err) => {
+        if (err) return res.status(400).json({ error: 'Upload failed. Max 5 files, 20MB each.' });
+        if (!req.files || !req.files.length) return res.status(400).json({ error: 'No files uploaded' });
+        const files = req.files.map(f => ({
+            original: f.originalname,
+            size: f.size,
+            path: f.filename,
+            uploaded_at: new Date().toISOString()
+        }));
+        db.insert('uploads', { id: uuidv4(), client_name: client_name.trim(), client_email: client_email.trim(), files, created_at: new Date().toISOString() });
+        sendEmailAlert({
+            subject: `Files Uploaded by ${client_name}`,
+            html: `<h2>New File Upload</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Files:</strong><ul>${files.map(f => `<li>${f.original} (${(f.size / 1024).toFixed(1)} KB)</li>`).join('')}</ul></p>`
+        });
+        res.json({ success: true, files: files.map(f => ({ name: f.original, size: f.size })) });
+    });
+});
+
+app.get('/api/uploads', authenticateToken, (req, res) => {
+    const uploads = db.query('uploads', null);
+    res.json(uploads.reverse());
+});
+
+// ===== Push Notifications =====
+let pushSubscriptions = [];
+
+app.post('/api/push/subscribe', (req, res) => {
+    const sub = req.body;
+    if (!sub || !sub.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
+    pushSubscriptions = pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
+    pushSubscriptions.push(sub);
+    if (pushSubscriptions.length > 100) pushSubscriptions = pushSubscriptions.slice(-100);
+    res.json({ success: true });
+});
+
+function notifyClient(orderId, status) {
+    if (!pushSubscriptions.length) return;
+    const statusLabels = {
+        pending: 'Order Received', in_progress: 'In Progress',
+        completed: 'Completed', cancelled: 'Cancelled',
+        paid: 'Payment Confirmed', unpaid: 'Payment Pending'
+    };
+    const title = 'Order Update';
+    const body = `Order ${orderId.slice(0, 8)}… — ${statusLabels[status] || status}`;
+    pushSubscriptions.forEach(sub => {
+        fetch(sub.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, body, icon: '/img/icon-192.png' })
+        }).catch(() => {
+            pushSubscriptions = pushSubscriptions.filter(s => s.endpoint !== sub.endpoint);
+        });
+    });
+}
+
+// ===== Sitemap =====
+app.get('/sitemap.xml', (req, res) => {
+    const siteUrl = process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com';
+    const pages = ['/', '/client/portal.html', '/qr.html', '/privacy.html', '/payment-success.html', '/payment-cancel.html', '/blog/'];
+    const blogPosts = db.query('blog_posts', p => p.published !== 0);
+    let xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    pages.forEach(p => { xml += `<url><loc>${siteUrl}${p}</loc><priority>0.8</priority></url>`; });
+    blogPosts.forEach(p => { xml += `<url><loc>${siteUrl}/blog/?slug=${p.slug}</loc><lastmod>${p.updated_at || p.created_at}</lastmod><priority>0.6</priority></url>`; });
+    xml += '</urlset>';
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
 });
 
 // ===== QR Code =====

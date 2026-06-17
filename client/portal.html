@@ -32,19 +32,41 @@
         .portal-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
         .portal-card-body { color:var(--text-secondary); font-size:0.9rem; }
         .portal-card-body span { display:block; margin-bottom:0.3rem; }
-        .order-track { display:flex; gap:0.5rem; margin-top:1rem; justify-content:center; }
-        .track-step { display:flex; flex-direction:column; align-items:center; gap:0.3rem; font-size:0.7rem; color:var(--text-muted); padding:0.5rem; border-radius:8px; flex:1; text-align:center; }
-        .track-step.active { color:var(--accent-1); }
-        .track-step i { font-size:1.2rem; }
+        .timeline { display:flex; gap:0; margin-top:1rem; position:relative; justify-content:space-between; }
+        .timeline::before { content:''; position:absolute; top:20px; left:12.5%; right:12.5%; height:3px; background:var(--border-color); border-radius:2px; z-index:0; }
+        .timeline-step { display:flex; flex-direction:column; align-items:center; gap:0.3rem; font-size:0.65rem; color:var(--text-muted); flex:1; text-align:center; position:relative; z-index:1; }
+        .timeline-step .step-dot { width:20px; height:20px; border-radius:50%; background:var(--border-color); border:3px solid #0a0a1a; display:flex; align-items:center; justify-content:center; font-size:0.5rem; transition:0.3s; }
+        .timeline-step.active .step-dot { background:var(--accent-1); box-shadow:0 0 12px rgba(0,212,255,0.4); }
+        .timeline-step.done .step-dot { background:#00c853; }
+        .timeline-step.done .step-dot i, .timeline-step.active .step-dot i { color:#fff; }
+        .timeline-step span { max-width:80px; line-height:1.2; }
+        .timeline-step.active span { color:var(--accent-1); font-weight:600; }
+        .timeline-step.done span { color:#00c853; }
         .status-badge { padding:0.2rem 0.6rem; border-radius:50px; font-size:0.7rem; font-weight:600; }
         .status-pending { background:rgba(255,107,53,0.15); color:#ff6b35; }
+        .status-deposit_paid { background:rgba(255,193,7,0.15); color:#ffc107; }
         .status-in_progress { background:rgba(0,212,255,0.15); color:var(--accent-1); }
         .status-completed { background:rgba(0,200,83,0.15); color:#00c853; }
         .status-cancelled { background:rgba(255,68,68,0.15); color:#ff4444; }
+        .status-paid { background:rgba(0,200,83,0.15); color:#00c853; }
+        .status-unpaid { background:rgba(255,107,53,0.15); color:#ff6b35; }
         .dash-header { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
-        .dash-header button { flex:1; min-width:100px; padding:0.6rem; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-secondary); cursor:pointer; font-family:inherit; font-weight:600; font-size:0.85rem; transition:0.3s; }
+        .dash-header button { flex:1; min-width:80px; padding:0.6rem; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-secondary); cursor:pointer; font-family:inherit; font-weight:600; font-size:0.85rem; transition:0.3s; }
         .dash-header button.active { background:linear-gradient(135deg,var(--accent-1),var(--accent-2)); color:#fff; border-color:transparent; }
         .dash-header button.logout { flex:0; min-width:auto; }
+        .upload-zone { border:2px dashed var(--border-color); border-radius:12px; padding:2rem 1.5rem; text-align:center; cursor:pointer; transition:0.3s; margin-top:0.8rem; }
+        .upload-zone:hover, .upload-zone.dragover { border-color:var(--accent-1); background:rgba(0,212,255,0.05); }
+        .upload-zone i { font-size:2rem; color:var(--accent-1); margin-bottom:0.5rem; display:block; }
+        .upload-zone p { color:var(--text-secondary); font-size:0.85rem; }
+        .upload-zone small { color:var(--text-muted); font-size:0.7rem; }
+        .upload-list { margin-top:0.8rem; }
+        .upload-item { display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.6rem; background:rgba(255,255,255,0.03); border-radius:6px; margin-bottom:0.3rem; font-size:0.8rem; }
+        .upload-item i { color:var(--accent-1); }
+        .upload-item .size { color:var(--text-muted); margin-left:auto; font-size:0.7rem; }
+        .notif-bar { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.2); border-radius:8px; padding:0.6rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; cursor:pointer; }
+        .notif-bar i { color:var(--accent-1); }
+        .notif-bar.enabled { background:rgba(0,200,83,0.1); border-color:rgba(0,200,83,0.2); }
+        .notif-bar.enabled i { color:#00c853; }
     </style>
 </head>
 <body>
@@ -52,7 +74,7 @@
         <div class="portal-header">
             <a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a>
             <h1 style="margin-top:1rem;font-size:1.8rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Client Portal</h1>
-            <p style="color:var(--text-secondary)">Track your orders and manage your account</p>
+            <p style="color:var(--text-secondary)">Track your orders, upload files, manage your account</p>
         </div>
 
         <div id="portalAuth">
@@ -85,12 +107,20 @@
                 <h3>Welcome, <span id="portalUserName"></span>!</h3>
                 <p style="color:var(--text-secondary);font-size:0.85rem">Referral Code: <strong id="portalRefCode" style="color:var(--accent-1)"></strong></p>
             </div>
+
+            <div id="pushNotifBar" class="notif-bar" onclick="subscribePush()">
+                <i class="fas fa-bell"></i>
+                <span id="pushNotifText">Enable push notifications for order updates</span>
+            </div>
+
             <div class="dash-header">
-                <button id="showOrders" class="active"><i class="fas fa-shopping-bag"></i> My Orders</button>
+                <button id="showOrders" class="active"><i class="fas fa-shopping-bag"></i> Orders</button>
+                <button id="showUploads"><i class="fas fa-upload"></i> Uploads</button>
                 <button id="showAppts"><i class="fas fa-calendar"></i> Appointments</button>
                 <button id="portalLogout" class="logout"><i class="fas fa-sign-out-alt"></i></button>
             </div>
             <div id="portalOrders"></div>
+            <div id="portalUploads" style="display:none"></div>
             <div id="portalAppointments" style="display:none"></div>
         </div>
     </div>
@@ -100,6 +130,7 @@
         let client = JSON.parse(localStorage.getItem('vit_portal_session'));
 
         if (client) showDashboard();
+        checkPushSupport();
 
         document.getElementById('showLogin').addEventListener('click', () => {
             document.querySelectorAll('.auth-tabs button').forEach(b => b.classList.remove('active'));
@@ -152,17 +183,32 @@
         document.getElementById('showOrders').addEventListener('click', () => {
             document.querySelectorAll('.dash-header button').forEach(b => b.classList.remove('active'));
             document.getElementById('showOrders').classList.add('active');
+            hideAllSections();
             document.getElementById('portalOrders').style.display = 'block';
-            document.getElementById('portalAppointments').style.display = 'none';
             loadOrders();
         });
+
+        document.getElementById('showUploads').addEventListener('click', () => {
+            document.querySelectorAll('.dash-header button').forEach(b => b.classList.remove('active'));
+            document.getElementById('showUploads').classList.add('active');
+            hideAllSections();
+            document.getElementById('portalUploads').style.display = 'block';
+            initUploadSection();
+        });
+
         document.getElementById('showAppts').addEventListener('click', () => {
             document.querySelectorAll('.dash-header button').forEach(b => b.classList.remove('active'));
             document.getElementById('showAppts').classList.add('active');
-            document.getElementById('portalOrders').style.display = 'none';
+            hideAllSections();
             document.getElementById('portalAppointments').style.display = 'block';
             loadAppointments();
         });
+
+        function hideAllSections() {
+            document.getElementById('portalOrders').style.display = 'none';
+            document.getElementById('portalUploads').style.display = 'none';
+            document.getElementById('portalAppointments').style.display = 'none';
+        }
 
         function showDashboard() {
             document.getElementById('portalAuth').style.display = 'none';
@@ -170,6 +216,7 @@
             document.getElementById('portalUserName').textContent = client.name;
             document.getElementById('portalRefCode').textContent = client.referral_code;
             loadOrders();
+            updatePushStatus();
         }
 
         async function loadOrders() {
@@ -178,20 +225,210 @@
                 const orders = await fetch(API+'/api/orders?email='+encodeURIComponent(client.email)).then(r=>r.json());
                 c.innerHTML = orders.length ? orders.map(o => `
                     <div class="portal-card">
-                        <div class="portal-card-header"><strong>${o.service}</strong><span class="status-badge status-${o.status}">${o.status}</span></div>
+                        <div class="portal-card-header"><strong>${o.service}</strong><span class="status-badge status-${o.status}">${formatStatus(o.status)}</span></div>
                         <div class="portal-card-body">
                             <span>Price: ${o.price||'N/A'}</span>
-                            <span>Payment: ${o.deposit_paid ? 'Deposit Paid' : o.payment_status}</span>
+                            <span>Payment: <span class="status-badge status-${o.payment_status}">${formatPayment(o)}</span></span>
                             <span>Ordered: ${new Date(o.created_at).toLocaleDateString()}</span>
                         </div>
-                        <div class="order-track">
-                            <div class="track-step active"><i class="fas fa-file-signature"></i><span>Contract</span></div>
-                            <div class="track-step ${o.status==='in_progress'||o.status==='completed'?'active':''}"><i class="fas fa-cogs"></i><span>In Progress</span></div>
-                            <div class="track-step ${o.status==='completed'?'active':''}"><i class="fas fa-check-circle"></i><span>Done</span></div>
-                        </div>
+                        ${renderTimeline(o)}
                     </div>
-                `).join('') : '<p style="color:var(--text-secondary);text-align:center">No orders yet</p>';
+                `).join('') : '<p style="color:var(--text-secondary);text-align:center">No orders yet. <a href="/#pricing" style="color:var(--accent-1)">Browse services</a></p>';
             } catch { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Server offline</p>'; }
+        }
+
+        function formatStatus(s) {
+            const labels = { pending:'Pending', deposit_paid:'Deposit Paid', in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled' };
+            return labels[s] || s;
+        }
+
+        function formatPayment(o) {
+            if (o.deposit_paid == 1) return 'Deposit Paid';
+            if (o.payment_status === 'paid') return 'Paid';
+            if (o.payment_status === 'deposit_paid') return 'Deposit Paid';
+            return o.payment_status === 'unpaid' ? 'Unpaid' : o.payment_status;
+        }
+
+        function renderTimeline(o) {
+            const steps = [
+                { key: 'pending', icon: 'fa-file-signature', label: 'Order Received' },
+                { key: 'deposit', icon: 'fa-hand-holding-usd', label: 'Deposit' },
+                { key: 'progress', icon: 'fa-cogs', label: 'In Progress' },
+                { key: 'done', icon: 'fa-check-circle', label: 'Completed' }
+            ];
+            const statusMap = {
+                pending: 0, deposit_paid: 1, in_progress: 2, completed: 3, cancelled: -1
+            };
+            const currentIdx = statusMap[o.status] !== undefined ? statusMap[o.status] : (statusMap[o.payment_status] || 0);
+            if (currentIdx < 0) return `<p style="color:#ff4444;font-size:0.85rem;margin-top:0.5rem">Order cancelled</p>`;
+            return `<div class="timeline">${steps.map((s, i) => {
+                const cls = i < currentIdx ? 'done' : (i === currentIdx ? 'active' : '');
+                const icon = i < currentIdx ? 'fa-check' : s.icon;
+                return `<div class="timeline-step ${cls}"><div class="step-dot"><i class="fas ${icon}" style="font-size:8px"></i></div><span>${s.label}</span></div>`;
+            }).join('')}</div>`;
+        }
+
+        // ===== Push Notifications =====
+        function checkPushSupport() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                document.getElementById('pushNotifBar').style.display = 'none';
+            }
+        }
+
+        function updatePushStatus() {
+            const bar = document.getElementById('pushNotifBar');
+            if (localStorage.getItem('vit_push_enabled')) {
+                bar.classList.add('enabled');
+                document.getElementById('pushNotifText').textContent = 'Push notifications enabled';
+            } else {
+                bar.classList.remove('enabled');
+                document.getElementById('pushNotifText').textContent = 'Enable push notifications for order updates';
+            }
+        }
+
+        async function subscribePush() {
+            if (localStorage.getItem('vit_push_enabled')) return;
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array('BPX6J8kGqzrnPmZbH0cYFdMOQ-NTGaLfQlCgHzSJZ7vK5LxR9w2y3t4V5n6m7o8p9q0r1s2t3u4v5w6x7y8z9A0B')
+                });
+                await fetch('/api/push/subscribe', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub)
+                });
+                localStorage.setItem('vit_push_enabled', 'true');
+                updatePushStatus();
+            } catch { /* push not supported or denied */ }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = atob(base64);
+            return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+        }
+
+        // ===== File Upload =====
+        function initUploadSection() {
+            const c = document.getElementById('portalUploads');
+            c.innerHTML = `
+                <div class="portal-card">
+                    <h3 style="margin-bottom:0.5rem"><i class="fas fa-upload"></i> Upload Files</h3>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem">Upload documents for your service — CV drafts, assignment briefs, diagnostic logs, etc. Max 5 files, 20MB each.</p>
+                    <div class="upload-zone" id="uploadZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drop files here or click to browse</p>
+                        <small>PDF, Word, Excel, PowerPoint, Images, ZIP, TXT</small>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.zip,.jpg,.jpeg,.png,.xlsx,.xls,.pptx,.ppt" style="display:none">
+                    <div class="upload-list" id="uploadList"></div>
+                    <button class="btn btn-primary" id="uploadBtn" style="margin-top:1rem;width:100%;justify-content:center" disabled><i class="fas fa-upload"></i> Upload to Vincent IT</button>
+                    <div id="uploadMsg" style="margin-top:0.5rem;font-size:0.85rem;text-align:center"></div>
+                </div>
+                <div class="portal-card">
+                    <h4 style="margin-bottom:0.5rem"><i class="fas fa-history"></i> Your Uploads</h4>
+                    <div id="uploadHistory"><p style="color:var(--text-muted);font-size:0.85rem">Loading...</p></div>
+                </div>
+            `;
+            bindUploadEvents();
+            loadUploadHistory();
+        }
+
+        let selectedFiles = [];
+
+        function bindUploadEvents() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            zone.addEventListener('click', () => input.click());
+
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+            });
+
+            input.addEventListener('change', () => { if (input.files.length) handleFiles(input.files); });
+        }
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).slice(0, 5);
+            renderFileList();
+            document.getElementById('uploadBtn').disabled = !selectedFiles.length;
+        }
+
+        function renderFileList() {
+            const list = document.getElementById('uploadList');
+            list.innerHTML = selectedFiles.map((f, i) => `
+                <div class="upload-item">
+                    <i class="fas fa-file"></i>
+                    <span>${f.name}</span>
+                    <span class="size">${(f.size / 1024).toFixed(1)} KB</span>
+                    <span style="cursor:pointer;color:#ff4444;margin-left:0.3rem" onclick="removeFile(${i})">&times;</span>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(idx) {
+            selectedFiles.splice(idx, 1);
+            renderFileList();
+            document.getElementById('uploadBtn').disabled = !selectedFiles.length;
+        }
+
+        document.addEventListener('click', async (e) => {
+            if (e.target.id === 'uploadBtn' || e.target.closest('#uploadBtn')) {
+                const btn = document.getElementById('uploadBtn');
+                if (!selectedFiles.length) return;
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                const msg = document.getElementById('uploadMsg');
+                const formData = new FormData();
+                selectedFiles.forEach(f => formData.append('files', f));
+                formData.append('client_name', client.name);
+                formData.append('client_email', client.email);
+                try {
+                    const res = await fetch('/api/client/upload', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        msg.innerHTML = '<span style="color:#00c853">Upload successful!</span>';
+                        selectedFiles = [];
+                        renderFileList();
+                        btn.disabled = true;
+                        loadUploadHistory();
+                    } else {
+                        msg.innerHTML = '<span style="color:#ff6b35">' + (data.error || 'Upload failed') + '</span>';
+                        btn.disabled = false;
+                    }
+                } catch {
+                    msg.innerHTML = '<span style="color:#ff6b35">Upload failed. Try again or use WhatsApp.</span>';
+                    btn.disabled = false;
+                }
+                btn.innerHTML = '<i class="fas fa-upload"></i> Upload to Vincent IT';
+            }
+        });
+
+        async function loadUploadHistory() {
+            const c = document.getElementById('uploadHistory');
+            if (!c) return;
+            try {
+                const uploads = await fetch(API+'/api/uploads').then(r => r.json());
+                if (uploads.length) {
+                    const clientUploads = uploads.filter(u => u.client_email === client.email);
+                    c.innerHTML = clientUploads.length ? clientUploads.map(u => `
+                        <div class="upload-item">
+                            <i class="fas fa-cloud-upload-alt" style="color:var(--accent-1)"></i>
+                            <span>${u.files.map(f => f.name).join(', ')}</span>
+                            <span class="size">${new Date(u.created_at).toLocaleDateString()}</span>
+                        </div>
+                    `).join('') : '<p style="color:var(--text-muted);font-size:0.85rem">No uploads yet</p>';
+                } else {
+                    c.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem">No uploads yet</p>';
+                }
+            } catch {
+                c.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem">Server offline</p>';
+            }
         }
 
         async function loadAppointments() {
