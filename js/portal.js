@@ -181,6 +181,19 @@ function loadPortalOrders() {
     } else renderPortalOrdersOffline(container);
 }
 
+async function cancelOrder(id) {
+    if (!confirm('Cancel this order?')) return;
+    const email = portalClient?.email;
+    if (!email) { alert('Please log in to cancel orders.'); return; }
+    try {
+        const res = await fetch('/api/orders/' + id + '/cancel', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success) { loadPortalOrders(); } else { alert(data.error || 'Cancel failed'); }
+    } catch { alert('Server unavailable'); }
+}
+
 function renderPortalOrders(container, orders) {
     if (!orders.length) { container.innerHTML = '<p style="color:var(--text-muted)" data-i18n="portal.noOrders">No orders yet</p>'; return; }
     container.innerHTML = orders.map(o => `
@@ -199,6 +212,7 @@ function renderPortalOrders(container, orders) {
                 <div class="track-step ${o.status === 'in_progress' ? 'active' : ''}"><i class="fas fa-cogs"></i><span>In Progress</span></div>
                 <div class="track-step ${o.status === 'completed' ? 'active' : ''}"><i class="fas fa-check-circle"></i><span>Completed</span></div>
             </div>
+            ${o.status !== 'completed' && o.status !== 'cancelled' ? '<button class="btn btn-sm btn-outline" onclick="cancelOrder(\'' + o.id + '\')" style="margin-top:0.5rem;color:#ff6b35;border-color:#ff6b35;font-size:0.75rem"><i class="fas fa-times"></i> Cancel</button>' : ''}
         </div>
     `).join('');
 }
@@ -207,6 +221,19 @@ function renderPortalOrdersOffline(container) {
     const localOrders = JSON.parse(localStorage.getItem('vit_orders') || '[]');
     if (localOrders.length) renderPortalOrders(container, localOrders);
     else container.innerHTML = '<p style="color:var(--text-muted)" data-i18n="portal.noOrders">No orders yet</p>';
+}
+
+async function cancelAppointment(id) {
+    if (!confirm('Cancel this appointment?')) return;
+    const email = portalClient?.email;
+    if (!email) { alert('Please log in to cancel appointments.'); return; }
+    try {
+        const res = await fetch('/api/appointments/' + id + '/cancel', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success) { loadPortalAppointments(); } else { alert(data.error || 'Cancel failed'); }
+    } catch { alert('Server unavailable'); }
 }
 
 function loadPortalAppointments() {
@@ -223,6 +250,7 @@ function loadPortalAppointments() {
                 <div class="portal-card-body">
                     <span>${new Date(a.date).toLocaleDateString()} at ${a.time}</span>
                 </div>
+                ${a.status !== 'cancelled' ? '<div style="margin-top:0.5rem"><button class="btn btn-sm btn-outline" onclick="cancelAppointment(\'' + a.id + '\')" style="color:#ff6b35;border-color:#ff6b35;font-size:0.75rem"><i class="fas fa-times"></i> Cancel</button></div>' : ''}
             </div>
         `).join('');
     } else {

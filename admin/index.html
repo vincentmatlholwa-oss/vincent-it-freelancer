@@ -76,7 +76,7 @@
     <!-- Dashboard -->
     <div id="dashboard">
         <nav class="dash-nav">
-            <h1 class="dash-title"><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+            <h1 class="dash-title"><i class="fas fa-shield-alt"></i> Admin Dashboard <span id="pendingBadge" style="display:none;font-size:0.7rem;background:#ff6b35;color:#fff;padding:0.2rem 0.6rem;border-radius:50px;vertical-align:middle;font-weight:600;-webkit-text-fill-color:#fff"></span></h1>
             <div>
                 <a href="/" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a>
                 <button id="logoutBtn" style="margin-left:1rem;padding:0.3rem 0.8rem;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-sec);cursor:pointer;font-family:inherit;font-size:0.8rem;">Logout</button>
@@ -185,8 +185,15 @@
                     <div class="stat-card"><div class="stat-num">${s.orderCount}</div><div class="stat-label">Orders</div></div>
                     <div class="stat-card"><div class="stat-num">${s.appointmentCount}</div><div class="stat-label">Appointments</div></div>
                 `;
+                const badge = document.getElementById('pendingBadge');
+                const totalPending = (s.pendingOrders || 0) + (s.pendingReviews || 0);
+                if (totalPending > 0) { badge.style.display = 'inline'; badge.textContent = totalPending + ' pending'; }
+                else { badge.style.display = 'none'; }
             } catch {}
         }
+
+        // Auto-refresh stats every 30s
+        setInterval(loadStats, 30000);
 
         function renderContacts(data) {
             if (!data.length) { document.getElementById('panel-contacts').innerHTML = '<p style="color:var(--text-sec)">No messages yet</p>'; return; }

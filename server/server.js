@@ -440,6 +440,30 @@ app.get('/api/orders', (req, res) => {
     });
 });
 
+// Client-side order cancellation
+app.post('/api/orders/:id/cancel', (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const orders = db.query('orders', o => o.id === req.params.id);
+    if (!orders.length) return res.status(404).json({ error: 'Order not found' });
+    if (orders[0].client_email.toLowerCase() !== email.toLowerCase()) return res.status(403).json({ error: 'Email does not match this order' });
+    if (orders[0].status === 'completed' || orders[0].status === 'cancelled') return res.status(400).json({ error: 'Cannot cancel a ' + orders[0].status + ' order' });
+    db.update('orders', req.params.id, { status: 'cancelled', payment_status: 'cancelled', updated_at: new Date().toISOString() });
+    res.json({ success: true, message: 'Order cancelled successfully.' });
+});
+
+// Client-side appointment cancellation
+app.post('/api/appointments/:id/cancel', (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const appointments = db.query('appointments', a => a.id === req.params.id);
+    if (!appointments.length) return res.status(404).json({ error: 'Appointment not found' });
+    if (appointments[0].client_email.toLowerCase() !== email.toLowerCase()) return res.status(403).json({ error: 'Email does not match this appointment' });
+    if (appointments[0].status === 'cancelled') return res.status(400).json({ error: 'Already cancelled' });
+    db.update('appointments', req.params.id, { status: 'cancelled' });
+    res.json({ success: true, message: 'Appointment cancelled.' });
+});
+
 app.patch('/api/orders/:id', authenticateToken, (req, res) => {
     const updates = {};
     if (req.body.status) updates.status = req.body.status;
@@ -689,6 +713,27 @@ app.post('/api/payfast/itn', (req, res) => {
             res.status(200).send('IGNORED');
         }
     }).catch(() => res.status(200).send('ERROR'));
+});
+
+// Receipt: fetch order details by ID + email
+app.get('/api/receipt', (req, res) => {
+    const { order_id, email } = req.query;
+    if (!order_id) return res.status(400).json({ error: 'Order ID required' });
+    let order = null;
+    const serviceOrders = db.query('orders', o => o.id === order_id);
+    if (serviceOrders.length) order = serviceOrders[0];
+    if (!order) {
+        const templateOrders = db.query('template_orders', o => o.id === order_id);
+        if (templateOrders.length) order = templateOrders[0];
+    }
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (email && order.client_email.toLowerCase() !== email.toLowerCase()) return res.status(403).json({ error: 'Email mismatch' });
+    res.json({
+        id: order.id, client_name: order.client_name, client_email: order.client_email,
+        service: order.service || order.template_id, price: order.price,
+        status: order.status, payment_status: order.payment_status,
+        created_at: order.created_at, payment_method: order.payment_method || 'Pending'
+    });
 });
 
 app.get('/payment/success', (req, res) => {

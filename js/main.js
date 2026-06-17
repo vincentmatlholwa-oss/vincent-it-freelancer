@@ -483,6 +483,28 @@ function initSignaturePad() {
 function generateContractPDF(isClientCopy) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
+    const pageHeight = 297;
+    const marginTop = 20;
+    const marginBottom = 20;
+    const footerTop = pageHeight - marginBottom;
+
+    function addPageIfNeeded(y, needed) {
+        if (y + needed > footerTop) { doc.addPage(); return marginTop; }
+        return y;
+    }
+
+    function drawFooter(pageNum) {
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFillColor(...dark); doc.rect(0, pageHeight - 14, 210, 14, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(8);
+            doc.text('Vincent IT Freelancer', 105, pageHeight - 6, { align: 'center' });
+            doc.text('Page ' + i + ' of ' + totalPages, 195, pageHeight - 6, { align: 'right' });
+        }
+        doc.setPage(totalPages);
+    }
+
     const name = document.getElementById('clientName').value.trim();
     const email = document.getElementById('clientEmail').value.trim();
     const phone = document.getElementById('clientPhone').value.trim();
@@ -491,6 +513,7 @@ function generateContractPDF(isClientCopy) {
     const additional = document.getElementById('additionalInfo').value.trim();
     const date = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
     const primary = [0, 212, 255], secondary = [123, 47, 247], dark = [10, 10, 26];
+
     doc.setFillColor(...dark); doc.rect(0, 0, 210, 60, 'F');
     doc.setFillColor(...primary); doc.rect(0, 58, 210, 2, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont('helvetica', 'bold');
@@ -498,10 +521,14 @@ function generateContractPDF(isClientCopy) {
     doc.setFontSize(11); doc.setFont('helvetica', 'normal');
     doc.text('Vincent IT Freelancer', 105, 45, { align: 'center' });
     doc.text('Professional IT Services', 105, 53, { align: 'center' });
-    let yPos = 75;
+
+    let y = 75;
+
+    // Agreement Details
+    y = addPageIfNeeded(y, 40);
     doc.setTextColor(30, 30, 50); doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-    doc.text('Agreement Details', 15, yPos); yPos += 10;
-    doc.setDrawColor(...primary); doc.setLineWidth(0.5); doc.line(15, yPos, 195, yPos); yPos += 8;
+    doc.text('Agreement Details', 15, y); y += 10;
+    doc.setDrawColor(...primary); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 8;
     doc.setFontSize(10);
     const fields = [
         ['Date:', date], ['Client Name:', name], ['Email:', email],
@@ -509,18 +536,25 @@ function generateContractPDF(isClientCopy) {
     ];
     if (address) fields.push(['Address:', address]);
     fields.forEach(([l, v]) => {
-        doc.setFont('helvetica', 'bold'); doc.setTextColor(50, 50, 70); doc.text(l, 15, yPos);
-        doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 50); doc.text(v, 55, yPos);
-        yPos += 7;
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(50, 50, 70); doc.text(l, 15, y);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 50); doc.text(v, 55, y);
+        y += 7;
     });
     if (additional) {
-        doc.setFont('helvetica', 'bold'); doc.setTextColor(50, 50, 70); doc.text('Notes:', 15, yPos);
-        doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 50); doc.text(additional, 55, yPos);
-        yPos += 10;
-    } else yPos += 3;
-    doc.setDrawColor(...primary); doc.line(15, yPos, 195, yPos); yPos += 8;
+        y = addPageIfNeeded(y, 12);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(50, 50, 70); doc.text('Notes:', 15, y);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 50);
+        const noteLines = doc.splitTextToSize(additional, 140);
+        doc.text(noteLines, 55, y);
+        y += 7 + (noteLines.length - 1) * 5;
+    } else y += 3;
+
+    doc.setDrawColor(...primary); doc.line(15, y, 195, y); y += 10;
+
+    // Terms
+    y = addPageIfNeeded(y, 50);
     doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 50);
-    doc.text('Terms & Conditions Summary', 15, yPos); yPos += 10;
+    doc.text('Terms & Conditions', 15, y); y += 10;
     const terms = [
         '1. Service scope: remote installation/activation of MS Office & Windows, BSOD repair, data recovery, hardware upgrades, CV creation, and academic assistance.',
         '2. Payment: 50% deposit required before service. Balance due upon completion.',
@@ -529,47 +563,71 @@ function generateContractPDF(isClientCopy) {
         '5. Services typically completed within 1-24 hours.',
         '6. Full refund of deposit if service cannot be completed due to client device limitations.',
         '7. All client information kept strictly confidential.',
-        '8. Students receive 10% discount. Existing clients receive 5% discount.',
+        '8. Students & referrals receive 10% discount. Returning clients receive 5% discount.',
         '9. Governed by the laws of South Africa. Disputes resolved via arbitration in Mahikeng.'
     ];
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 100);
     terms.forEach(term => {
-        doc.splitTextToSize(term, 175).forEach(line => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.text(line, 15, yPos); yPos += 5;
-        });
+        const lines = doc.splitTextToSize(term, 175);
+        y = addPageIfNeeded(y, lines.length * 5 + 2);
+        lines.forEach(line => { doc.text(line, 15, y); y += 5; });
     });
-    yPos += 8;
-    if (yPos > 250) { doc.addPage(); yPos = 20; }
-    doc.setDrawColor(...primary); doc.setLineWidth(0.5); doc.line(15, yPos, 195, yPos); yPos += 8;
+
+    y += 5;
+
+    // Signatures
+    y = addPageIfNeeded(y, 60);
+    doc.setDrawColor(...primary); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 10;
     doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 50);
-    doc.text('Signatures', 15, yPos); yPos += 12;
+    doc.text('Signatures', 15, y); y += 14;
+
     const sigData = document.getElementById('signatureData').value;
     if (sigData) {
-        doc.addImage(sigData, 'PNG', 20, yPos, 80, 30);
+        doc.addImage(sigData, 'PNG', 20, y, 80, 30);
         doc.setFontSize(8); doc.setTextColor(150, 150, 150);
-        doc.text('Client Signature', 20, yPos + 35); yPos += 45;
+        doc.text('Client Signature', 20, y + 34); y += 40;
     }
-    yPos += 5;
+
+    y += 4;
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 30, 50);
-    doc.text('Vincent IT Freelancer (Provider)', 15, yPos); yPos += 8;
+    doc.text('Vincent IT Freelancer (Provider)', 15, y); y += 10;
     doc.setTextColor(...secondary); doc.setFont('helvetica', 'italic');
-    doc.text('V. IT Freelancer', 25, yPos + 15, { fontSize: 14 });
-    doc.setFontSize(8); doc.setTextColor(150, 150, 150);
-    doc.text('Vincent IT Freelancer (Digital Signature)', 25, yPos + 23); yPos += 35;
+    doc.text('V. IT Freelancer', 15, y); y += 7;
+    doc.setFontSize(7); doc.setTextColor(150, 150, 150);
+    doc.text('Provider Digital Signature', 15, y); y += 12;
+
     doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-    doc.text('This agreement was generated and signed digitally on ' + date, 15, yPos); yPos += 5;
-    doc.text('Contract ID: VIT-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase(), 15, yPos);
-    doc.setFillColor(...dark); doc.rect(0, 283, 210, 14, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(8);
-    doc.text('Vincent IT Freelancer', 105, 291, { align: 'center' });
-    doc.text('© ' + new Date().getFullYear() + ' All rights reserved', 105, 297, { align: 'center' });
+    doc.text('Generated on ' + date, 15, y); y += 5;
+    doc.text('Contract ID: VIT-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase(), 15, y);
+
+    drawFooter();
     return doc;
 }
 
 function generateInvoice() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
+    const pageHeight = 297;
+    const marginBottom = 20;
+    const footerTop = pageHeight - marginBottom;
+
+    function addPageIfNeeded(y, needed) {
+        if (y + needed > footerTop) { doc.addPage(); return 20; }
+        return y;
+    }
+
+    function drawFooter() {
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFillColor(...dark); doc.rect(0, pageHeight - 14, 210, 14, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(8);
+            doc.text('Vincent IT Freelancer', 105, pageHeight - 6, { align: 'center' });
+            doc.text('Page ' + i + ' of ' + totalPages, 195, pageHeight - 6, { align: 'right' });
+        }
+        doc.setPage(totalPages);
+    }
+
     const name = document.getElementById('clientName').value.trim();
     const date = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
     const invId = 'INV-' + Date.now().toString(36).toUpperCase();
@@ -580,40 +638,40 @@ function generateInvoice() {
     doc.text('INVOICE', 105, 25, { align: 'center' });
     doc.setFontSize(10); doc.setFont('helvetica', 'normal');
     doc.text('Vincent IT Freelancer', 105, 38, { align: 'center' });
-    let yPos = 65;
+    let y = 65;
+    y = addPageIfNeeded(y, 40);
     doc.setTextColor(30, 30, 50); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-    doc.text('Bill To:', 15, yPos); yPos += 7;
+    doc.text('Bill To:', 15, y); y += 7;
     doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(60, 60, 80);
-    doc.text(name, 15, yPos); yPos += 6;
-    doc.text('Date: ' + date, 15, yPos); yPos += 6;
-    doc.text('Invoice: ' + invId, 15, yPos); yPos += 10;
-    doc.setDrawColor(...primary); doc.setLineWidth(0.5); doc.line(15, yPos, 195, yPos); yPos += 8;
+    doc.text(name, 15, y); y += 6;
+    doc.text('Date: ' + date, 15, y); y += 6;
+    doc.text('Invoice: ' + invId, 15, y); y += 10;
+    doc.setDrawColor(...primary); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 8;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text('Service', 15, yPos); doc.text('Qty', 130, yPos); doc.text('Amount', 160, yPos);
-    yPos += 6; doc.setDrawColor(200, 200, 220); doc.line(15, yPos, 195, yPos); yPos += 5;
+    doc.text('Service', 15, y); doc.text('Qty', 130, y); doc.text('Amount', 160, y);
+    y += 6; doc.setDrawColor(200, 200, 220); doc.line(15, y, 195, y); y += 5;
     doc.setFont('helvetica', 'normal');
     const items = cart.length > 0 ? cart : [{ index: document.getElementById('serviceType').selectedIndex - 1, qty: 1 }];
     items.forEach(item => {
         if (item.index < 0 || item.index >= services.length) return;
         const s = services[item.index];
-        doc.text(s.title, 15, yPos);
-        doc.text('x' + item.qty, 130, yPos);
-        doc.text('R' + parsePrice(s.price) * item.qty, 160, yPos);
-        yPos += 7;
+        y = addPageIfNeeded(y, 7);
+        doc.text(s.title, 15, y);
+        doc.text('x' + item.qty, 130, y);
+        doc.text('R' + parsePrice(s.price) * item.qty, 160, y);
+        y += 7;
     });
-    yPos += 3; doc.setDrawColor(...primary); doc.line(15, yPos, 195, yPos); yPos += 8;
+    y = addPageIfNeeded(y, 20);
+    y += 3; doc.setDrawColor(...primary); doc.line(15, y, 195, y); y += 8;
     const total = items.reduce((s, item) => s + parsePrice(services[item.index]?.price || '0') * item.qty, 0);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text('Total:', 130, yPos); doc.text('R' + total, 160, yPos);
-    yPos += 10;
+    doc.text('Total:', 130, y); doc.text('R' + total, 160, y);
+    y += 10;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-    doc.text('Payment due upon completion. 50% deposit required for remote services.', 15, yPos);
-    yPos += 5;
-    doc.text('Thank you for your business!', 15, yPos);
-    doc.setFillColor(...dark); doc.rect(0, 283, 210, 14, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(8);
-    doc.text('Vincent IT Freelancer', 105, 291, { align: 'center' });
-    doc.text('© ' + new Date().getFullYear(), 105, 297, { align: 'center' });
+    doc.text('Payment due upon completion. 50% deposit required for remote services.', 15, y);
+    y += 5;
+    doc.text('Thank you for your business!', 15, y);
+    drawFooter();
     return doc;
 }
 

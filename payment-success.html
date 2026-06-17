@@ -110,11 +110,30 @@
         </div>
     </div>
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const orderId = params.get('order_id');
-        if (orderId) {
-            document.getElementById('orderDisplay').textContent = 'Order ID: ' + orderId;
-        }
+        (async function() {
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('order_id');
+            const email = params.get('email');
+            if (orderId) {
+                document.getElementById('orderDisplay').textContent = 'Order ID: ' + orderId;
+                try {
+                    const url = '/api/receipt?order_id=' + encodeURIComponent(orderId) + (email ? '&email=' + encodeURIComponent(email) : '');
+                    const data = await fetch(url).then(r => r.json());
+                    if (data.service) {
+                        document.querySelector('.steps').insertAdjacentHTML('beforebegin', `
+                            <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:1rem 0;text-align:left">
+                                <p style="color:#00d4ff;font-weight:600;margin-bottom:0.5rem"><i class="fas fa-receipt"></i> Receipt Summary</p>
+                                <p><strong>Service:</strong> ${data.service}</p>
+                                <p><strong>Amount:</strong> ${data.price || 'N/A'}</p>
+                                <p><strong>Payment:</strong> <span style="color:#00d4ff">${data.payment_status}</span></p>
+                                <p><strong>Date:</strong> ${new Date(data.created_at).toLocaleDateString()}</p>
+                                <p><strong>Method:</strong> ${data.payment_method === 'payfast' ? 'PayFast (Card/EFT)' : data.payment_method || 'Pending'}</p>
+                            </div>
+                        `);
+                    }
+                } catch {}
+            }
+        })();
     </script>
 </body>
 </html>
