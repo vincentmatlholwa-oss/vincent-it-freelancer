@@ -95,12 +95,11 @@ app.use((req, res, next) => {
         const origin = req.headers['origin'] || '';
         const referer = req.headers['referer'] || '';
         if (origin || referer) {
-            const allowed = (CORS_ORIGIN === '*' ? '' : CORS_ORIGIN).split(',').map(s => s.trim());
+            if (CORS_ORIGIN === '*') { next(); return; }
+            const allowed = CORS_ORIGIN.split(',').map(s => s.trim());
             const source = origin || referer.replace(/\/+$/, '');
             const match = allowed.some(a => a && source.startsWith(a));
-            if (!allowed.includes('*') && !match) {
-                return res.status(403).json({ error: 'CSRF check failed' });
-            }
+            if (!match) return res.status(403).json({ error: 'CSRF check failed' });
         }
     }
     next();
@@ -199,6 +198,7 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     if (email !== ADMIN_EMAIL) return res.status(401).json({ error: 'Invalid credentials' });
     try {
+        if (!ADMIN_PASSWORD_HASH) return res.status(401).json({ error: 'Invalid credentials' });
         const valid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
         if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
         const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
