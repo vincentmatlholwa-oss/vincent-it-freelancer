@@ -504,10 +504,21 @@ app.get('/api/client/uploads', (req, res) => {
 });
 
 // ===== Push Notifications =====
-const webpush = require('web-push');
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BPX6J8kGqzrnPmZbH0cYFdMOQ-NTGaLfQlCgHzSJZ7vK5LxR9w2y3t4V5n6m7o8p9q0r1s2t3u4v5w6x7y8z9A0B';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'dev-placeholder-key';
-webpush.setVapidDetails('mailto:' + (process.env.ADMIN_EMAIL || 'admin@vincentit.com'), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+let webpush = null;
+try {
+    webpush = require('web-push');
+    const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+    const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+    if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+        webpush.setVapidDetails('mailto:' + (process.env.ADMIN_EMAIL || 'admin@vincentit.com'), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    } else {
+        console.log('VAPID keys not configured — push notifications disabled');
+        webpush = null;
+    }
+} catch (e) {
+    console.log('web-push not available — push notifications disabled');
+    webpush = null;
+}
 
 function loadPushSubscriptions() {
     return db.query('push_subscriptions', null);
@@ -539,6 +550,7 @@ const STATUS_LABELS = {
 };
 
 function notifyClient(orderId, status) {
+    if (!webpush) return;
     const subs = loadPushSubscriptions();
     if (!subs.length) return;
     const title = 'Order Update';
