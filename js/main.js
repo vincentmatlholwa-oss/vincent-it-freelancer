@@ -177,6 +177,7 @@ function renderPricing() {
             <div class="discount-badge">
                 <span><i class="fas fa-graduation-cap"></i> Student 10% off</span>
                 <span><i class="fas fa-user-friends"></i> Returning 5% off</span>
+                <span><i class="fas fa-share-alt"></i> Referral 10% off</span>
             </div>
             <ul class="pricing-features">
                 ${s.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
@@ -412,14 +413,14 @@ function initCart() {
 
 // ===== FAQ =====
 const faqs = [
-    { q: 'How do I pay?', a: 'Payments are accepted via EFT, SnapScan, or bank transfer. A 50% deposit is required before remote services begin. Students get 10% off and returning clients get 5% off.' },
+    { q: 'How do I pay?', a: 'Payments are accepted via EFT, SnapScan, or bank transfer. A 50% deposit is required before remote services begin. Students get 10% off, returning clients 5% off, and referrals 10% off (use codes: STUDENT10, VIP5, REFER10).' },
     { q: 'Do I need to be present during the service?', a: 'Yes, you need to be available during the appointment to provide remote access and any necessary information (product keys, etc.).' },
     { q: 'What if the service can\'t be completed?', a: 'If the service cannot be completed due to technical limitations on your device, you receive a full refund of your deposit.' },
     { q: 'How long does each service take?', a: 'Most software activations take 15-45 minutes. Repairs and installations take 1-3 hours. CVs and assignments take 1-5 days depending on complexity.' },
     { q: 'Do you guarantee data recovery?', a: 'Data recovery is performed with care but cannot be guaranteed. We always advise clients to maintain their own backups.' },
     { q: 'Is remote access safe?', a: 'Absolutely. We use encrypted connections via TeamViewer/AnyDesk and your data is never stored or shared. You can revoke access at any time.' },
     { q: 'What if I\'m not satisfied?', a: 'We strive for 100% satisfaction. If something isn\'t right, contact us within 48 hours and we\'ll make it right at no extra cost.' },
-    { q: 'Can I get a discount for multiple services?', a: 'Yes! Bundle deals are available. Add multiple services to your cart and use coupon codes STUDENT10 or VIP5 for extra savings.' }
+    { q: 'Can I get a discount for multiple services?', a: 'Yes! Bundle deals are available. Add multiple services to your cart and use coupon codes STUDENT10 (10% off), VIP5 (5% off), or REFER10 (10% off for referrals) for extra savings.' }
 ];
 
 function renderFAQ() {
