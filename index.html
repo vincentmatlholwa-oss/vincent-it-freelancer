@@ -174,17 +174,6 @@
             </div>
         </div>
     </section>
-    <!-- Reviews Preview -->
-    <section class="section" id="reviews">
-        <div class="section-header">
-            <span class="section-badge">Testimonials</span>
-            <h2 class="section-title">What Clients Say</h2>
-            <p class="section-desc">Real reviews from real customers</p>
-        </div>
-        <div id="reviewsPreview" style="max-width:600px;margin:0 auto">
-            <p style="text-align:center;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading reviews...</p>
-        </div>
-    </section>
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
@@ -223,23 +212,6 @@
     <script src="js/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Load approved reviews
-            fetch('/api/reviews?approved=1').then(r=>r.json()).then(reviews => {
-                const c = document.getElementById('reviewsPreview');
-                if (reviews && reviews.length) {
-                    c.innerHTML = reviews.slice(0, 3).map(r => `
-                        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.5rem;margin-bottom:1rem;text-align:center">
-                            <p style="color:var(--text-secondary);font-style:italic;margin-bottom:0.5rem">"${r.text}"</p>
-                            <strong style="color:var(--accent-1)">${r.client_name}</strong>
-                            <span style="color:#ffc107;display:block;margin-top:0.2rem">${'<i class="fas fa-star" style="font-size:0.75rem"></i>'.repeat(r.rating)}</span>
-                        </div>
-                    `).join('');
-                } else {
-                    c.innerHTML = '<p style="text-align:center;color:var(--text-muted)">No reviews yet. Be the first!</p>';
-                }
-            }).catch(() => {
-                document.getElementById('reviewsPreview').innerHTML = '<p style="text-align:center;color:var(--text-muted)">Reviews coming soon.</p>';
-            });
             if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
             if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
         });
