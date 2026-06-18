@@ -12,7 +12,7 @@ const translations = {
         contract: { badge: 'Legal', title: 'Service Contract & Agreement', desc: 'Review, fill in your details, and sign digitally', agree: 'I have read and agree to the', terms: 'Terms & Conditions', sign: 'Sign & Generate Contract', clear: 'Clear', sigHint: 'Sign below using your mouse, touch, or stylus' },
         contact: { badge: 'Get in Touch', title: 'Let\'s Work Together', desc: 'Reach out for a free consultation', cta: 'Chat on WhatsApp Now' },
         cart: { empty: 'Your cart is empty', total: 'Total:', checkout: 'Proceed to Checkout' },
-        chat: { title: 'Live Chat', placeholder: 'Type a message...', send: 'Send', admin: 'Vincent IT' },
+        chat: { title: 'Live Chat', placeholder: 'Type a message...', send: 'Send', admin: 'Vincent IT', typing: 'typing...', sendImage: 'Send image' },
         search: { placeholder: 'Search services...', noResults: 'No services found' },
         quiz: { title: 'Find Your Service', desc: 'Answer a few questions to find the perfect service for you', start: 'Start Quiz', next: 'Next', prev: 'Previous', done: 'See Results', restart: 'Restart' },
         booking: { title: 'Book an Appointment', desc: 'Schedule a time that works for you', name: 'Full Name', email: 'Email', phone: 'Phone', service: 'Service', date: 'Date', time: 'Time', notes: 'Additional Notes', submit: 'Book Appointment', success: 'Appointment booked! We will confirm shortly.' },

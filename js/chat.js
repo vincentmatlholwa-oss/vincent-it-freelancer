@@ -1,5 +1,7 @@
 let chatPollInterval = null;
 let chatSocket = null;
+let chatTypingTimer = null;
+let chatReadReceipts = {};
 
 function initWebSocket() {
     if (chatSocket && chatSocket.readyState === 1) return;
@@ -25,6 +27,26 @@ function initWebSocket() {
                             document.getElementById('chatNotif').style.display = 'inline';
                         }
                     }
+                } else if (data.type === 'typing' && data.is_admin) {
+                    showTypingIndicator(data.sender || 'Vincent IT');
+                } else if (data.type === 'read_receipt' && data.is_admin) {
+                    const msgs = document.querySelectorAll('#chatMessages .chat-msg.user .chat-bubble');
+                    const last = msgs[msgs.length - 1];
+                    if (last) {
+                        let receipt = last.querySelector('.chat-receipt');
+                        if (!receipt) {
+                            receipt = document.createElement('span');
+                            receipt.className = 'chat-receipt';
+                            receipt.innerHTML = '<i class="fas fa-check-double" style="color:var(--accent-1);font-size:0.6rem;margin-left:0.3rem"></i>';
+                            last.appendChild(receipt);
+                        }
+                    }
+                } else if (data.type === 'chat_image') {
+                    const box = document.getElementById('chatBox');
+                    appendImageMessage('Vincent IT', data.url, 'admin');
+                    if (!box || !box.classList.contains('open')) {
+                        document.getElementById('chatNotif').style.display = 'inline';
+                    }
                 }
             } catch (e) {}
         };
@@ -36,6 +58,35 @@ function initWebSocket() {
         };
     } catch (e) {
         chatSocket = null;
+    }
+}
+
+function showTypingIndicator(sender) {
+    let indicator = document.getElementById('chatTypingIndicator');
+    if (!indicator) {
+        const container = document.getElementById('chatMessages');
+        indicator = document.createElement('div');
+        indicator.id = 'chatTypingIndicator';
+        indicator.className = 'chat-msg admin';
+        indicator.innerHTML = '<div class="chat-bubble typing-bubble"><span class="typing-dots"><span></span><span></span><span></span></span></div>';
+        container.appendChild(indicator);
+        scrollChat();
+    }
+    clearTimeout(chatTypingTimer);
+    chatTypingTimer = setTimeout(() => {
+        if (indicator) indicator.remove();
+    }, 3000);
+}
+
+function sendTypingIndicator() {
+    if (chatSocket && chatSocket.readyState === 1) {
+        chatSocket.send(JSON.stringify({ type: 'typing', is_admin: false }));
+    }
+}
+
+function sendReadReceipt() {
+    if (chatSocket && chatSocket.readyState === 1) {
+        chatSocket.send(JSON.stringify({ type: 'read_receipt', is_admin: false }));
     }
 }
 
@@ -93,6 +144,8 @@ function initChat() {
                 </div>
             </div>
             <div class="chat-input-area">
+                <input type="file" id="chatFileInput" accept="image/*" style="display:none">
+                <button id="chatFileBtn" title="Send image"><i class="fas fa-image"></i></button>
                 <input type="text" id="chatInput" data-i18n-placeholder="chat.placeholder" placeholder="Type a message...">
                 <button id="chatSend"><i class="fas fa-paper-plane"></i></button>
             </div>
@@ -134,12 +187,14 @@ function pollAdminReplies() {
         .catch(() => {});
 }
 
-function bindChatEvents() {
+    function bindChatEvents() {
     const toggle = document.getElementById('chatToggle');
     const box = document.getElementById('chatBox');
     const close = document.getElementById('chatClose');
     const send = document.getElementById('chatSend');
     const input = document.getElementById('chatInput');
+    const fileBtn = document.getElementById('chatFileBtn');
+    const fileInput = document.getElementById('chatFileInput');
     const notif = document.getElementById('chatNotif');
 
     toggle.addEventListener('click', () => {
@@ -148,11 +203,46 @@ function bindChatEvents() {
         if (box.classList.contains('open')) {
             notif.style.display = 'none';
             scrollChat();
+            sendReadReceipt();
         }
     });
     close.addEventListener('click', () => {
         box.classList.remove('open');
         toggle.classList.remove('active');
+    });
+
+    // File upload
+    function handleFileSelect(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+        if (file.size > 5 * 1024 * 1024) { alert('File too large (max 5MB)'); return; }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const dataUrl = ev.target.result;
+            appendImageMessage('You', dataUrl, 'user');
+            if (navigator.onLine) {
+                fetch('/api/chat/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: 'Website Visitor', image: dataUrl, is_admin: false })
+                }).catch(() => {});
+            }
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    }
+    if (fileBtn && fileInput) {
+        fileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    // Typing indicator
+    let typingTimeout = null;
+    input.addEventListener('input', () => {
+        sendTypingIndicator();
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {}, 1000);
     });
 
     function sendMessage() {
@@ -381,6 +471,15 @@ function appendMessage(sender, text, type) {
     const div = document.createElement('div');
     div.className = `chat-msg ${type}`;
     div.innerHTML = `<div class="chat-bubble"><strong>${sender}</strong><p>${escapeHtml(text).replace(/\n/g, '<br>')}</p></div>`;
+    container.appendChild(div);
+    scrollChat();
+}
+
+function appendImageMessage(sender, url, type) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = `chat-msg ${type}`;
+    div.innerHTML = `<div class="chat-bubble"><strong>${sender}</strong><img src="${url}" alt="Shared image" style="max-width:200px;border-radius:8px;margin-top:0.3rem;display:block"></div>`;
     container.appendChild(div);
     scrollChat();
 }

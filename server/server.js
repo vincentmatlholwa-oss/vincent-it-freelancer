@@ -305,6 +305,7 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
         const valid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
         if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
         const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+        notifyAdminWhatsApp(`Admin logged in: ${email}`);
         res.json({ success: true, token });
     } catch {
         res.status(500).json({ error: 'Login failed' });
@@ -493,8 +494,11 @@ app.get('/api/appointments', authenticateToken, (req, res) => {
 
 app.patch('/api/appointments/:id', authenticateToken, (req, res) => {
     const { status } = req.body;
-    db.update('appointments', req.params.id, { status });
+    const updated = db.update('appointments', req.params.id, { status });
     res.json({ success: true });
+    if (updated && status) {
+        notifyAdminWhatsApp(`Appointment ${status}: ${updated.client_name} - ${updated.service} on ${updated.date}`);
+    }
 });
 
 // ===== Orders =====
@@ -1154,8 +1158,39 @@ app.post('/api/chat', validate([
 });
 
 app.get('/api/chat', authenticateToken, (req, res) => {
-    const messages = db.query('chat_messages', null);
+    const messages = db.query('chat_messages', null).map(m => {
+        // Only include image for admin; strip for others
+        const { image, ...rest } = m;
+        return req.user.role === 'admin' ? m : rest;
+    });
+    // Mark all unread as read for admin
+    if (req.user.role === 'admin') {
+        messages.forEach(m => {
+            if (!m.is_admin && !m.read) {
+                db.update('chat_messages', m.id, { read: 1 });
+            }
+        });
+    }
     res.json(messages);
+});
+
+// Chat image upload
+app.post('/api/chat/upload', (req, res) => {
+    const { sender, image, is_admin } = req.body;
+    if (!image) return res.status(400).json({ error: 'Image required' });
+    // Store image as base64 in chat_messages
+    const id = uuidv4();
+    db.insert('chat_messages', {
+        id,
+        sender: (sender || 'Website Visitor').trim().replace(/<[^>]*>/g, ''),
+        message: '[Image]',
+        image: image.substring(0, 500000),
+        is_admin: is_admin ? 1 : 0,
+        read: 0,
+        created_at: new Date().toISOString()
+    });
+    res.json({ success: true, id });
+    if (broadcastChat) broadcastChat({ type: 'chat_image', sender, url: image, is_admin: is_admin ? 1 : 0 });
 });
 
 // Public chat endpoint for visitor polling (last 50 admin messages)
@@ -1194,6 +1229,7 @@ app.post('/api/blog', authenticateToken, validate([
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     });
+    notifyAdminWhatsApp(`New Blog Post: "${title}" by ${author}`);
     res.json({ success: true, message: 'Post created!' });
 });
 
@@ -1234,11 +1270,82 @@ app.get('/api/admin/stats', authenticateToken, (req, res) => {
     const pendingReviews = reviews.filter(r => !r.approved).length;
     const recentContacts = contacts.slice(-5).reverse();
     const todayVisits = visitors.filter(v => new Date(v.created_at).toDateString() === new Date().toDateString()).length;
+    const totalRevenue = orders.filter(o => o.payment_status === 'paid').reduce((sum, o) => {
+        const match = String(o.price || '').match(/\d+/);
+        return sum + (match ? parseInt(match[0]) : 0);
+    }, 0);
+    const templateRevenue = db.query('template_orders', o => o.payment_status === 'paid').reduce((sum, o) => {
+        const match = String(o.price || '').match(/\d+/);
+        return sum + (match ? parseInt(match[0]) : 0);
+    }, 0);
     res.json({
         contactCount: contacts.length, orderCount: orders.length,
         reviewCount: reviews.length, appointmentCount: appointments.length,
         pendingOrders, pendingReviews, recentContacts,
-        visitorCount: visitors.length, uniqueVisitors: uniqueVisitors.size, todayVisits
+        visitorCount: visitors.length, uniqueVisitors: uniqueVisitors.size, todayVisits,
+        totalRevenue: totalRevenue + templateRevenue
+    });
+});
+
+// ===== Analytics (charts data) =====
+app.get('/api/admin/analytics', authenticateToken, (req, res) => {
+    const visitors = db.query('visitors', null);
+    const orders = db.query('orders', null);
+    const templateOrders = db.query('template_orders', null);
+
+    // Daily visitors for last 30 days
+    const dailyVisitors = {};
+    const dailyOrders = {};
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        dailyVisitors[key] = 0;
+        dailyOrders[key] = 0;
+    }
+    visitors.forEach(v => {
+        const key = new Date(v.created_at).toISOString().slice(0, 10);
+        if (dailyVisitors[key] !== undefined) dailyVisitors[key]++;
+    });
+    const paidOrders = orders.filter(o => o.payment_status === 'paid');
+    paidOrders.forEach(o => {
+        const key = new Date(o.created_at).toISOString().slice(0, 10);
+        if (dailyOrders[key] !== undefined) dailyOrders[key]++;
+    });
+    const labels = Object.keys(dailyVisitors);
+    const visitorData = Object.values(dailyVisitors);
+    const orderData = Object.values(dailyOrders);
+
+    // Revenue breakdown
+    const revenueByMonth = {};
+    paidOrders.concat(templateOrders.filter(o => o.payment_status === 'paid')).forEach(o => {
+        const key = new Date(o.created_at).toISOString().slice(0, 7);
+        if (!revenueByMonth[key]) revenueByMonth[key] = 0;
+        const match = String(o.price || '').match(/\d+/);
+        revenueByMonth[key] += match ? parseInt(match[0]) : 0;
+    });
+
+    // Conversion rate (orders / visitors per day)
+    const conversionRates = labels.map((k, i) => {
+        const v = visitorData[i];
+        return v > 0 ? +((orderData[i] / v) * 100).toFixed(1) : 0;
+    });
+
+    // Top services
+    const serviceCounts = {};
+    orders.forEach(o => {
+        const svc = o.service || 'Unknown';
+        serviceCounts[svc] = (serviceCounts[svc] || 0) + 1;
+    });
+    const topServices = Object.entries(serviceCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
+
+    res.json({
+        dailyVisitors: { labels, data: visitorData },
+        dailyOrders: { labels, data: orderData },
+        monthlyRevenue: Object.entries(revenueByMonth).map(([month, amount]) => ({ month, amount })),
+        conversionRates: { labels, data: conversionRates },
+        topServices
     });
 });
 
@@ -1344,6 +1451,16 @@ if (require.main === module) {
         
         wss.on('connection', (ws) => {
             chatClients.add(ws);
+            ws.on('message', (raw) => {
+                try {
+                    const msg = JSON.parse(raw.toString());
+                    if (msg.type === 'typing') {
+                        broadcastChat({ type: 'typing', is_admin: msg.is_admin || false, sender: 'Visitor' });
+                    } else if (msg.type === 'read_receipt') {
+                        broadcastChat({ type: 'read_receipt', is_admin: msg.is_admin || false });
+                    }
+                } catch (e) {}
+            });
             ws.on('close', () => chatClients.delete(ws));
             ws.on('error', () => chatClients.delete(ws));
         });
@@ -1361,6 +1478,36 @@ if (require.main === module) {
         setInterval(backupDatabase, 60 * 60 * 1000);
         // Initial backup after 10 seconds
         setTimeout(backupDatabase, 10000);
+
+        // ===== Automated 24h Appointment Reminders =====
+        function checkAndSendReminders() {
+            const now = new Date();
+            const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const tomorrowStr = in24h.toISOString().slice(0, 10);
+            const appointments = db.query('appointments', a =>
+                a.status === 'confirmed' && a.date === tomorrowStr && !a.reminder_sent
+            );
+            appointments.forEach(a => {
+                const reminderMsg = `Hi ${a.client_name},\n\nReminder: You have an appointment tomorrow!\nService: ${a.service}\nDate: ${a.date}\nTime: ${a.time}\n\nReply or WhatsApp 067 783 4591 if you need to reschedule.\n\n- Vincent IT Freelancer`;
+                notifyCustomer({
+                    name: a.client_name,
+                    email: a.client_email,
+                    phone: a.client_phone,
+                    message: reminderMsg
+                });
+                sendEmailAlert({
+                    to: a.client_email,
+                    subject: 'Appointment Reminder – Tomorrow at ' + a.time,
+                    html: `<h2>Appointment Reminder</h2><p>Hi ${a.client_name},</p><p>This is a reminder that you have an appointment <strong>tomorrow</strong>:</p><p><strong>Service:</strong> ${a.service}<br><strong>Date:</strong> ${a.date}<br><strong>Time:</strong> ${a.time}</p><p>Please be available at the scheduled time. Reply if you need to reschedule.</p><p>– Vincent IT Freelancer</p>`
+                });
+                notifyAdminWhatsApp(`Reminder sent: ${a.client_name}'s ${a.service} appointment is tomorrow at ${a.time}`);
+                db.update('appointments', a.id, { reminder_sent: 1 });
+                console.log('Reminder sent for appointment:', a.id.slice(0, 8));
+            });
+        }
+        // Check reminders every 30 minutes
+        setInterval(checkAndSendReminders, 30 * 60 * 1000);
+        checkAndSendReminders();
         
         server.listen(PORT, () => {
             console.log(`Vincent IT Server running on http://localhost:${PORT}`);

@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <style>
         :root { --accent-1: #00d4ff; --accent-2: #7b2ff7; --bg: #0a0a1a; --bg-card: #12122a; --text: #fff; --text-sec: #b0b0d0; --border: rgba(255,255,255,0.08); }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -56,6 +57,11 @@
         nav.dash-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; }
         nav.dash-nav a { color:var(--accent-1); text-decoration:none; font-size:0.85rem; }
         nav.dash-nav a:hover { text-decoration:underline; }
+        .typing-dots { display:inline-flex;gap:3px;align-items:center;margin-right:0.3rem; }
+        .typing-dots span { width:6px;height:6px;background:var(--text-muted);border-radius:50%;animation:typingBounce 1.4s infinite ease-in-out both; }
+        .typing-dots span:nth-child(1) { animation-delay:-0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay:-0.16s; }
+        @keyframes typingBounce { 0%,80%,100% { transform:scale(0.6);opacity:0.4; } 40% { transform:scale(1);opacity:1; } }
     </style>
 </head>
 <body>
@@ -96,6 +102,7 @@
             <button class="tab-btn" data-tab="uploads"><i class="fas fa-upload"></i> Uploads</button>
             <button class="tab-btn" data-tab="clients"><i class="fas fa-user-friends"></i> Clients</button>
             <button class="tab-btn" data-tab="visitors"><i class="fas fa-globe"></i> Visitors</button>
+            <button class="tab-btn" data-tab="analytics"><i class="fas fa-chart-bar"></i> Analytics</button>
             <button class="tab-btn" data-tab="deletions"><i class="fas fa-user-slash"></i> Deletions</button>
         </div>
 
@@ -110,6 +117,41 @@
         <div id="panel-clients" class="panel"></div>
         <div id="panel-visitors" class="panel"></div>
         <div id="panel-deletions" class="panel"></div>
+        <div id="panel-analytics" class="panel">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem">
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1rem">
+                    <h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-eye"></i> Daily Visitors (30 days)</h4>
+                    <canvas id="visitorChart" height="200"></canvas>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1rem">
+                    <h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-shopping-cart"></i> Daily Orders (30 days)</h4>
+                    <canvas id="ordersChart" height="200"></canvas>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1rem">
+                    <h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-percentage"></i> Conversion Rate (30 days)</h4>
+                    <canvas id="conversionChart" height="200"></canvas>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1rem">
+                    <h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-money-bill-trend-up"></i> Monthly Revenue</h4>
+                    <canvas id="revenueChart" height="200"></canvas>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1rem">
+                    <h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-trophy"></i> Top Services</h4>
+                    <div id="topServicesList"></div>
+                </div>
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1rem">
+                    <h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-info-circle"></i> Email Provider</h4>
+                    <div id="emailProviderInfo" style="color:var(--text-sec);font-size:0.85rem;line-height:1.8">
+                        <p>Configure SMTP in <code style="color:var(--accent-1)">server/.env</code></p>
+                        <p style="margin-top:0.5rem">
+                            <strong>SendGrid:</strong> <code style="color:var(--text-sec)">smtp.sendgrid.net:587</code><br>
+                            <strong>Mailgun:</strong> <code style="color:var(--text-sec)">smtp.mailgun.org:587</code><br>
+                            <strong>Gmail:</strong> <code style="color:var(--text-sec)">smtp.gmail.com:587</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -182,6 +224,7 @@
                 else if (name === 'uploads') { const d = await fetch(API+'/api/uploads', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderUploads(d); }
                 else if (name === 'clients') { const d = await fetch(API+'/api/admin/clients', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderClients(d); }
                 else if (name === 'visitors') { const d = await fetch(API+'/api/visitors', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderVisitors(d); }
+                else if (name === 'analytics') { loadAnalytics(); }
                 else if (name === 'deletions') { const d = await fetch(API+'/api/admin/delete-requests', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderDeletions(d); }
             } catch(e) { document.getElementById('panel-'+name).innerHTML = '<p style="color:#ff6b35">Error loading data. Make sure the server is running.</p>'; }
         }
@@ -196,6 +239,7 @@
                     <div class="stat-card"><div class="stat-num">${s.contactCount}</div><div class="stat-label">Messages</div></div>
                     <div class="stat-card"><div class="stat-num">${s.orderCount}</div><div class="stat-label">Orders</div></div>
                     <div class="stat-card"><div class="stat-num">${s.appointmentCount}</div><div class="stat-label">Appointments</div></div>
+                    <div class="stat-card"><div class="stat-num" style="font-size:1.4rem;background:linear-gradient(135deg,#00c853,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">R${(s.totalRevenue || 0).toLocaleString()}</div><div class="stat-label">Revenue (paid)</div></div>
                 `;
                 const badge = document.getElementById('pendingBadge');
                 const totalPending = (s.pendingOrders || 0) + (s.pendingReviews || 0);
@@ -297,17 +341,38 @@
         }
 
         function renderChat(data) {
-            document.getElementById('panel-chat').innerHTML = `<div style="max-height:500px;overflow-y:auto;margin-bottom:1rem">
+            document.getElementById('panel-chat').innerHTML = `<div id="adminChatMessages" style="max-height:500px;overflow-y:auto;margin-bottom:1rem">
                 ${data.map(m => `<div style="padding:0.5rem;border-bottom:1px solid var(--border);${m.is_admin ? 'background:rgba(0,212,255,0.05)' : ''}">
                     <strong style="color:var(--accent-1)">${m.sender}</strong> <small style="color:var(--text-sec)">${new Date(m.created_at).toLocaleString()}</small>
-                    <p style="margin-top:0.2rem;color:var(--text-sec)">${m.message}</p>
+                    ${m.image
+                        ? `<img src="${m.image}" alt="Shared image" style="max-width:200px;border-radius:8px;margin-top:0.3rem;display:block">`
+                        : `<p style="margin-top:0.2rem;color:var(--text-sec)">${m.message}</p>`
+                    }
+                    ${!m.is_admin && m.read ? '<span style="font-size:0.6rem;color:var(--accent-1)"><i class="fas fa-check-double"></i> Read</span>' : ''}
+                    <span style="font-size:0.6rem;color:var(--text-muted)">${new Date(m.created_at).toLocaleString()}</span>
                 </div>`).join('')}
+                <div id="adminTypingIndicator" style="display:none;padding:0.5rem;color:var(--text-muted);font-size:0.8rem;font-style:italic"><span class="typing-dots"><span></span><span></span><span></span></span> Visitor typing...</div>
             </div>
             <div style="display:flex;gap:0.5rem">
                 <input type="text" id="adminChatInput" style="flex:1;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit" placeholder="Reply as admin...">
-                <button onclick="sendAdminReply()" style="padding:0.7rem 1.2rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));border:none;border-radius:8px;color:#fff;cursor:pointer"><i class="fas fa-paper-plane"></i></button>
+                <button onclick="adminSendReply()" style="padding:0.7rem 1.2rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));border:none;border-radius:8px;color:#fff;cursor:pointer"><i class="fas fa-paper-plane"></i></button>
             </div>`;
+            // Auto scroll to bottom
+            const msgs = document.getElementById('adminChatMessages');
+            if (msgs) msgs.scrollTop = msgs.scrollHeight;
         }
+
+        function adminSendReply() {
+            const input = document.getElementById('adminChatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            fetch(API + '/api/chat', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ sender: 'Vincent IT (Admin)', message: msg, is_admin: true }) });
+            input.value = '';
+            loadPanel('chat');
+        }
+
+        // Override sendAdminReply to use WS typing
+        const originalLoadPanel = loadPanel;
 
         async function confirmTemplatePayment(orderId) {
             await fetch(API + '/api/admin/templates/confirm-payment', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ order_id: orderId }) });
@@ -399,15 +464,6 @@
                 `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-sec)">No visits yet</td></tr>'}
                 </tbody></table>
             `;
-        }
-
-        async function sendAdminReply() {
-            const input = document.getElementById('adminChatInput');
-            const msg = input.value.trim();
-            if (!msg) return;
-            await fetch(API + '/api/chat', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ sender: 'Vincent IT (Admin)', message: msg, is_admin: true }) });
-            input.value = '';
-            loadPanel('chat');
         }
 
         async function handleDeletion(id, action) {
@@ -514,6 +570,100 @@
         }
 
         setTimeout(loadBlogList, 500);
+
+        // ===== Analytics Charts =====
+        let chartInstances = {};
+
+        function destroyCharts() {
+            Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch {} });
+            chartInstances = {};
+        }
+
+        const chartColors = {
+            primary: '#00d4ff',
+            secondary: '#7b2ff7',
+            success: '#00c853',
+            warning: '#ff6b35',
+            danger: '#ff4444'
+        };
+
+        function createChart(id, type, labels, data, label, color) {
+            const ctx = document.getElementById(id)?.getContext('2d');
+            if (!ctx) return;
+            if (chartInstances[id]) chartInstances[id].destroy();
+            const isDark = document.body.classList.contains('light-theme') === false;
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#b0b0d0' : '#666';
+            chartInstances[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: type === 'line' ? color + '33' : color + '44',
+                        borderColor: color,
+                        borderWidth: 2,
+                        fill: type === 'line',
+                        tension: 0.3,
+                        pointRadius: type === 'line' ? 3 : 0,
+                        pointBackgroundColor: color
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false, labels: { color: textColor } }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: { beginAtZero: true, ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+                    }
+                }
+            });
+        }
+
+        async function loadAnalytics() {
+            try {
+                const data = await fetch(API + '/api/admin/analytics', { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json());
+                destroyCharts();
+
+                if (data.dailyVisitors) {
+                    const labels = data.dailyVisitors.labels.map(d => d.slice(5));
+                    createChart('visitorChart', 'line', labels, data.dailyVisitors.data, 'Visitors', chartColors.primary);
+                    createChart('ordersChart', 'bar', labels, data.dailyOrders.data, 'Orders', chartColors.secondary);
+                    createChart('conversionChart', 'line', labels, data.conversionRates.data, 'Conv. Rate %', chartColors.success);
+                }
+
+                if (data.monthlyRevenue && data.monthlyRevenue.length) {
+                    const revLabels = data.monthlyRevenue.map(r => r.month);
+                    const revData = data.monthlyRevenue.map(r => r.amount);
+                    createChart('revenueChart', 'bar', revLabels, revData, 'Revenue (R)', chartColors.warning);
+                } else {
+                    document.getElementById('revenueChart').parentElement.innerHTML = '<h4 style="color:var(--accent-1);margin-bottom:0.5rem;font-size:0.9rem"><i class="fas fa-money-bill-trend-up"></i> Monthly Revenue</h4><p style="color:var(--text-sec);font-size:0.85rem">No paid orders yet</p>';
+                }
+
+                if (data.topServices && data.topServices.length) {
+                    const maxCount = Math.max(...data.topServices.map(s => s.count));
+                    document.getElementById('topServicesList').innerHTML = data.topServices.map(s => `
+                        <div style="margin-bottom:0.8rem">
+                            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.2rem">
+                                <span style="color:var(--text-sec)">${s.name}</span>
+                                <span style="color:var(--accent-1);font-weight:700">${s.count}</span>
+                            </div>
+                            <div style="height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden">
+                                <div style="height:100%;width:${(s.count/maxCount)*100}%;background:linear-gradient(90deg,${chartColors.primary},${chartColors.secondary});border-radius:3px"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('topServicesList').innerHTML = '<p style="color:var(--text-sec);font-size:0.85rem">No service data yet</p>';
+                }
+            } catch {
+                document.getElementById('panel-analytics').innerHTML = '<p style="color:#ff6b35">Error loading analytics data</p>';
+            }
+        }
     </script>
 </body>
 </html>

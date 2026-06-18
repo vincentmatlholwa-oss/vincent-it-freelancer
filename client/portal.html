@@ -662,5 +662,15 @@
             setInterval(startHeartbeat, 120000);
         }
     </script>
+<div id="cookieBanner" style="position:fixed;bottom:0;left:0;right:0;background:#12122a;border-top:1px solid rgba(255,255,255,0.08);padding:1rem 2rem;display:none;z-index:99999;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <p style="color:#b0b0d0;font-size:0.85rem;margin:0;flex:1;min-width:200px">
+        <i class="fas fa-cookie-bite" style="color:#00d4ff"></i>
+        This site uses minimal cookies for functionality. By continuing, you accept our <a href="/privacy.html" style="color:#00d4ff">privacy policy</a>.
+    </p>
+    <div style="display:flex;gap:0.5rem">
+        <button onclick="localStorage.setItem('vit_cookie_consent','true');this.parentElement.parentElement.style.display='none'" style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.85rem">Got it</button>
+    </div>
+</div>
+<script>if (!localStorage.getItem('vit_cookie_consent')) { document.getElementById('cookieBanner').style.display = 'flex'; }</script>
 </body>
 </html>
