@@ -461,7 +461,7 @@ function initCart() {
         if (!isLoggedIn()) { requireLogin(); return; }
         document.getElementById('cartSidebar').classList.remove('open');
         document.getElementById('cartOverlay').classList.remove('open');
-        document.getElementById('contract').scrollIntoView({ behavior: 'smooth' });
+        window.location.href = 'contract.html';
         const msg = cart.map(c => `- ${services[c.index].title} x${c.qty} @ ${services[c.index].price}`).join('\n');
         const total = cart.reduce((s, c) => s + parsePrice(services[c.index].price) * c.qty, 0);
         document.getElementById('additionalInfo').value =
@@ -953,6 +953,17 @@ window.addEventListener('beforeinstallprompt', function(e) {
     deferredPrompt = e;
     var banner = document.getElementById('pwaInstallBanner');
     if (banner) banner.style.display = 'flex';
+    if (banner) {
+        banner.onclick = function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    if (choiceResult.outcome === 'accepted') banner.style.display = 'none';
+                    deferredPrompt = null;
+                });
+            }
+        };
+    }
 });
 window.addEventListener('appinstalled', function() {
     deferredPrompt = null;

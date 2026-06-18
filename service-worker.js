@@ -75,6 +75,13 @@ self.addEventListener('fetch', event => {
     );
 });
 
+// Handle incoming messages (prevents "message channel closed" errors)
+self.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
 // Push notifications
 self.addEventListener('push', event => {
     if (!event.data) return;
