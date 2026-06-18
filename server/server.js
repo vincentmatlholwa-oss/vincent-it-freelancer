@@ -196,6 +196,190 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 app.get('/health', (req, res) => res.status(200).send('ok'));
 
+// ===== SMS via Africa's Talking (free tier) =====
+const AT_USERNAME = process.env.AT_USERNAME || 'sandbox';
+const AT_API_KEY = process.env.AT_API_KEY || '';
+function sendSMS({ to, message }) {
+    if (!AT_API_KEY || AT_USERNAME === 'sandbox' && process.env.NODE_ENV === 'production') return;
+    const https = require('https');
+    const data = JSON.stringify({ username: AT_USERNAME, to: to.replace(/[^0-9]/g, ''), message: message.substring(0, 160) });
+    const req = https.request({
+        hostname: 'api.africastalking.com',
+        port: 443,
+        path: '/version1/messaging',
+        method: 'POST',
+        headers: { 'ApiKey': AT_API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    });
+    req.on('error', err => console.error('SMS send failed:', err.message));
+    req.write(data);
+    req.end();
+}
+
+// ===== Admin Audit Log =====
+function addAuditLog({ action, details, admin }) {
+    db.insert('audit_logs', {
+        id: uuidv4(),
+        action: action.substring(0, 200),
+        details: (details || '').substring(0, 1000),
+        admin: admin || 'system',
+        ip: '',
+        created_at: new Date().toISOString()
+    });
+}
+
+app.get('/api/admin/audit-logs', authenticateToken, (req, res) => {
+    const logs = db.query('audit_logs', null);
+    res.json(logs.reverse());
+});
+
+// ===== Blog Categories & Tags =====
+app.get('/api/blog/paginated', (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const category = req.query.category || '';
+    const tag = req.query.tag || '';
+    let posts = db.query('blog_posts', p => p.published !== 0);
+    if (category) posts = posts.filter(p => (p.category || '').toLowerCase() === category.toLowerCase());
+    if (tag) posts = posts.filter(p => (p.tags || '').toLowerCase().split(',').map(t => t.trim()).includes(tag.toLowerCase()));
+    posts = posts.reverse();
+    const total = posts.length;
+    const totalPages = Math.ceil(total / limit);
+    const paged = posts.slice((page - 1) * limit, page * limit);
+    res.json({ posts: paged, total, totalPages, page, limit });
+});
+
+app.get('/api/blog/tags', (req, res) => {
+    const posts = db.query('blog_posts', p => p.published !== 0);
+    const tagCount = {};
+    posts.forEach(p => {
+        (p.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+            tagCount[t] = (tagCount[t] || 0) + 1;
+        });
+    });
+    const tags = Object.entries(tagCount).map(([tag, count]) => ({ tag, count }));
+    res.json(tags);
+});
+
+app.get('/api/blog/categories', (req, res) => {
+    const posts = db.query('blog_posts', p => p.published !== 0);
+    const catCount = {};
+    posts.forEach(p => {
+        const cat = (p.category || 'Uncategorized').trim();
+        catCount[cat] = (catCount[cat] || 0) + 1;
+    });
+    res.json(Object.entries(catCount).map(([category, count]) => ({ category, count })));
+});
+
+// ===== File Vault (Admin uploads files for clients) =====
+const vaultDir = path.join(__dirname, '..', 'vault');
+if (!fs.existsSync(vaultDir)) fs.mkdirSync(vaultDir, { recursive: true });
+
+app.post('/api/admin/vault/upload', authenticateToken, upload.array('files', 10), (req, res) => {
+    const { client_email, client_name, notes } = req.body;
+    if (!client_email) return res.status(400).json({ error: 'Client email required' });
+    if (!req.files || !req.files.length) return res.status(400).json({ error: 'No files uploaded' });
+    const files = req.files.map(f => ({
+        original: f.originalname,
+        size: f.size,
+        path: f.filename,
+        uploaded_at: new Date().toISOString()
+    }));
+    const vaultEntry = db.insert('vault_files', {
+        id: uuidv4(),
+        client_email: client_email.trim().toLowerCase(),
+        client_name: (client_name || '').trim(),
+        notes: (notes || '').trim(),
+        files,
+        created_at: new Date().toISOString()
+    });
+    addAuditLog({ action: 'Vault upload', details: `${files.length} file(s) vaulted for ${client_email}`, admin: req.user.email });
+    res.json({ success: true, vaultEntry });
+});
+
+app.get('/api/client/vault', (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const entries = db.query('vault_files', v => v.client_email.toLowerCase() === email.toLowerCase());
+    entries.forEach(e => {
+        e.files = (e.files || []).map(f => ({
+            ...f,
+            download_url: `/api/client/vault/download/${e.id}/${encodeURIComponent(f.path)}?name=${encodeURIComponent(f.original)}`
+        }));
+    });
+    res.json(entries.reverse());
+});
+
+app.get('/api/client/vault/download/:entryId/:filePath', (req, res) => {
+    const { entryId, filePath } = req.params;
+    const entries = db.query('vault_files', v => v.id === entryId);
+    if (!entries.length) return res.status(404).json({ error: 'Entry not found' });
+    const entry = entries[0];
+    const file = entry.files.find(f => f.path === filePath);
+    if (!file) return res.status(404).json({ error: 'File not found' });
+    const absPath = path.join(uploadsDir, file.path);
+    if (!fs.existsSync(absPath)) return res.status(404).json({ error: 'File not found on server' });
+    res.download(absPath, req.query.name || file.original);
+});
+
+app.get('/api/admin/vault', authenticateToken, (req, res) => {
+    const entries = db.query('vault_files', null);
+    res.json(entries.reverse());
+});
+
+// ===== Invoice History =====
+app.get('/api/client/invoices', (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
+    const templateOrders = db.query('template_orders', o => o.client_email.toLowerCase() === email.toLowerCase());
+    const invoices = [...orders, ...templateOrders].map(o => ({
+        id: o.id,
+        client_name: o.client_name,
+        client_email: o.client_email,
+        service: o.service || o.template_id,
+        price: o.price,
+        status: o.status,
+        payment_status: o.payment_status,
+        created_at: o.created_at,
+        invoice_number: 'INV-' + o.id.slice(0, 8).toUpperCase()
+    }));
+    res.json(invoices.reverse());
+});
+
+app.get('/api/client/invoices/:id/pdf', async (req, res) => {
+    const { id } = req.params;
+    let order = null;
+    let o = db.query('orders', o2 => o2.id === id);
+    if (o.length) order = o[0];
+    if (!order) { o = db.query('template_orders', o2 => o2.id === id); if (o.length) order = o[0]; }
+    if (!order) return res.status(404).json({ error: 'Invoice not found' });
+    let items = [];
+    try { if (order.cart_items) items = typeof order.cart_items === 'string' ? JSON.parse(order.cart_items) : order.cart_items; } catch {}
+    const pdfBuffer = await generateInvoicePDF(order, items);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=INV-${id.slice(0, 8).toUpperCase()}.pdf`);
+    res.send(pdfBuffer);
+});
+
+// ===== Appointment Availability (30-min slots) =====
+const WORK_HOURS = { start: 8, end: 17 };
+app.get('/api/appointments/available', (req, res) => {
+    const date = req.query.date;
+    if (!date) return res.status(400).json({ error: 'Date required' });
+    const day = new Date(date + 'T00:00:00');
+    if (day.getDay() === 0 || day.getDay() === 6) return res.json({ slots: [], message: 'No appointments on weekends' });
+    const appointments = db.query('appointments', a => a.date === date && a.status !== 'cancelled');
+    const booked = appointments.map(a => a.time);
+    const slots = [];
+    for (let h = WORK_HOURS.start; h < WORK_HOURS.end; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            if (!booked.includes(time)) slots.push(time);
+        }
+    }
+    res.json({ slots, date });
+});
+
 // CSRF origin check for state-changing requests
 app.use((req, res, next) => {
     if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) && !req.path.startsWith('/api/clients/')) {
