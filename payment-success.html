@@ -97,8 +97,6 @@
         <div class="order-id" id="orderDisplay">Order ID: loading...</div>
         <ul class="steps">
             <li><i class="fas fa-check-circle"></i> Payment confirmed</li>
-            <li><i class="fas fa-mobile-alt"></i> Pay via PayShap: <strong>067 783 4591</strong></li>
-            <li><i class="fab fa-whatsapp"></i> Send proof of payment on WhatsApp</li>
             <li><i class="fas fa-cogs"></i> We will start working on your order</li>
         </ul>
         <div style="margin-top:1.5rem">
@@ -128,7 +126,7 @@
                                 <p><strong>Amount:</strong> ${data.price || 'N/A'}</p>
                                 <p><strong>Payment:</strong> <span style="color:#00d4ff">${data.payment_status}</span></p>
                                 <p><strong>Date:</strong> ${new Date(data.created_at).toLocaleDateString()}</p>
-                                <p><strong>Method:</strong> ${data.payment_method === 'payfast' ? 'PayFast (Card/EFT)' : data.payment_method || 'Pending'}</p>
+                                <p><strong>Method:</strong> ${data.payment_method || 'Pending'}</p>
                             </div>
                         `);
                     }

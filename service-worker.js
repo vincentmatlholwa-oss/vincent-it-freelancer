@@ -36,20 +36,34 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-    if (event.request.url.includes('/api/')) {
+    // POST /api/orders — catch offline submissions
+    if (event.request.method === 'POST' && event.request.url.includes('/api/orders')) {
         event.respondWith(
-            fetch(event.request).catch(() => {
-                return new Response(JSON.stringify({ offline: true, message: 'You are offline. Data will sync when connected.' }), {
+            fetch(event.request).then(res => res).catch(() => {
+                return new Response(JSON.stringify({ success: true, offline: true, message: 'Order queued for sync when online.' }), {
                     headers: { 'Content-Type': 'application/json' }
                 });
             })
         );
         return;
     }
+    // API requests — return offline JSON on failure
+    if (event.request.url.includes('/api/')) {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                return new Response(JSON.stringify({ offline: true, message: 'You are offline.' }), {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            })
+        );
+        return;
+    }
+    // Web fonts — fetch directly
     if (event.request.url.match(/\.(woff2?|ttf|otf|eot)/)) {
         event.respondWith(fetch(event.request));
         return;
     }
+    // Static assets — cache-first
     event.respondWith(
         caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
             if (response.ok && event.request.url.startsWith(self.location.origin)) {
@@ -59,25 +73,6 @@ self.addEventListener('fetch', event => {
             return response;
         }))
     );
-});
-
-// Background Sync for offline contract submissions
-self.addEventListener('sync', event => {
-    if (event.tag === 'sync-contracts') {
-        event.waitUntil(
-            caches.open(CACHE_NAME).then(cache =>
-                cache.keys().then(keys =>
-                    Promise.all(keys.filter(k => k.url.includes('/api/orders')).map(k =>
-                        cache.match(k).then(res => res.json()).then(data =>
-                            fetch(k.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-                                .then(() => cache.delete(k))
-                                .catch(() => {})
-                        )
-                    ))
-                )
-            )
-        );
-    }
 });
 
 // Push notifications

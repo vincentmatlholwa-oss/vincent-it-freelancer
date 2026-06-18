@@ -13,6 +13,9 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const http = require('http');
+const { WebSocketServer } = require('ws');
+const PDFDocument = require('pdfkit');
 const db = require('./database');
 
 const app = express();
@@ -21,6 +24,8 @@ const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'producti
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@vincentit.com';
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD ? bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10) : null;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+
+let broadcastChat = null;
 
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
     console.error('FATAL: JWT_SECRET must be set in production');
@@ -39,6 +44,32 @@ const upload = multer({
         cb(null, allowed.includes(ext) || !ext);
     }
 });
+
+// Database backup
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
+const BACKUP_DIR = path.join(__dirname, 'backups');
+if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+
+function backupDatabase() {
+    try {
+        if (!fs.existsSync(DB_PATH)) return;
+        const date = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const backupPath = path.join(BACKUP_DIR, `data-backup-${date}.db`);
+        fs.copyFileSync(DB_PATH, backupPath);
+        const backups = fs.readdirSync(BACKUP_DIR)
+            .filter(f => f.startsWith('data-backup-'))
+            .sort()
+            .reverse();
+        if (backups.length > 48) {
+            backups.slice(48).forEach(f => {
+                try { fs.unlinkSync(path.join(BACKUP_DIR, f)); } catch {}
+            });
+        }
+        console.log('DB backup created:', backupPath);
+    } catch (e) {
+        console.error('Backup failed:', e.message);
+    }
+}
 
 // Email transporter
 const transporter = nodemailer.createTransport({
@@ -61,6 +92,49 @@ function sendEmailAlert({ subject, html, to }) {
         subject: `${prefix}${subject}`,
         html
     }).catch(err => console.error('Email alert failed:', err.message));
+}
+
+function sendEmailWithAttachment({ to, subject, html, attachment }) {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+    transporter.sendMail({
+        from: `"Vincent IT" <${process.env.SMTP_USER}>`,
+        to,
+        subject,
+        html,
+        attachments: attachment ? [{ filename: attachment.filename, content: attachment.content, contentType: attachment.contentType }] : []
+    }).catch(err => console.error('Email send failed:', err.message));
+}
+
+function generateInvoicePDF(order, items) {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ margin: 50 });
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => resolve(Buffer.concat(buffers)));
+        doc.on('error', reject);
+        
+        doc.fontSize(24).font('Helvetica-Bold').text('INVOICE', { align: 'center' });
+        doc.fontSize(10).font('Helvetica').text('Vincent IT Freelancer', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text('Invoice: INV-' + Date.now().toString(36).toUpperCase());
+        doc.text('Date: ' + new Date().toLocaleDateString('en-ZA'));
+        doc.text('Client: ' + (order.client_name || 'N/A'));
+        doc.text('Email: ' + (order.client_email || 'N/A'));
+        doc.moveDown();
+        doc.fontSize(10).text('Service: ' + (order.service || 'N/A'));
+        doc.text('Price: ' + (order.price || 'N/A'));
+        if (items && items.length) {
+            doc.moveDown().fontSize(11).font('Helvetica-Bold').text('Items:');
+            doc.fontSize(10).font('Helvetica');
+            items.forEach(item => {
+                doc.text('  - ' + (item.title || 'Item') + ' x' + (item.qty || 1) + ' @ R' + (item.price || 0));
+            });
+        }
+        doc.moveDown().moveDown();
+        doc.fontSize(9).fillColor('#666').text('Thank you for your business!', { align: 'center' });
+        doc.text('Payment: TymeBank a/c 51135445245 or PayShap 0677834591', { align: 'center' });
+        doc.end();
+    });
 }
 
 // WhatsApp notification via UltraMsg (free, no template approval needed)
@@ -101,9 +175,9 @@ app.use(helmet({
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "cdn.tailwindcss.com"],
             fontSrc: ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
-            imgSrc: ["'self'", "data:", "https:", "www.payfast.co.za", "sandbox.payfast.co.za", "cdnjs.cloudflare.com"],
-            connectSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.tailwindcss.com", "www.payfast.co.za", "sandbox.payfast.co.za"],
-            formAction: ["'self'", "https://www.payfast.co.za", "https://sandbox.payfast.co.za"],
+            imgSrc: ["'self'", "data:", "https:", "cdnjs.cloudflare.com"],
+            connectSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "cdn.tailwindcss.com"],
+            formAction: ["'self'"],
             frameSrc: ["'self'", "https://www.google.com"],
             frameAncestors: ["'self'"]
         }
@@ -124,7 +198,7 @@ app.get('/health', (req, res) => res.status(200).send('ok'));
 
 // CSRF origin check for state-changing requests
 app.use((req, res, next) => {
-    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) && !req.path.startsWith('/api/payfast/') && !req.path.startsWith('/api/clients/')) {
+    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) && !req.path.startsWith('/api/clients/')) {
         const origin = req.headers['origin'] || '';
         const referer = req.headers['referer'] || '';
         if (origin || referer) {
@@ -301,9 +375,9 @@ app.post('/api/templates/purchase', validate([
     notifyAdminWhatsApp(`New Template Order!\n${order.client_name}\n${template_id}\n${price}\nOrder: ${id.slice(0,8)}...`);
     notifyCustomer({
         name: order.client_name, email: order.client_email, phone: order.client_phone,
-        message: `Hi ${order.client_name},\n\nYour template order (${template_id}) for ${price} is received!\nOrder ID: ${id}\n\nPay via the link provided or contact us on WhatsApp to complete payment.\n\n- Vincent IT Freelancer`
+        message: `Hi ${order.client_name},\n\nYour template order (${template_id}) for ${price} is received!\nOrder ID: ${id}\n\nPay via TymeBank a/c 51135445245 or PayShap 0677834591, then upload proof on the website.\n\n- Vincent IT Freelancer`
     });
-    res.json({ success: true, order_id: id, download_token: token, price, message: 'Template order created! Share the order ID with admin on WhatsApp to get your download link after payment.' });
+    res.json({ success: true, order_id: id, download_token: token, price, message: 'Template order created! Pay via banking details shown and upload proof.' });
 });
 
 // Verify payment and get download link
@@ -335,26 +409,41 @@ app.post('/api/admin/templates/confirm-payment', authenticateToken, (req, res) =
     const updated = db.update('template_orders', order_id, { payment_status: 'paid', status: 'completed', updated_at: new Date().toISOString() });
     if (!updated) return res.status(404).json({ error: 'Order not found' });
     notifyClient(order_id, 'paid');
-    res.json({ success: true, download_token: updated.download_token, message: 'Payment confirmed. Download link is now active.' });
+    notifyCustomer({
+        name: updated.client_name, email: updated.client_email, phone: updated.client_phone,
+        message: `Hi ${updated.client_name},\n\nYour payment for template ${updated.template_id} has been confirmed!\nDownload link: ${process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com'}/api/templates/download/${updated.download_token}\n\nThank you for your business!\n- Vincent IT Freelancer`
+    });
+    sendEmailAlert({
+        to: updated.client_email,
+        subject: 'Payment Confirmed – Download Your Template',
+        html: `<h2>Payment Confirmed!</h2><p>Hi ${updated.client_name},</p><p>Your payment for <strong>${updated.template_id}</strong> has been confirmed.</p><p>Download your template here: <a href="${process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com'}/api/templates/download/${updated.download_token}">Download Link</a></p><p>– Vincent IT Freelancer</p>`
+    });
+    res.json({ success: true, download_token: updated.download_token, message: 'Payment confirmed. Download link sent to client via email and WhatsApp.' });
 });
 
-// Admin: confirm deposit paid for service orders
-app.post('/api/admin/orders/confirm-deposit', authenticateToken, (req, res) => {
+// Admin: confirm payment for service orders
+app.post('/api/admin/orders/confirm-payment', authenticateToken, (req, res) => {
+    backupDatabase();
     const { order_id } = req.body;
     if (!order_id) return res.status(400).json({ error: 'Order ID required' });
-    const updated = db.update('orders', order_id, { deposit_paid: 1, payment_status: 'deposit_paid', status: 'in_progress', updated_at: new Date().toISOString() });
+    const updated = db.update('orders', order_id, { payment_status: 'paid', status: 'paid', updated_at: new Date().toISOString() });
     if (!updated) return res.status(404).json({ error: 'Order not found' });
-    notifyClient(order_id, 'in_progress');
-    res.json({ success: true, message: 'Deposit confirmed. Order is now in progress.' });
+    notifyClient(order_id, 'paid');
+    res.json({ success: true, message: 'Payment confirmed.' });
 });
 
 // Admin: mark service order as completed
 app.post('/api/admin/orders/complete', authenticateToken, (req, res) => {
     const { order_id } = req.body;
     if (!order_id) return res.status(400).json({ error: 'Order ID required' });
-    const updated = db.update('orders', order_id, { status: 'completed', payment_status: 'paid', updated_at: new Date().toISOString() });
+    const updated = db.update('orders', order_id, { status: 'completed', updated_at: new Date().toISOString() });
     if (!updated) return res.status(404).json({ error: 'Order not found' });
     notifyClient(order_id, 'completed');
+    sendEmailAlert({
+        to: updated.client_email,
+        subject: 'Order Completed – ' + order_id.slice(0, 8),
+        html: `<h2>Service Completed!</h2><p>Hi ${updated.client_name},</p><p>Your order <strong>${order_id.slice(0, 8)}</strong> has been marked as completed.</p><p>Your item/service is ready. Contact us on WhatsApp if you need anything else.</p><p>– Vincent IT Freelancer</p>`
+    });
     res.json({ success: true, message: 'Order marked as completed.' });
 });
 
@@ -397,7 +486,8 @@ app.post('/api/appointments', validate([
 });
 
 app.get('/api/appointments', authenticateToken, (req, res) => {
-    const appointments = db.query('appointments', null);
+    const { email } = req.query;
+    const appointments = db.query('appointments', email ? a => a.client_email.toLowerCase() === email.toLowerCase() : null);
     res.json(appointments.reverse());
 });
 
@@ -413,6 +503,7 @@ app.post('/api/orders', validate([
     { name: 'client_email', label: 'Email', required: true, type: 'email', maxLength: 200 },
     { name: 'service', label: 'Service', required: true, maxLength: 500 }
 ]), (req, res) => {
+    backupDatabase();
     const { client_name, client_email, client_phone, service, price, cart_items } = req.body;
     if (price) {
         const priceNum = parseFloat(String(price).replace(/[^0-9.]/g, ''));
@@ -450,13 +541,28 @@ app.post('/api/orders', validate([
         sendEmailAlert({
             to: client_email,
             subject: `Order Confirmation – ${id}`,
-            html: `<h2>Thank you for your order, ${client_name}!</h2><p>Your order <strong>${id}</strong> has been received.</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p>We will contact you shortly via WhatsApp.</p><p>– Vincent IT Freelancer</p>`
+            html: `<h2>Thank you for your order, ${client_name}!</h2><p>Your order <strong>${id}</strong> has been received.</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p><strong>To pay:</strong> TymeBank a/c 51135445245 (branch 678910) or PayShap 0677834591</p><p>After payment, upload proof on the website and click "I Have Paid".</p><p>– Vincent IT Freelancer</p>`
         });
     }
     notifyCustomer({
         name: client_name, email: client_email, phone: client_phone,
-        message: `Hi ${client_name},\n\nYour order is confirmed!\nOrder ID: ${id}\nService: ${service}\nPrice: ${price || 'N/A'}\n\nWe will contact you shortly. Track your order in the Client Portal.\n\n- Vincent IT Freelancer`
+        message: `Hi ${client_name},\n\nYour order is confirmed!\nOrder ID: ${id}\nService: ${service}\nPrice: ${price || 'N/A'}\n\nPay via TymeBank a/c 51135445245 or PayShap 0677834591. Upload proof on the website.\nTrack your order in the Client Portal.\n\n- Vincent IT Freelancer`
     });
+    try {
+        generateInvoicePDF({
+            client_name: client_name.trim(),
+            client_email: client_email.trim().toLowerCase(),
+            service: service.trim(),
+            price: (price || '').trim()
+        }, items).then(pdfBuffer => {
+            sendEmailWithAttachment({
+                to: client_email.trim().toLowerCase(),
+                subject: 'Invoice – ' + id,
+                html: `<h2>Invoice for your order</h2><p>Hi ${client_name.trim()},</p><p>Your order <strong>${id}</strong> has been confirmed. Please find your invoice attached.</p><p>Pay via TymeBank a/c <strong>51135445245</strong> (branch 678910) or PayShap <strong>0677834591</strong>. Upload proof in your checkout page.</p><p>– Vincent IT Freelancer</p>`,
+                attachment: { filename: 'Invoice-' + id.slice(0,8) + '.pdf', content: pdfBuffer, contentType: 'application/pdf' }
+            });
+        });
+    } catch (e) { console.error('Invoice PDF error:', e.message); }
     res.json({ success: true, order_id: id, message: 'Order created!' });
 });
 
@@ -514,8 +620,7 @@ app.patch('/api/orders/:id', authenticateToken, (req, res) => {
     if (req.body.status) updates.status = req.body.status;
     if (req.body.payment_status) updates.payment_status = req.body.payment_status;
     if (req.body.deposit_paid !== undefined) updates.deposit_paid = req.body.deposit_paid ? 1 : 0;
-    if (req.body.pf_payment_id) updates.pf_payment_id = req.body.pf_payment_id;
-    if (req.body.payment_method) updates.payment_method = req.body.payment_method;
+    if (req.body.client_message) updates.client_message = req.body.client_message;
     updates.updated_at = new Date().toISOString();
     db.update('orders', req.params.id, updates);
     // Notify client via push if status changed
@@ -640,7 +745,7 @@ app.get('/sitemap.xml', (req, res) => {
     const blogPosts = db.query('blog_posts', p => p.published !== 0);
     let xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     pages.forEach(p => { xml += `<url><loc>${siteUrl}${p}</loc><priority>0.8</priority></url>`; });
-    blogPosts.forEach(p => { xml += `<url><loc>${siteUrl}/blog/?slug=${p.slug}</loc><lastmod>${p.updated_at || p.created_at}</lastmod><priority>0.6</priority></url>`; });
+    blogPosts.forEach(p => { xml += `<url><loc>${siteUrl}/blog/${p.slug}</loc><lastmod>${p.updated_at || p.created_at}</lastmod><priority>0.6</priority></url>`; });
     xml += '</urlset>';
     res.header('Content-Type', 'application/xml');
     res.send(xml);
@@ -675,89 +780,6 @@ app.get('/api/qr/svg', (req, res) => {
             res.send(styled);
         })
         .catch(() => res.status(500).json({ error: 'Failed to generate QR code' }));
-});
-
-// ===== PayFast Automated Payments =====
-const payfast = require('./payfast');
-
-app.post('/api/payfast/pay', (req, res) => {
-    const { order_id, deposit_only } = req.body;
-    if (!order_id) return res.status(400).json({ error: 'Order ID required' });
-
-    let order = null;
-    const serviceOrders = db.query('orders', o => o.id === order_id);
-    if (serviceOrders.length) order = serviceOrders[0];
-
-    if (!order) {
-        const templateOrders = db.query('template_orders', o => o.id === order_id);
-        if (templateOrders.length) order = templateOrders[0];
-    }
-
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    if (order.payment_status === 'paid') return res.json({ success: true, message: 'Already paid', paid: true });
-
-    let priceNum = parseFloat(String(order.price || '0').replace(/[^0-9.]/g, ''));
-    if (!priceNum || priceNum <= 0) return res.status(400).json({ error: 'Invalid price' });
-
-    if (deposit_only) {
-        priceNum = Math.round((priceNum / 2) * 100) / 100;
-    }
-
-    const pfOrder = {
-        id: order.id,
-        client_name: order.client_name,
-        client_email: order.client_email,
-        amount: priceNum,
-        description: (deposit_only ? '50% Deposit — ' : '') + (order.service || order.template_id || 'Vincent IT Service'),
-        type: order.template_id ? 'template' : 'service'
-    };
-
-    if (payfast.isSandbox()) {
-        res.json({ success: true, pay_url: payfast.getPaymentUrl(pfOrder), sandbox: true, deposit_only });
-    } else {
-        res.json({ success: true, form_html: payfast.getPaymentFormHtml(pfOrder), pay_url: payfast.getPaymentUrl(pfOrder), deposit_only });
-    }
-});
-
-app.post('/api/payfast/itn', (req, res) => {
-    const data = req.body;
-    payfast.validateItn(data).then(result => {
-        if (result.valid && (result.paymentStatus === 'COMPLETE' || result.paymentStatus === 'SUCCESS')) {
-            const itemName = data.item_name || '';
-            const isDeposit = itemName.includes('50% Deposit') || itemName.includes('deposit');
-            let updated = null;
-            if (isDeposit) {
-                updated = db.update('orders', result.orderId, {
-                    payment_status: 'deposit_paid',
-                    deposit_paid: 1,
-                    status: 'in_progress',
-                    pf_payment_id: result.pfPaymentId,
-                    payment_method: 'payfast',
-                    updated_at: new Date().toISOString()
-                });
-            } else {
-                updated = db.update('orders', result.orderId, {
-                    payment_status: 'paid',
-                    status: 'processing',
-                    pf_payment_id: result.pfPaymentId,
-                    payment_method: 'payfast',
-                    updated_at: new Date().toISOString()
-                });
-            }
-            if (!updated) {
-                db.update('template_orders', result.orderId, {
-                    payment_status: 'paid',
-                    status: 'completed',
-                    pf_payment_id: result.pfPaymentId,
-                    payment_method: 'payfast',
-                    updated_at: new Date().toISOString()
-                });
-            }
-            res.status(200).send('OK');
-        } else {
-            res.status(200).send('IGNORED');
-        }
-    }).catch(() => res.status(200).send('ERROR'));
 });
 
 // Receipt: fetch order details by ID + email
@@ -901,11 +923,30 @@ app.post('/api/clients/register', validate([
             referral_code: refCode,
             created_at: new Date().toISOString()
         });
+        const verificationToken = uuidv4() + '-' + Math.random().toString(36).substr(2, 8);
+        db.update('clients', id, { verification_token: verificationToken, verified: 0 });
+        const verifyUrl = (process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com') + '/api/clients/verify?token=' + verificationToken + '&email=' + encodeURIComponent(emailLower);
+        sendEmailAlert({
+            to: emailLower,
+            subject: 'Verify your email – Vincent IT',
+            html: `<h2>Welcome, ${name.trim()}!</h2><p>Please verify your email by clicking the link below:</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>This link expires in 24 hours.</p><p>– Vincent IT Freelancer</p>`
+        });
         const token = jwt.sign({ email: emailLower, role: 'client', clientId: id }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ success: true, token, client: { id, name: name.trim(), email: emailLower, referral_code: refCode } });
+        res.json({ success: true, token, client: { id, name: name.trim(), email: emailLower, referral_code: refCode, verified: false } });
     } catch {
         res.status(500).json({ error: 'Registration failed' });
     }
+});
+
+app.get('/api/clients/verify', async (req, res) => {
+    const { token, email } = req.query;
+    if (!token || !email) return res.status(400).send('Invalid verification link');
+    const clients = db.query('clients', c => c.email.toLowerCase() === email.toLowerCase());
+    if (!clients.length) return res.status(404).send('Account not found');
+    if (clients[0].verified) return res.send('<html><body style="font-family:Inter,sans-serif;background:#0a0a1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="text-align:center"><h1 style="color:#00d4ff">Already Verified!</h1><p>Your email is already verified.</p><a href="/client/portal.html" style="color:#7b2ff7">Go to Portal</a></div></body></html>');
+    if (clients[0].verification_token !== token) return res.status(400).send('Invalid or expired verification token');
+    db.update('clients', clients[0].id, { verified: 1, verification_token: null });
+    res.send('<html><body style="font-family:Inter,sans-serif;background:#0a0a1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="text-align:center"><h1 style="color:#00d4ff">Email Verified!</h1><p>Your email has been verified successfully.</p><a href="/client/portal.html" style="color:#7b2ff7">Go to Portal</a></div></body></html>');
 });
 
 app.post('/api/clients/login', authLimiter, async (req, res) => {
@@ -917,11 +958,30 @@ app.post('/api/clients/login', authLimiter, async (req, res) => {
         const valid = await bcrypt.compare(password, clients[0].password);
         if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
         const client = clients[0];
+        if (!client.verified) return res.status(403).json({ error: 'Please verify your email before logging in. Check your inbox (including spam) for the verification link.', needsVerification: true, email: client.email });
         const token = jwt.sign({ email: client.email, role: 'client', clientId: client.id }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ success: true, token, client: { id: client.id, name: client.name, email: client.email, phone: client.phone, referral_code: client.referral_code } });
+        res.json({ success: true, token, client: { id: client.id, name: client.name, email: client.email, phone: client.phone, referral_code: client.referral_code, verified: client.verified || 0 } });
     } catch {
         res.status(500).json({ error: 'Login failed' });
     }
+});
+
+// Resend verification email
+app.post('/api/clients/resend-verification', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const clients = db.query('clients', c => c.email.toLowerCase() === email.toLowerCase());
+    if (!clients.length) return res.status(404).json({ error: 'Account not found' });
+    if (clients[0].verified) return res.json({ success: true, message: 'Email already verified. You can log in.' });
+    const verificationToken = uuidv4() + '-' + Math.random().toString(36).substr(2, 8);
+    db.update('clients', clients[0].id, { verification_token: verificationToken });
+    const verifyUrl = (process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com') + '/api/clients/verify?token=' + verificationToken + '&email=' + encodeURIComponent(email);
+    sendEmailAlert({
+        to: email,
+        subject: 'Verify your email – Vincent IT',
+        html: `<h2>Verify Your Email</h2><p>Click the link below to verify your email:</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>– Vincent IT Freelancer</p>`
+    });
+    res.json({ success: true, message: 'Verification email resent. Check your inbox.' });
 });
 
 // ===== Password Reset =====
@@ -1090,11 +1150,18 @@ app.post('/api/chat', validate([
         created_at: new Date().toISOString()
     });
     res.json({ success: true });
+    if (broadcastChat) broadcastChat({ type: 'new_message', sender, message, is_admin: is_admin ? 1 : 0, created_at: new Date().toISOString() });
 });
 
 app.get('/api/chat', authenticateToken, (req, res) => {
     const messages = db.query('chat_messages', null);
     res.json(messages);
+});
+
+// Public chat endpoint for visitor polling (last 50 admin messages)
+app.get('/api/chat/public', (req, res) => {
+    const messages = db.query('chat_messages', m => m.is_admin === 1);
+    res.json(messages.slice(-50));
 });
 
 // ===== Blog =====
@@ -1175,6 +1242,79 @@ app.get('/api/admin/stats', authenticateToken, (req, res) => {
     });
 });
 
+// ===== Banking Details (replaces payment gateway) =====
+app.get('/api/banking-details', (req, res) => {
+    res.json({
+        bank: 'TymeBank',
+        account_holder: 'Mojalefa Vincent Matlholwa',
+        account_type: 'Savings',
+        account_number: '51135445245',
+        branch_code: '678910',
+        payshap: '0677834591',
+        instructions: 'Pay the exact amount and upload your proof of payment below.'
+    });
+});
+
+// ===== Proof of Payment Upload + Mark as Paid =====
+const proofUpload = multer({
+    dest: uploadsDir,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, allowed.includes(ext) || !ext);
+    }
+});
+
+app.post('/api/orders/:id/mark-paid', proofUpload.single('proof'), (req, res) => {
+    const { id } = req.params;
+    const { client_name, client_email, client_phone, message } = req.body;
+    if (!client_name || !client_email) return res.status(400).json({ error: 'Name and email required' });
+    const orders = db.query('orders', o => o.id === id);
+    if (!orders.length) {
+        const templateOrders = db.query('template_orders', o => o.id === id);
+        if (!templateOrders.length) return res.status(404).json({ error: 'Order not found' });
+        const order = templateOrders[0];
+        db.update('template_orders', id, { payment_status: 'client_marked_paid', status: 'awaiting_confirmation', updated_at: new Date().toISOString(), client_message: message || '' });
+        const proofInfo = req.file ? `Proof: ${req.file.originalname} (${(req.file.size / 1024).toFixed(0)} KB)` : 'No proof file attached';
+        const waMsg = `PAID (Client Marked)\n\nName: ${client_name}\nEmail: ${client_email}\nPhone: ${client_phone || 'N/A'}\nOrder ID: ${id.slice(0, 8)}...\nTemplate: ${order.template_id}\nPrice: ${order.price}\nMessage: ${message || 'N/A'}\n${proofInfo}\n\nPlease confirm payment and send download link.`;
+        notifyAdminWhatsApp(waMsg);
+        notifyCustomer({
+            name: client_name, email: client_email, phone: client_phone,
+            message: `Hi ${client_name},\n\nThank you! Your payment notification for Order ${id.slice(0, 8)} has been sent to Vincent IT.\n\nWe will confirm your payment and deliver your item shortly.\n\n- Vincent IT Freelancer`
+        });
+        return res.json({ success: true, message: 'Payment notification sent! Admin will confirm shortly.' });
+    }
+    const order = orders[0];
+    db.update('orders', id, { payment_status: 'client_marked_paid', status: 'awaiting_confirmation', updated_at: new Date().toISOString(), client_message: message || '' });
+    const proofInfo = req.file ? `Proof: ${req.file.originalname} (${(req.file.size / 1024).toFixed(0)} KB)` : 'No proof file attached';
+    let items = [];
+    try { if (order.cart_items) items = typeof order.cart_items === 'string' ? JSON.parse(order.cart_items) : order.cart_items; } catch {}
+    const itemDetail = items.length ? items.map(i => `- ${i.title} x${i.qty} @ R${i.price}`).join('\n') : order.service;
+    const waMsg = `PAID (Client Marked)\n\nName: ${client_name}\nEmail: ${client_email}\nPhone: ${client_phone || 'N/A'}\nOrder ID: ${id.slice(0, 8)}...\nService: ${order.service}\nPrice: ${order.price}\nItems:\n${itemDetail}\nMessage: ${message || 'N/A'}\n${proofInfo}\n\nPlease confirm payment and deliver the item.`;
+    notifyAdminWhatsApp(waMsg);
+    notifyCustomer({
+        name: client_name, email: client_email, phone: client_phone,
+        message: `Hi ${client_name},\n\nThank you! Your payment notification for Order ${id.slice(0, 8)} has been sent to Vincent IT.\n\nWe will confirm your payment and start working on your service.\n\n- Vincent IT Freelancer`
+    });
+    res.json({ success: true, message: 'Payment notification sent! Admin will confirm shortly.' });
+});
+
+// Admin backup trigger
+app.post('/api/admin/backup', authenticateToken, (req, res) => {
+    backupDatabase();
+    res.json({ success: true, message: 'Backup created' });
+});
+
+// SEO-friendly blog URLs
+app.get('/blog/:slug', (req, res) => {
+    const { slug } = req.params;
+    if (slug === 'index.html' || slug.includes('.')) {
+        return res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
+    }
+    res.sendFile(path.join(__dirname, '..', 'blog', 'index.html'));
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -1196,10 +1336,36 @@ app.use((err, req, res, next) => {
 
 if (require.main === module) {
     db.load().then(() => {
-        app.listen(PORT, () => {
+        const server = http.createServer(app);
+        
+        // WebSocket server for chat
+        const wss = new WebSocketServer({ server, path: '/ws' });
+        const chatClients = new Set();
+        
+        wss.on('connection', (ws) => {
+            chatClients.add(ws);
+            ws.on('close', () => chatClients.delete(ws));
+            ws.on('error', () => chatClients.delete(ws));
+        });
+        
+        broadcastChat = (message) => {
+            const data = JSON.stringify(message);
+            chatClients.forEach(client => {
+                if (client.readyState === 1) {
+                    try { client.send(data); } catch (e) { chatClients.delete(client); }
+                }
+            });
+        };
+        
+        // Auto backup every hour
+        setInterval(backupDatabase, 60 * 60 * 1000);
+        // Initial backup after 10 seconds
+        setTimeout(backupDatabase, 10000);
+        
+        server.listen(PORT, () => {
             console.log(`Vincent IT Server running on http://localhost:${PORT}`);
-            console.log(`Admin dashboard: http://localhost:${PORT}/admin/`);
-            console.log(`Client portal: http://localhost:${PORT}/client/portal.html`);
+            console.log(`Admin dashboard: http://${PORT}/admin/`);
+            console.log(`Client portal: http://${PORT}/client/portal.html`);
             console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
         });
     }).catch(err => {

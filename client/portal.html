@@ -50,6 +50,8 @@
         .status-cancelled { background:rgba(255,68,68,0.15); color:#ff4444; }
         .status-paid { background:rgba(0,200,83,0.15); color:#00c853; }
         .status-unpaid { background:rgba(255,107,53,0.15); color:#ff6b35; }
+        .status-awaiting_confirmation { background:rgba(255,193,7,0.15); color:#ffc107; }
+        .status-client_marked_paid { background:rgba(255,193,7,0.15); color:#ffc107; }
         .dash-header { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
         .dash-header button { flex:1; min-width:80px; padding:0.6rem; border:1px solid var(--border-color); border-radius:8px; background:transparent; color:var(--text-secondary); cursor:pointer; font-family:inherit; font-weight:600; font-size:0.85rem; transition:0.3s; }
         .dash-header button.active { background:linear-gradient(135deg,var(--accent-1),var(--accent-2)); color:#fff; border-color:transparent; }
@@ -397,34 +399,53 @@
                             <span>Ordered: ${new Date(o.created_at).toLocaleDateString()}</span>
                         </div>
                         ${renderTimeline(o)}
+                        ${(o.status !== 'completed' && o.status !== 'cancelled') ? `<div style="margin-top:0.5rem"><button class="btn btn-outline" style="font-size:0.8rem;padding:0.3rem 0.8rem" onclick="cancelOrder('${o.id}')"><i class="fas fa-times"></i> Cancel Order</button></div>` : ''}
                     </div>
                 `).join('') : '<p style="color:var(--text-secondary);text-align:center">No orders yet. <a href="/#pricing" style="color:var(--accent-1)">Browse services</a></p>';
             } catch { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Server offline</p>'; }
         }
 
+        async function cancelOrder(orderId) {
+            if (!confirm('Cancel this order?')) return;
+            const msg = document.getElementById('orderCancelMsg');
+            try {
+                const res = await fetch(API+'/api/orders/'+orderId+'/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: client.email })
+                });
+                const data = await res.json();
+                if (data.success) { loadOrders(); }
+                else { if (msg) msg.innerHTML = '<span style="color:#ff6b35">'+data.error+'</span>'; }
+            } catch { if (msg) msg.innerHTML = '<span style="color:#ff6b35">Server error</span>'; }
+        }
+
         function formatStatus(s) {
-            const labels = { pending:'Pending', deposit_paid:'Deposit Paid', in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled' };
+            const labels = { pending:'Pending', awaiting_confirmation:'Awaiting Confirmation', in_progress:'In Progress', paid:'Paid', completed:'Completed', cancelled:'Cancelled' };
             return labels[s] || s;
         }
 
         function formatPayment(o) {
-            if (o.deposit_paid == 1) return 'Deposit Paid';
             if (o.payment_status === 'paid') return 'Paid';
-            if (o.payment_status === 'deposit_paid') return 'Deposit Paid';
-            return o.payment_status === 'unpaid' ? 'Unpaid' : o.payment_status;
+            if (o.payment_status === 'client_marked_paid') return 'Awaiting Admin Confirmation';
+            if (o.payment_status === 'unpaid') return 'Unpaid';
+            return o.payment_status || 'Unpaid';
         }
 
         function renderTimeline(o) {
             const steps = [
                 { key: 'pending', icon: 'fa-file-signature', label: 'Order Received' },
-                { key: 'deposit', icon: 'fa-hand-holding-usd', label: 'Deposit' },
+                { key: 'paid', icon: 'fa-hand-holding-usd', label: 'Paid' },
                 { key: 'progress', icon: 'fa-cogs', label: 'In Progress' },
                 { key: 'done', icon: 'fa-check-circle', label: 'Completed' }
             ];
             const statusMap = {
-                pending: 0, deposit_paid: 1, in_progress: 2, completed: 3, cancelled: -1
+                pending: 0, awaiting_confirmation: 1, paid: 2, in_progress: 2, completed: 3, cancelled: -1
             };
-            const currentIdx = statusMap[o.status] !== undefined ? statusMap[o.status] : (statusMap[o.payment_status] || 0);
+            const paymentStatusMap = {
+                unpaid: 0, client_marked_paid: 1, paid: 2
+            };
+            const currentIdx = statusMap[o.status] !== undefined ? statusMap[o.status] : (paymentStatusMap[o.payment_status] || 0);
             if (currentIdx < 0) return `<p style="color:#ff4444;font-size:0.85rem;margin-top:0.5rem">Order cancelled</p>`;
             return `<div class="timeline">${steps.map((s, i) => {
                 const cls = i < currentIdx ? 'done' : (i === currentIdx ? 'active' : '');
@@ -596,9 +617,37 @@
             }
         }
 
+        async function cancelAppointment(apptId) {
+            if (!confirm('Cancel this appointment?')) return;
+            try {
+                await fetch(API+'/api/appointments/'+apptId+'/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: client.email })
+                });
+                loadAppointments();
+            } catch {}
+        }
+
         async function loadAppointments() {
             const c = document.getElementById('portalAppointments');
-            c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Appointment tracking coming soon with full calendar integration.</p>';
+            try {
+                const tok = localStorage.getItem('vit_client_token');
+                if (!tok) { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Session expired</p>'; return; }
+                const res = await fetch(API+'/api/appointments?email='+encodeURIComponent(client.email), { headers: { 'Authorization': 'Bearer ' + tok } });
+                if (res.status === 401 || res.status === 403) { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Session expired</p>'; return; }
+                const appts = await res.json();
+                c.innerHTML = appts.length ? appts.map(a => `
+                    <div class="portal-card">
+                        <div class="portal-card-header"><strong>${a.service}</strong><span class="status-badge status-${a.status}">${formatStatus(a.status)}</span></div>
+                        <div class="portal-card-body">
+                            <span>Date: ${a.date} at ${a.time}</span>
+                            <span>Booked: ${new Date(a.created_at).toLocaleDateString()}</span>
+                        </div>
+                        ${(a.status !== 'completed' && a.status !== 'cancelled') ? `<div style="margin-top:0.5rem"><button class="btn btn-outline" style="font-size:0.8rem;padding:0.3rem 0.8rem" onclick="cancelAppointment('${a.id}')"><i class="fas fa-times"></i> Cancel Appointment</button></div>` : ''}
+                    </div>
+                `).join('') : '<p style="color:var(--text-secondary);text-align:center">No appointments yet.</p>';
+            } catch { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Server offline</p>'; }
         }
 
         // Heartbeat - let server know client is online

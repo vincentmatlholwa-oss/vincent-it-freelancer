@@ -1,3 +1,72 @@
+let chatPollInterval = null;
+let chatSocket = null;
+
+function initWebSocket() {
+    if (chatSocket && chatSocket.readyState === 1) return;
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = proto + '//' + window.location.host + '/ws';
+    try {
+        chatSocket = new WebSocket(wsUrl);
+        chatSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'new_message' && data.is_admin) {
+                    const box = document.getElementById('chatBox');
+                    const existing = document.querySelectorAll('#chatMessages .chat-msg.admin');
+                    let alreadyExists = false;
+                    existing.forEach(el => {
+                        const p = el.querySelector('p');
+                        if (p && p.textContent === data.message) alreadyExists = true;
+                    });
+                    if (!alreadyExists) {
+                        appendMessage('Vincent IT', data.message, 'admin');
+                        saveChatToLocal(data.message, 'admin');
+                        if (!box || !box.classList.contains('open')) {
+                            document.getElementById('chatNotif').style.display = 'inline';
+                        }
+                    }
+                }
+            } catch (e) {}
+        };
+        chatSocket.onclose = () => {
+            chatSocket = null;
+        };
+        chatSocket.onerror = () => {
+            chatSocket = null;
+        };
+    } catch (e) {
+        chatSocket = null;
+    }
+}
+
+function startPollingFallback() {
+    if (chatPollInterval) return;
+    chatPollInterval = setInterval(() => {
+        if (!chatSocket) pollAdminReplies();
+    }, 5000);
+}
+
+function stopPollingFallback() {
+    if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+    }
+}
+
+function initWebSocketWithFallback() {
+    initWebSocket();
+    // Start fallback polling immediately; if WebSocket connects, polling stops
+    startPollingFallback();
+    // Override onopen to stop polling when WebSocket connects
+    if (chatSocket) {
+        const originalOnopen = chatSocket.onopen;
+        chatSocket.onopen = function() {
+            stopPollingFallback();
+            if (typeof originalOnopen === 'function') originalOnopen.apply(this, arguments);
+        };
+    }
+}
+
 function initChat() {
     const chatContainer = document.createElement('div');
     chatContainer.className = 'chat-widget';
@@ -32,6 +101,37 @@ function initChat() {
     document.body.appendChild(chatContainer);
     bindChatEvents();
     loadChatHistory();
+    initWebSocketWithFallback();
+}
+
+function pollAdminReplies() {
+    if (!navigator.onLine) return;
+    const box = document.getElementById('chatBox');
+    if (!box || !box.classList.contains('open')) return;
+    fetch('/api/chat/public')
+        .then(r => r.json())
+        .then(messages => {
+            const existing = document.querySelectorAll('#chatMessages .chat-msg.admin:not(:first-child)');
+            const existingSet = new Set();
+            existing.forEach(el => {
+                const p = el.querySelector('p');
+                if (p) existingSet.add(p.textContent);
+            });
+            const history = JSON.parse(localStorage.getItem('vit_chat_history') || '[]');
+            let newCount = 0;
+            messages.forEach(m => {
+                if (!m.is_admin) return;
+                if (existingSet.has(m.message)) return;
+                if (history.some(h => h.message === m.message && h.type === 'admin')) return;
+                appendMessage('Vincent IT', m.message, 'admin');
+                saveChatToLocal(m.message, 'admin');
+                newCount++;
+            });
+            if (newCount > 0 && !box.classList.contains('open')) {
+                document.getElementById('chatNotif').style.display = 'inline';
+            }
+        })
+        .catch(() => {});
 }
 
 function bindChatEvents() {
@@ -94,9 +194,9 @@ const KNOWLEDGE = {
         { name: 'Website Template + Customisation', price: 'From R500', est: '2-7 days', desc: 'Responsive, custom branding, mobile-friendly' }
     ],
     faq: {
-        deposit: 'We require a 50% deposit before starting remote services. If the service cannot be completed due to device limitations, you get a full refund.',
+        deposit: 'Payment is due upfront or upon completion depending on the service. If the service cannot be completed due to device limitations, you get a full refund.',
         location: 'Based in Mahikeng, North West, South Africa. Services available remotely anywhere in South Africa.',
-        payment: 'We accept EFT, mobile money, and cash (for local clients). Deposit of 50% secures your booking.',
+        payment: 'We accept PayShap (0677834591) or EFT to TymeBank a/c 51135445245. After payment, upload your proof on the website checkout page.',
         turnaround: 'Most software services (Office, Windows, BSOD) are completed within 30 min to 2 hours. CV and assignments take 1-5 days. Websites take 2-7 days.',
         warranty: 'All activations are lifetime. If issues arise after service, contact me and I will resolve them at no extra cost.',
         booking: 'You can book an appointment in the Booking section above, or contact me directly on WhatsApp for immediate scheduling.'
@@ -248,7 +348,7 @@ function getReply(input) {
     }
 
     if (scores.deposit > 0) {
-        return 'We require a 50% deposit before starting remote services. If the service cannot be completed due to device limitations, you get a full refund. All activations come with lifetime support.';
+        return 'Payment via TymeBank a/c 51135445245 or PayShap 0677834591. After paying, upload your proof on the checkout page and we will start working on your service. All activations come with lifetime support.';
     }
 
     if (scores.turnaround > 0) {

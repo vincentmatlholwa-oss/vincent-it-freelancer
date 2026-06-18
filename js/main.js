@@ -173,7 +173,7 @@ function renderPricing() {
             <p class="pricing-desc">${s.desc}</p>
             <div class="pricing-amount">${s.price}</div>
             <div class="pricing-est"><i class="far fa-clock"></i> Est. ${s.est}</div>
-            ${s.remote ? '<div class="pricing-note">50% deposit to start</div>' : '<div class="pricing-note">&nbsp;</div>'}
+            ${s.remote ? '<div class="pricing-note">Remote service — pay upfront</div>' : '<div class="pricing-note">&nbsp;</div>'}
             <ul class="pricing-features">
                 ${s.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
             </ul>
@@ -217,32 +217,51 @@ function renderTemplates() {
     `).join('');
 }
 
-function payWithPayFast(orderId) {
-    return fetch('/api/payfast/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId })
-    }).then(r => r.json());
-}
-
 let pendingBuyTemplate = null;
 
 function buyTemplate(templateId, templateTitle, templatePrice) {
+    pendingBuyTemplate = { id: templateId, title: templateTitle, price: templatePrice };
     const modal = document.getElementById('paymentModal');
     if (!modal) return;
     modal.style.display = 'flex';
     document.getElementById('paymentModalStep1').style.display = 'block';
     document.getElementById('paymentModalStep2').style.display = 'none';
+    document.getElementById('paymentModalStep3').style.display = 'none';
     document.getElementById('payFormMsg').innerHTML = '';
     document.getElementById('payName').value = '';
     document.getElementById('payEmail').value = '';
     document.getElementById('payPhone').value = '';
-    pendingBuyTemplate = { id: templateId, title: templateTitle, price: templatePrice };
+    document.getElementById('paidStatusTemplate').innerHTML = '';
+    loadBankingDetailsTemplate();
 }
 
 function closePaymentModal() {
     document.getElementById('paymentModal').style.display = 'none';
     pendingBuyTemplate = null;
+}
+
+async function loadBankingDetailsTemplate() {
+    const container = document.getElementById('bankingDetailsTemplate');
+    if (!container) return;
+    try {
+        const res = await fetch('/api/banking-details');
+        const data = await res.json();
+        container.innerHTML = `
+            <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;text-align:center">
+                <p style="font-weight:700;color:var(--accent-1);margin-bottom:0.5rem;font-size:1rem"><i class="fas fa-university"></i> Banking Details</p>
+                <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.8">
+                    <p><strong style="color:#fff">Bank:</strong> ${data.bank}</p>
+                    <p><strong style="color:#fff">Account Holder:</strong> ${data.account_holder}</p>
+                    <p><strong style="color:#fff">Account Number:</strong> <span style="color:#00d4ff;font-weight:700;letter-spacing:1px">${data.account_number}</span></p>
+                    <p><strong style="color:#fff">Branch Code:</strong> ${data.branch_code}</p>
+                    <p><strong style="color:#fff">PayShap:</strong> <span style="color:#00d4ff;font-weight:700;letter-spacing:1px">${data.payshap}</span></p>
+                    <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">${data.instructions}</p>
+                </div>
+            </div>
+        `;
+    } catch {
+        container.innerHTML = '<p style="color:#ff6b35">Could not load banking details.</p>';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -271,35 +290,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     document.getElementById('paymentModalStep1').style.display = 'none';
                     document.getElementById('paymentModalStep2').style.display = 'block';
+                    document.getElementById('paymentModalStep3').style.display = 'block';
                     document.getElementById('payOrderRef').textContent = 'Order ID: ' + data.order_id + ' | ' + p.title + ' - ' + p.price;
+                    document.getElementById('templateOrderId').value = data.order_id;
+                    document.getElementById('templateClientName').value = name;
+                    document.getElementById('templateClientEmail').value = email;
+                    document.getElementById('templateClientPhone').value = phone;
+                    if (data.download_token) {
+                        const link = window.location.origin + '/api/templates/download/' + data.download_token;
+                        document.getElementById('payDownloadLink').style.display = 'block';
+                        document.getElementById('payDownloadAnchor').href = link;
+                        document.getElementById('payDownloadAnchor').textContent = 'Download Link (activates after payment confirmation)';
+                        const downloads = JSON.parse(localStorage.getItem('vit_template_downloads') || '[]');
+                        if (!downloads.find(d => d.order_id === data.order_id)) {
+                            downloads.push({ order_id: data.order_id, token: data.download_token, template: p.title, date: new Date().toISOString() });
+                            localStorage.setItem('vit_template_downloads', JSON.stringify(downloads));
+                        }
+                    }
                 } else {
                     msg.innerHTML = data.error || 'Could not create order. Please try again.';
                 }
             } catch {
                 msg.innerHTML = 'Server unavailable. Please use WhatsApp to order.';
             }
-            btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-right"></i> Proceed to Payment';
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-right"></i> Proceed';
+        });
+    }
+
+    // Template mark paid
+    const markPaidBtn = document.getElementById('markPaidTemplate');
+    if (markPaidBtn) {
+        markPaidBtn.addEventListener('click', async function() {
+            const orderId = document.getElementById('templateOrderId').value;
+            const name = document.getElementById('templateClientName').value;
+            const email = document.getElementById('templateClientEmail').value;
+            const phone = document.getElementById('templateClientPhone').value;
+            const fileInput = document.getElementById('proofOfPaymentTemplate');
+            const file = fileInput?.files[0];
+            const msg = document.getElementById('paidMessageTemplate').value.trim();
+            if (!orderId) { alert('No order ID. Please create the order first.'); return; }
+            const btn = this;
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            try {
+                const formData = new FormData();
+                formData.append('client_name', name);
+                formData.append('client_email', email);
+                formData.append('client_phone', phone);
+                formData.append('message', msg);
+                if (file) formData.append('proof', file);
+                const res = await fetch('/api/orders/' + orderId + '/mark-paid', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('paidStatusTemplate').innerHTML = '<span style="color:#00c853;font-weight:600"><i class="fas fa-check-circle"></i> Payment notification sent! Admin will confirm shortly.</span>';
+                    btn.style.display = 'none';
+                    if (fileInput) fileInput.style.display = 'none';
+                    if (document.getElementById('paidMessageTemplate')) document.getElementById('paidMessageTemplate').style.display = 'none';
+                } else {
+                    document.getElementById('paidStatusTemplate').innerHTML = '<span style="color:#ff6b35">' + (data.error || 'Failed') + '</span>';
+                }
+            } catch {
+                document.getElementById('paidStatusTemplate').innerHTML = '<span style="color:#ff6b35">Server error. Please WhatsApp us directly.</span>';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fab fa-whatsapp"></i> I Have Paid — Notify Admin';
         });
     }
 });
-
-function openPayFastPayment(orderId) {
-    payWithPayFast(orderId).then(data => {
-        if (data.success && data.pay_url) {
-            if (data.form_html) {
-                const w = window.open('', 'payfast', 'width=800,height=700');
-                w.document.write(`<html><head><title>PayFast Payment</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:sans-serif}</style></head><body>${data.form_html}<script>document.getElementById('payfast_form').submit();<\/script></body></html>`);
-                w.document.close();
-            } else {
-                window.open(data.pay_url, '_blank');
-            }
-        } else {
-            alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
-        }
-    }).catch(() => {
-        alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
-    });
-}
 
 // ===== Cart =====
 let cart = [];
@@ -364,7 +419,7 @@ function updateCartUI() {
 
 function parsePrice(priceStr) {
     const nums = priceStr.match(/\d+/g);
-    return nums ? parseInt(nums[nums.length - 1]) : 0;
+    return nums ? parseInt(nums[0]) : 0;
 }
 
 function initCart() {
@@ -394,9 +449,9 @@ function initCart() {
 
 // ===== FAQ =====
 const faqs = [
-    { q: 'How do I pay?', a: 'Payments are accepted via PayShap (number: 067 783 4591) or EFT. A 50% deposit is required before remote services begin. After payment, send your proof of payment via WhatsApp or email.' },
+    { q: 'How do I pay?', a: 'Pay via PayShap to <strong>0677834591</strong> or EFT to TymeBank (account: 51135445245, branch: 678910). After payment, upload your proof in the checkout and click "I Have Paid — Notify Admin".' },
     { q: 'Do I need to be present during the service?', a: 'Yes, you need to be available during the appointment to provide remote access and any necessary information (product keys, etc.).' },
-    { q: 'What if the service can\'t be completed?', a: 'If the service cannot be completed due to technical limitations on your device, you receive a full refund of your deposit.' },
+    { q: 'What if the service can\'t be completed?', a: 'If the service cannot be completed due to technical limitations on your device, you receive a full refund.' },
     { q: 'How long does each service take?', a: 'Most software activations take 15-45 minutes. Repairs and installations take 1-3 hours. CVs and assignments take 1-5 days depending on complexity.' },
     { q: 'Do you guarantee data recovery?', a: 'Data recovery is performed with care but cannot be guaranteed. We always advise clients to maintain their own backups.' },
     { q: 'Is remote access safe?', a: 'Absolutely. We use encrypted connections via TeamViewer/AnyDesk and your data is never stored or shared. You can revoke access at any time.' },
@@ -647,7 +702,7 @@ function generateInvoice() {
     doc.text('Total:', 130, y); doc.text('R' + total, 160, y);
     y += 10;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-    doc.text('Payment due upon completion. 50% deposit required for remote services.', 15, y);
+    doc.text('Payment via TymeBank a/c 51135445245 or PayShap 0677834591.', 15, y);
     y += 5;
     doc.text('Thank you for your business!', 15, y);
     drawFooter();
@@ -713,9 +768,10 @@ function initContractForm() {
             await new Promise(r => setTimeout(r, 800));
             contractContainer.style.display = 'none';
             resultDiv.style.display = 'block';
-            window.__contractData = { clientName, isRemote: selectedService === 'remote-installation', orderId };
+            window.__contractData = { clientName, clientEmail, clientPhone, isRemote: selectedService === 'remote-installation', orderId };
             const orderIdEl = document.getElementById('resultOrderId');
             if (orderIdEl) orderIdEl.textContent = orderId ? `Order ID: ${orderId}` : '';
+            loadBankingDetails();
         } catch (err) { alert('Error generating contract.'); console.error(err); }
         finally { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Sign & Generate Contract'; }
     });
@@ -731,36 +787,64 @@ function initContractForm() {
         const doc = generateInvoice();
         doc.save(`Invoice_${document.getElementById('clientName').value.trim().replace(/\s+/g, '_')}.pdf`);
     });
-    document.getElementById('proceedWhatsApp').addEventListener('click', function(e) {
-        const d = window.__contractData || {};
-        const orderRef = d.orderId ? `\nOrder ID: ${d.orderId}` : '';
-        let msg;
-        if (d.isRemote) {
-            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract for REMOTE INSTALLATION.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nI am paying the 50% deposit via PayShap (067 783 4591). Here is my proof of payment.`);
-        } else {
-            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nI will pay via PayShap (067 783 4591) and send proof. Please proceed.`);
+    // Load banking details and display them
+    async function loadBankingDetails() {
+        const container = document.getElementById('bankingDetails');
+        if (!container) return;
+        try {
+            const res = await fetch('/api/banking-details');
+            const data = await res.json();
+            container.innerHTML = `
+                <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:0.5rem 0;text-align:center">
+                    <p style="font-weight:700;color:var(--accent-1);margin-bottom:0.5rem;font-size:1.1rem"><i class="fas fa-university"></i> Banking Details</p>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.8">
+                        <p><strong style="color:#fff">Bank:</strong> ${data.bank}</p>
+                        <p><strong style="color:#fff">Account Holder:</strong> ${data.account_holder}</p>
+                        <p><strong style="color:#fff">Account Number:</strong> <span style="color:#00d4ff;font-weight:700;letter-spacing:1px;font-size:1rem">${data.account_number}</span></p>
+                        <p><strong style="color:#fff">Account Type:</strong> ${data.account_type}</p>
+                        <p><strong style="color:#fff">Branch Code:</strong> ${data.branch_code}</p>
+                        <p><strong style="color:#fff">PayShap:</strong> <span style="color:#00d4ff;font-weight:700;letter-spacing:1px;font-size:1rem">${data.payshap}</span></p>
+                        <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">${data.instructions}</p>
+                    </div>
+                </div>
+            `;
+        } catch {
+            container.innerHTML = '<p style="color:#ff6b35">Could not load banking details.</p>';
         }
-        window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
-    });
-    function initiatePayment(depositOnly, btn) {
-        const d = window.__contractData;
-        if (!d || !d.orderId) { alert('No order ID found. Please submit the contract first.'); return; }
-        const amount = depositOnly ? '50% Deposit' : 'Full Amount';
-        const msg = encodeURIComponent(
-            `Hi Vincent IT! I have signed the contract.\n\nOrder ID: ${d.orderId}\nPayment: ${amount}\n\nI am paying via PayShap. Here is my proof of payment.`
-        );
-        window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
     }
-    document.getElementById('payNowBtn').addEventListener('click', function() { initiatePayment(false, this); });
-    document.getElementById('payDepositBtn').addEventListener('click', function() { initiatePayment(true, this); });
-    (function() {
-        var params = new URLSearchParams(window.location.search);
-        var retryId = params.get('retry_pay');
-        if (retryId && window.__contractData) {
-            window.__contractData.orderId = retryId;
-            document.getElementById('payDepositBtn').click();
+    loadBankingDetails();
+
+    document.getElementById('markPaidBtn').addEventListener('click', async function() {
+        const d = window.__contractData || {};
+        if (!d.orderId) { alert('No order found. Please submit the contract first.'); return; }
+        const fileInput = document.getElementById('proofOfPayment');
+        const file = fileInput?.files[0];
+        const msg = document.getElementById('paidMessage').value.trim();
+        const btn = this;
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        try {
+            const formData = new FormData();
+            formData.append('client_name', d.clientName || 'Client');
+            formData.append('client_email', document.getElementById('clientEmail')?.value?.trim() || '');
+            formData.append('client_phone', document.getElementById('clientPhone')?.value?.trim() || '');
+            formData.append('message', msg);
+            if (file) formData.append('proof', file);
+            const res = await fetch('/api/orders/' + d.orderId + '/mark-paid', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('paidStatus').innerHTML = '<span style="color:#00c853;font-weight:600"><i class="fas fa-check-circle"></i> Payment notification sent! Admin will confirm shortly via WhatsApp.</span>';
+                btn.style.display = 'none';
+                fileInput.style.display = 'none';
+                document.getElementById('paidMessage').style.display = 'none';
+            } else {
+                document.getElementById('paidStatus').innerHTML = '<span style="color:#ff6b35">' + (data.error || 'Failed to send') + '</span>';
+            }
+        } catch {
+            document.getElementById('paidStatus').innerHTML = '<span style="color:#ff6b35">Server error. Please WhatsApp us directly.</span>';
         }
-    })();
+        btn.disabled = false; btn.innerHTML = '<i class="fab fa-whatsapp"></i> I Have Paid — Notify Admin';
+    });
+
     document.getElementById('resetContract').addEventListener('click', () => {
         contractContainer.style.display = 'block'; resultDiv.style.display = 'none';
         form.reset();

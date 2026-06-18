@@ -152,15 +152,24 @@
         });
 
         // Tabs
+        let activePanel = 'contacts';
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+                activePanel = btn.dataset.tab;
                 loadPanel(btn.dataset.tab);
             });
         });
+
+        // Auto-refresh active panel every 5s (only live tabs)
+        setInterval(() => {
+            if (activePanel === 'chat' || activePanel === 'orders' || activePanel === 'appointments') {
+                loadPanel(activePanel);
+            }
+        }, 5000);
 
         async function loadPanel(name) {
             try {
@@ -207,24 +216,34 @@
 
         function renderOrders(data) {
             if (!data.length) { document.getElementById('panel-orders').innerHTML = '<p style="color:var(--text-sec)">No orders yet</p>'; return; }
-            document.getElementById('panel-orders').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-orders" placeholder="Search orders..." oninput="filterTable('filter-orders','table-orders')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-orders"><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Status</th><th>Payment</th><th>Deposit</th><th>Actions</th></tr></thead><tbody>
+            document.getElementById('panel-orders').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-orders" placeholder="Search orders..." oninput="filterTable('filter-orders','table-orders')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-orders"><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Status</th><th>Payment</th><th>Client Message</th><th>Actions</th></tr></thead><tbody>
                 ${data.map(o => `<tr>
                     <td>${new Date(o.created_at).toLocaleDateString()}</td>
                     <td>${o.client_name}<br><small>${o.client_email}</small></td>
                     <td>${o.service}</td>
                     <td>${o.price||'-'}</td>
                     <td><span class="status ${o.status}">${o.status}</span></td>
-                    <td><span class="status ${o.payment_status === 'paid' ? 'approved' : 'pending'}">${o.payment_status}</span></td>
-                    <td>${o.deposit_paid ? 'Yes' : 'No'}</td>
+                    <td><span class="status ${o.payment_status === 'paid' || o.payment_status === 'client_marked_paid' ? 'approved' : 'pending'}">${o.payment_status === 'client_marked_paid' ? 'Client says PAID' : o.payment_status}</span></td>
+                    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${o.client_message || '-'}</td>
                     <td>
                         <button class="action-btn" onclick="updateOrder('${o.id}','status','pending')">Pending</button>
-                        <button class="action-btn" onclick="updateOrder('${o.id}','status','in_progress')">In Progress</button>
-                        <button class="action-btn" onclick="updateOrder('${o.id}','status','completed')">Complete</button>
-                        <button class="action-btn" onclick="updateOrder('${o.id}','payment_status','paid')">Mark Paid</button>
-                        <button class="action-btn" onclick="updateOrder('${o.id}','deposit_paid','true')">Deposit</button>
+                        <button class="action-btn" onclick="confirmOrderPayment('${o.id}')" style="${o.payment_status === 'client_marked_paid' ? 'border-color:#00c853;color:#00c853;font-weight:700' : ''}">${o.payment_status === 'client_marked_paid' ? 'Confirm Payment' : 'Mark Paid'}</button>
+                        <button class="action-btn" onclick="completeOrder('${o.id}')">Deliver Item</button>
                     </td>
                 </tr>`).join('')}
             </tbody></table>`;
+        }
+
+        async function confirmOrderPayment(id) {
+            if (!confirm('Confirm payment for this order?')) return;
+            await fetch(API + '/api/admin/orders/confirm-payment', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ order_id: id }) });
+            loadPanel('orders'); loadStats();
+        }
+
+        async function completeOrder(id) {
+            if (!confirm('Mark this order as completed and deliver the item?')) return;
+            await fetch(API + '/api/admin/orders/complete', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ order_id: id }) });
+            loadPanel('orders'); loadStats();
         }
 
         async function updateOrder(id, field, value) {
@@ -487,7 +506,7 @@
                         <div style="display:flex;gap:0.3rem">
                             <button class="action-btn" onclick="editBlogPost(${JSON.stringify(p).replace(/"/g,'&quot;')})">Edit</button>
                             <button class="action-btn" onclick="deleteBlogPost('${p.slug}')">Delete</button>
-                            <a href="/blog/?slug=${p.slug}" target="_blank" class="action-btn" style="text-decoration:none">View</a>
+                            <a href="/blog/${p.slug}" target="_blank" class="action-btn" style="text-decoration:none">View</a>
                         </div>
                     </div>
                 `).join('') : '<p style="color:var(--text-sec)">No posts yet</p>';

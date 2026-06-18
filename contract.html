@@ -99,11 +99,11 @@
                         <h4><i class="fas fa-gavel"></i> Terms & Conditions</h4>
                         <ol>
                             <li><strong>Scope:</strong> The service includes remote installation and/or activation of Microsoft Office (2013, 2016, 2019, 2021, 2024, 365) and Windows (10, 11), blue screen repair, data recovery, hardware upgrades, CV creation, academic assistance, and website templating.</li>
-                            <li><strong>Payment:</strong> A <strong>50% deposit</strong> is required before any remote service begins. The remaining balance is due upon completion. Payment via PayShap (067 783 4591) or EFT.</li>
+                            <li><strong>Payment:</strong> Payment via TymeBank a/c <strong>51135445245</strong> (branch 678910) or PayShap <strong>0677834591</strong>. Full payment is required before service begins unless otherwise agreed.</li>
                             <li><strong>Remote Access:</strong> The client agrees to grant remote access via TeamViewer, AnyDesk, or similar software. The client is responsible for backing up important data prior to service.</li>
                             <li><strong>Data:</strong> Vincent IT Freelancer is not liable for any pre-existing data loss. Data recovery services carry no guarantee of full recovery.</li>
                             <li><strong>Timeframe:</strong> Services are typically completed within 1–24 hours depending on complexity.</li>
-                            <li><strong>Refund Policy:</strong> Full refund of deposit if service cannot be completed due to client device limitations. No refunds once completed successfully.</li>
+                            <li><strong>Refund Policy:</strong> Full refund if service cannot be completed due to client device limitations. No refunds once completed successfully.</li>
                             <li><strong>Confidentiality:</strong> All client information and data accessed during service are kept strictly confidential.</li>
                             <li><strong>Client Cooperation:</strong> Client must be available during the agreed appointment and provide necessary information promptly.</li>
                             <li><strong>Liability:</strong> Liability is limited to the amount paid for the specific service.</li>
@@ -187,20 +187,20 @@
                     <h3>Contract Generated Successfully</h3>
                     <p id="resultOrderId" style="margin-top:0.5rem;font-size:0.9rem;color:var(--accent-1);"></p>
                 </div>
+                <div id="bankingDetails"></div>
+                <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:0.5rem 0;text-align:center">
+                    <p style="font-weight:600;color:var(--accent-1);margin-bottom:0.5rem"><i class="fas fa-upload"></i> Step: Upload Proof & Mark as Paid</p>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.8rem">After paying, upload your proof of payment and click the button below to notify Vincent IT.</p>
+                    <input type="file" id="proofOfPayment" accept="image/*,.pdf" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit;margin-bottom:0.5rem;box-sizing:border-box">
+                    <input type="text" id="paidMessage" placeholder="Optional message..." style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit;margin-bottom:0.5rem;box-sizing:border-box">
+                    <button class="btn btn-whatsapp" id="markPaidBtn" style="width:100%;justify-content:center"><i class="fab fa-whatsapp"></i> I Have Paid — Notify Admin</button>
+                    <div id="paidStatus" style="margin-top:0.5rem"></div>
+                </div>
                 <div class="result-actions">
-                    <div class="pay-shap-section" style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:0.5rem 0;text-align:center;width:100%">
-                        <p style="font-weight:600;color:var(--accent-1);margin-bottom:0.3rem"><i class="fas fa-mobile-alt"></i> Pay via PayShap</p>
-                        <p style="font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:2px">067 783 4591</p>
-                        <p style="color:var(--text-secondary);font-size:0.8rem;margin:0.5rem 0">Send proof of payment after deposit:</p>
-                        <div style="display:flex;gap:0.5rem;justify-content:center">
-                            <a href="https://wa.me/27677834591?text=I%20have%20paid%20via%20PayShap.%20Please%20find%20my%20proof%20attached." target="_blank" class="btn btn-whatsapp" style="font-size:0.8rem;padding:0.5rem 1rem"><i class="fab fa-whatsapp"></i> WhatsApp Proof</a>
-                            <a href="mailto:codingpredators@gmail.com?subject=Proof%20of%20Payment&body=I%20have%20paid%20via%20PayShap.%20Please%20find%20my%20proof%20attached." style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.5rem 1rem;background:transparent;border:1px solid var(--accent-1);color:var(--accent-1);border-radius:8px;text-decoration:none;font-weight:600;font-size:0.8rem"><i class="fas fa-envelope"></i> Email</a>
-                        </div>
-                    </div>
                     <button class="btn btn-primary" id="downloadClientPDF"><i class="fas fa-download"></i> Download My Copy</button>
                     <button class="btn btn-secondary" id="downloadVendorPDF"><i class="fas fa-file-contract"></i> Download Vendor Copy</button>
                     <button class="btn btn-primary" id="downloadInvoice"><i class="fas fa-file-invoice"></i> Download Invoice</button>
-                    <a href="https://wa.me/27677834591?text=I%20have%20signed%20the%20service%20contract.%20Please%20proceed%20with%20my%20service." target="_blank" class="btn btn-whatsapp" id="proceedWhatsApp"><i class="fab fa-whatsapp"></i> Proceed on WhatsApp</a>
+                    <a href="https://wa.me/27677834591?text=I%20have%20signed%20the%20service%20contract.%20Please%20proceed%20with%20my%20service." target="_blank" class="btn btn-whatsapp" id="proceedWhatsApp"><i class="fab fa-whatsapp"></i> Chat on WhatsApp</a>
                     <button class="btn btn-outline" id="resetContract"><i class="fas fa-redo"></i> Start Over</button>
                 </div>
             </div>

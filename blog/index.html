@@ -46,10 +46,18 @@
     <script>
         const API = window.location.origin;
 
+        function getSlugFromPath() {
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            if (pathParts.length >= 2 && pathParts[0] === 'blog') {
+                return pathParts.slice(1).join('/');
+            }
+            const params = new URLSearchParams(window.location.search);
+            return params.get('slug') || null;
+        }
+
         async function loadPosts() {
             const container = document.getElementById('blogList');
-            const params = new URLSearchParams(window.location.search);
-            const slug = params.get('slug');
+            const slug = getSlugFromPath();
 
             if (slug) { loadSinglePost(slug); return; }
 
@@ -58,7 +66,7 @@
                 if (posts.length) {
                     container.innerHTML = posts.map(p => `
                         <div class="blog-post">
-                            <h2><a href="?slug=${p.slug}">${p.title}</a></h2>
+                            <h2><a href="/blog/${encodeURIComponent(p.slug)}">${p.title}</a></h2>
                             <div class="blog-meta">By ${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
                             <div class="blog-excerpt">${p.excerpt}</div>
                             <div>${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
@@ -71,7 +79,7 @@
                         if (localPosts.length) {
                             container.innerHTML = localPosts.map(p => `
                                 <div class="blog-post">
-                                    <h2><a href="?slug=${p.slug}">${p.title}</a></h2>
+                                    <h2><a href="/blog/${encodeURIComponent(p.slug)}">${p.title}</a></h2>
                                     <div class="blog-meta">By ${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
                                     <div class="blog-excerpt">${p.excerpt}</div>
                                     <div>${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
@@ -85,7 +93,7 @@
                     const localPosts = await fetch('../blog/posts.json').then(r => r.json());
                     container.innerHTML = localPosts.map(p => `
                         <div class="blog-post">
-                            <h2><a href="?slug=${p.slug}">${p.title}</a></h2>
+                            <h2><a href="/blog/${encodeURIComponent(p.slug)}">${p.title}</a></h2>
                             <div class="blog-meta">By ${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
                             <div class="blog-excerpt">${p.excerpt}</div>
                             <div>${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
@@ -106,7 +114,7 @@
                 if (post.error) throw new Error(post.error);
                 container.innerHTML = `
                     <div class="blog-single">
-                        <a href="?" style="color:var(--accent-1);text-decoration:none;font-size:0.85rem"><i class="fas fa-arrow-left"></i> Back to all posts</a>
+                        <a href="/blog/" style="color:var(--accent-1);text-decoration:none;font-size:0.85rem"><i class="fas fa-arrow-left"></i> Back to all posts</a>
                         <h1 style="margin-top:1rem">${post.title}</h1>
                         <div class="blog-meta" style="margin-bottom:1.5rem">By ${post.author} &middot; ${new Date(post.created_at).toLocaleDateString()}</div>
                         <div class="content">${post.content}</div>
@@ -122,7 +130,7 @@
                     if (post) {
                         container.innerHTML = `
                             <div class="blog-single">
-                                <a href="?" style="color:var(--accent-1);text-decoration:none;font-size:0.85rem"><i class="fas fa-arrow-left"></i> Back to all posts</a>
+                        <a href="/blog/" style="color:var(--accent-1);text-decoration:none;font-size:0.85rem"><i class="fas fa-arrow-left"></i> Back to all posts</a>
                                 <h1 style="margin-top:1rem">${post.title}</h1>
                                 <div class="blog-meta" style="margin-bottom:1.5rem">By ${post.author} &middot; ${new Date(post.created_at).toLocaleDateString()}</div>
                                 <div class="content">${post.content}</div>
@@ -133,7 +141,7 @@
             }
         }
 
-        loadPosts();
+        document.addEventListener('DOMContentLoaded', loadPosts);
     </script>
 </body>
 </html>

@@ -15,6 +15,7 @@ function initPortal() {
                 <div class="portal-tabs">
                     <button class="portal-tab active" data-tab="login" data-i18n="portal.login">Login</button>
                     <button class="portal-tab" data-tab="register" data-i18n="portal.register">Register</button>
+                    <button class="portal-tab" data-tab="forgot" id="forgotTabBtn" style="display:none">Reset Password</button>
                 </div>
                 <div class="portal-form-container">
                     <form id="loginForm" class="portal-form active">
@@ -28,6 +29,7 @@ function initPortal() {
                         </div>
                         <button type="submit" class="btn btn-primary" data-i18n="portal.login"><i class="fas fa-sign-in-alt"></i> Login</button>
                         <div id="loginMsg" class="form-message"></div>
+                        <p style="margin-top:0.5rem;font-size:0.8rem"><a href="#" id="showForgotPassword" style="color:var(--accent-1)">Forgot password?</a></p>
                     </form>
                     <form id="registerForm" class="portal-form">
                         <div class="form-group">
@@ -49,6 +51,19 @@ function initPortal() {
                         <button type="submit" class="btn btn-primary" data-i18n="portal.register"><i class="fas fa-user-plus"></i> Register</button>
                         <div id="regMsg" class="form-message"></div>
                     </form>
+                    <form id="forgotForm" class="portal-form">
+                        <h4 style="margin-bottom:1rem;color:var(--accent-1)">Reset Password</h4>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="forgotEmail" required>
+                        </div>
+                        <div class="form-group" id="resetPasswordGroup" style="display:none">
+                            <label>New Password</label>
+                            <input type="password" id="resetPassword" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="forgotBtn"><i class="fas fa-paper-plane"></i> Send Reset Link</button>
+                        <div id="forgotMsg" class="form-message"></div>
+                    </form>
                 </div>
             </div>
             <div class="portal-dashboard" id="portalDashboard" style="display:none;">
@@ -66,6 +81,7 @@ function initPortal() {
                 <div id="portalAppointments" class="portal-section-content" style="display:none;"></div>
                 <div id="portalAccount" class="portal-section-content" style="display:none;">
                     <p>Referral Code: <strong id="portalRefCode"></strong></p>
+                    <p><a href="#" id="showForgotPasswordDash" style="color:var(--accent-1);font-size:0.85rem">Change Password</a></p>
                     <button class="btn btn-outline" id="portalLogout" data-i18n="portal.logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </div>
@@ -74,6 +90,7 @@ function initPortal() {
     section.parentNode.insertBefore(portalSection, section.nextSibling);
     bindPortalEvents();
     checkPortalSession();
+    checkResetToken();
 }
 
 let portalClient = null;
@@ -113,6 +130,10 @@ function bindPortalEvents() {
                 });
                 const data = await res.json();
                 if (data.success) { portalClient = data.client; savePortalSession(); showPortalDashboard(); }
+                else if (data.needsVerification) {
+                    msg.innerHTML = `<span style="color:#ff6b35">${data.error}</span>
+                        <p style="margin-top:0.5rem"><button class="btn btn-sm btn-outline" onclick="resendVerification('${data.email}')" style="font-size:0.8rem;padding:0.3rem 0.8rem">Resend verification email</button></p>`;
+                }
                 else msg.innerHTML = `<span style="color:#ff6b35">${data.error}</span>`;
             } catch { msg.innerHTML = '<span style="color:#ff6b35">Server unavailable</span>'; }
         } else { msg.innerHTML = '<span style="color:#ff6b35">You need an internet connection to log in</span>'; }
@@ -149,6 +170,68 @@ function bindPortalEvents() {
         portalClient = null; localStorage.removeItem('vit_portal_session');
         document.getElementById('portalAuth').style.display = 'block';
         document.getElementById('portalDashboard').style.display = 'none';
+    });
+
+    document.getElementById('showForgotPassword')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showForgotForm();
+    });
+    document.getElementById('showForgotPasswordDash')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showForgotForm();
+    });
+
+    document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgotEmail').value.trim();
+        const resetData = window.__resetData;
+        const msg = document.getElementById('forgotMsg');
+        const btn = document.getElementById('forgotBtn');
+
+        if (resetData && resetData.token) {
+            const password = document.getElementById('resetPassword').value;
+            if (!password || password.length < 6) {
+                msg.innerHTML = '<span style="color:#ff6b35">Password must be at least 6 characters</span>';
+                return;
+            }
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+            try {
+                const res = await fetch('/api/clients/reset-password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: resetData.email, token: resetData.token, password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    msg.innerHTML = '<span style="color:#00c853"><i class="fas fa-check-circle"></i> Password reset successfully! You can now log in.</span>';
+                    document.getElementById('resetPasswordGroup').style.display = 'none';
+                    btn.style.display = 'none';
+                    window.__resetData = null;
+                    setTimeout(() => { document.querySelector('.portal-tab[data-tab="login"]')?.click(); }, 2000);
+                } else {
+                    msg.innerHTML = '<span style="color:#ff6b35">' + (data.error || 'Reset failed') + '</span>';
+                }
+            } catch {
+                msg.innerHTML = '<span style="color:#ff6b35">Server error. Please try again.</span>';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Set New Password';
+        } else {
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            try {
+                const res = await fetch('/api/clients/forgot-password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    msg.innerHTML = '<span style="color:#00c853"><i class="fas fa-check-circle"></i> If the email exists, a reset link has been sent. Check your inbox (including spam).</span>';
+                } else {
+                    msg.innerHTML = '<span style="color:#ff6b35">' + (data.error || 'Failed') + '</span>';
+                }
+            } catch {
+                msg.innerHTML = '<span style="color:#ff6b35">Server error. Please try again.</span>';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Link';
+        }
     });
 }
 
@@ -234,6 +317,41 @@ async function cancelAppointment(id) {
         const data = await res.json();
         if (data.success) { loadPortalAppointments(); } else { alert(data.error || 'Cancel failed'); }
     } catch { alert('Server unavailable'); }
+}
+
+function checkResetToken() {
+    const params = new URLSearchParams(window.location.search);
+    const resetToken = params.get('reset_token');
+    const email = params.get('email');
+    if (resetToken && email) {
+        document.getElementById('forgotEmail').value = email;
+        document.getElementById('resetPasswordGroup').style.display = 'block';
+        document.getElementById('forgotBtn').innerHTML = '<i class="fas fa-save"></i> Set New Password';
+        document.getElementById('forgotTabBtn').style.display = 'inline-block';
+        document.getElementById('forgotTabBtn').click();
+        window.__resetData = { token: resetToken, email: email };
+    }
+}
+
+function showForgotForm() {
+    document.querySelectorAll('.portal-tab[data-tab]').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.portal-form').forEach(f => f.classList.remove('active'));
+    document.getElementById('forgotTabBtn').style.display = 'inline-block';
+    document.getElementById('forgotTabBtn').classList.add('active');
+    document.getElementById('forgotForm').classList.add('active');
+}
+
+async function resendVerification(email) {
+    const msg = document.getElementById('loginMsg');
+    msg.innerHTML = '<span style="color:var(--text-muted)">Sending verification email...</span>';
+    try {
+        const res = await fetch('/api/clients/resend-verification', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success) msg.innerHTML = '<span style="color:#00c853">Verification email resent! Check your inbox (including spam).</span>';
+        else msg.innerHTML = '<span style="color:#ff6b35">' + (data.error || 'Failed') + '</span>';
+    } catch { msg.innerHTML = '<span style="color:#ff6b35">Server error</span>'; }
 }
 
 function loadPortalAppointments() {
