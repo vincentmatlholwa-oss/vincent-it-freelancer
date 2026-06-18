@@ -732,41 +732,6 @@ img { max-width: 100%; display: block; }
     margin-bottom: 1.5rem;
 }
 
-.discount-badge {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-}
-
-.discount-badge span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.7rem;
-    padding: 0.25rem 0.7rem;
-    border-radius: 50px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-}
-
-.discount-badge span:first-child {
-    background: rgba(0, 212, 255, 0.15);
-    color: var(--accent-1);
-    border: 1px solid rgba(0, 212, 255, 0.2);
-}
-
-.discount-badge span:last-child {
-    background: rgba(123, 47, 247, 0.15);
-    color: #a87bff;
-    border: 1px solid rgba(123, 47, 247, 0.2);
-}
-
-.discount-badge span i {
-    font-size: 0.65rem;
-}
-
 .pricing-features {
     text-align: left;
     margin-bottom: 1.5rem;
@@ -1520,11 +1485,6 @@ img { max-width: 100%; display: block; }
         font-size: 0.8rem;
     }
 
-    .discount-badge span {
-        font-size: 0.6rem;
-        padding: 0.2rem 0.5rem;
-    }
-
     .theme-toggle,
     .cart-btn {
         width: 44px;
@@ -1788,48 +1748,6 @@ body.light-theme .hero-subtitle-text {
 .cart-footer {
     padding: 1.5rem;
     border-top: 1px solid var(--border-color);
-}
-
-.cart-coupon {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.cart-coupon input {
-    flex: 1;
-    padding: 0.6rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    font-family: inherit;
-}
-
-.cart-coupon input:focus {
-    outline: none;
-    border-color: var(--accent-1);
-}
-
-.cart-coupon button {
-    padding: 0.6rem 1.2rem;
-    background: var(--accent-gradient);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.cart-coupon button:hover { opacity: 0.9; }
-
-.cart-coupon-msg {
-    font-size: 0.8rem;
-    margin-bottom: 0.8rem;
-    min-height: 1.2rem;
 }
 
 .cart-total {

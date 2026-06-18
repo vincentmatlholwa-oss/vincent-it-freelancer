@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Transparent pricing for IT services - Office activation, PC repair, CV creation and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-inner">
+            <div class="skeleton-shape skeleton-logo"></div>
+            <div class="skeleton-shape skeleton-title"></div>
+            <div class="skeleton-shape skeleton-text"></div>
+            <div class="skeleton-shape skeleton-text short"></div>
+            <div class="skeleton-cards">
+                <div class="skeleton-shape skeleton-card"></div>
+                <div class="skeleton-shape skeleton-card"></div>
+                <div class="skeleton-shape skeleton-card"></div>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link active">Pricing</a>
+                <a href="templates.html" class="nav-link">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link">Contract</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="blog/" class="nav-link">Blog</a>
+                <a href="client/portal.html" class="nav-link">Portal</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <button class="cart-btn" id="cartBtn"><i class="fas fa-shopping-cart"></i><span class="cart-badge" id="cartBadge">0</span></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header"><h3><i class="fas fa-shopping-cart"></i> Your Cart</h3><button class="cart-close" id="cartClose">&times;</button></div>
+        <div class="cart-items" id="cartItems"><div class="cart-empty"><i class="fas fa-box-open"></i><p>Your cart is empty</p></div></div>
+        <div class="cart-footer">
+            <div class="cart-total"><span>Total:</span><span id="cartTotal">R0</span></div>
+            <button class="btn btn-primary" id="cartCheckout" style="width:100%;justify-content:center"><i class="fas fa-credit-card"></i> Proceed to Checkout</button>
+        </div>
+    </div>
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <section class="section" id="pricing" style="padding-top:8rem">
+        <div class="section-header">
+            <span class="section-badge">Pricing</span>
+            <h2 class="section-title">Transparent Pricing</h2>
+            <p class="section-desc">No hidden fees — quality service at fair rates</p>
+        </div>
+        <div class="pricing-grid" id="pricingGrid"></div>
+    </section>
+    <!-- Contact CTA -->
+    <section class="section" style="padding-top:2rem">
+        <div class="section-header">
+            <p class="section-desc">After adding items to your cart, proceed to the <a href="contract.html" style="color:var(--accent-1)">Contract page</a> to sign and complete your order.</p>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
+            <div class="footer-social">
+                <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+    <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:1rem;right:1rem;z-index:9999;background:linear-gradient(135deg,#12122a,#1a0a2e);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1rem;box-shadow:0 10px 40px rgba(0,0,0,0.5);max-width:300px;font-family:Inter,sans-serif;align-items:center;gap:0.8rem;flex-direction:column;text-align:center">
+        <div><strong style="color:#00d4ff">Install Vincent IT</strong><p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem">Install for quick access and offline support</p></div>
+        <div style="display:flex;gap:0.5rem">
+            <button onclick="installPWA()" style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.8rem">Install</button>
+            <button onclick="this.closest('#pwaInstallBanner').style.display='none'" style="padding:0.5rem 1.2rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-sec);cursor:pointer;font-family:inherit;font-size:0.8rem">Not now</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="js/three-background.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
+    </script>
+</body>
+</html>

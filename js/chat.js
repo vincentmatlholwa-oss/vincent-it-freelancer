@@ -95,7 +95,6 @@ const KNOWLEDGE = {
     ],
     faq: {
         deposit: 'We require a 50% deposit before starting remote services. If the service cannot be completed due to device limitations, you get a full refund.',
-        discount: 'Yes! Students get 10% off (code: STUDENT10). Returning clients get 5% off (code: VIP5). Refer a friend and you both get 10% off your next service.',
         location: 'Based in Mahikeng, North West, South Africa. Services available remotely anywhere in South Africa.',
         payment: 'We accept EFT, mobile money, and cash (for local clients). Deposit of 50% secures your booking.',
         turnaround: 'Most software services (Office, Windows, BSOD) are completed within 30 min to 2 hours. CV and assignments take 1-5 days. Websites take 2-7 days.',
@@ -128,7 +127,6 @@ function classifyIntent(input) {
     scores.generalService = countMatches(l, ['service', 'services', 'what do you do', 'can you help', 'dienste', 'offer', 'what you offer']);
 
     scores.price = countMatches(l, ['price', 'prys', 'cost', 'how much', 'what is the price', 'pricing', 'pryse', 'rate', 'cheap', 'expensive', 'afford', 'kwagala']);
-    scores.discount = countMatches(l, ['discount', 'afslag', 'student discount', 'student', 'returning', 'referral', 'coupon', 'promo', 'special', 'sale', 'cheaper']);
 
     scores.location = countMatches(l, ['mahikeng', 'location', 'where', 'based', 'noordwes', 'north west', 'south africa', 'area', 'near', 'lived', 'adres']);
     scores.contact = countMatches(l, ['contact', 'kontak', 'whatsapp', 'call', 'phone', 'email', 'reach', 'foon', 'sel', 'cell', 'mobile', 'telephone', 'nummer', 'nomer']);
@@ -235,10 +233,6 @@ function getReply(input) {
         KNOWLEDGE.services.forEach(s => lines.push(`• ${s.name}: ${s.price} (${s.est})`));
         lines.push('', 'Which one interests you?');
         return lines.join('\n');
-    }
-
-    if (scores.discount > 0) {
-        return 'We offer: 10% student discount (code: STUDENT10), 5% returning client discount (code: VIP5), and refer-a-friend: you both get 10% off your next service!';
     }
 
     if (scores.location > 0) {

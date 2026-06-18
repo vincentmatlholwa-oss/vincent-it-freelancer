@@ -14,9 +14,9 @@ const services = [
     },
     {
         icon: 'fa-solid fa-gem', title: 'Office + Windows Bundle',
-        desc: 'Best value — activate both Office and Windows at a discounted price.',
+        desc: 'Best value — activate both Office and Windows at a bundle price.',
         price: 'R300 - R500', est: '30-45 min',
-        features: ['Full bundle discount', 'Both activated', 'R50+ savings'], featured: true
+        features: ['Both activated', 'R50+ savings'], featured: true
     },
     {
         icon: 'fa-solid fa-truck-fast', title: 'Remote Installation',
@@ -174,11 +174,6 @@ function renderPricing() {
             <div class="pricing-amount">${s.price}</div>
             <div class="pricing-est"><i class="far fa-clock"></i> Est. ${s.est}</div>
             ${s.remote ? '<div class="pricing-note">50% deposit to start</div>' : '<div class="pricing-note">&nbsp;</div>'}
-            <div class="discount-badge">
-                <span><i class="fas fa-graduation-cap"></i> Student 10% off</span>
-                <span><i class="fas fa-user-friends"></i> Returning 5% off</span>
-                <span><i class="fas fa-share-alt"></i> Referral 10% off</span>
-            </div>
             <ul class="pricing-features">
                 ${s.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
             </ul>
@@ -230,57 +225,63 @@ function payWithPayFast(orderId) {
     }).then(r => r.json());
 }
 
-function buyTemplate(id, title, price) {
-    const name = prompt('Enter your full name:');
-    if (!name) return;
-    const email = prompt('Enter your email address:');
-    if (!email || !email.includes('@')) { alert('Please enter a valid email.'); return; }
-    const phone = prompt('Enter your phone number (optional):');
-    if (navigator.onLine) {
-        fetch('/api/templates/purchase', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client_name: name, client_email: email, client_phone: phone || '', template_id: id })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                payWithPayFast(data.order_id).then(payData => {
-                    if (payData.success && payData.pay_url) {
-                        const choice = confirm(
-                            `Order created!\n\nOrder ID: ${data.order_id}\nPrice: ${price}\nProduct: ${title}\n\nClick OK to pay online with PayFast (secure card/banking).\nClick Cancel to pay via EFT/WhatsApp instead.`
-                        );
-                        if (choice) {
-                            if (payData.form_html) {
-                                const w = window.open('', 'payfast', 'width=800,height=700');
-                                w.document.write(`<html><head><title>PayFast Payment</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:sans-serif}</style></head><body>${payData.form_html}<script>document.getElementById('payfast_form').submit();<\/script></body></html>`);
-                                w.document.close();
-                            } else {
-                                window.open(payData.pay_url, '_blank');
-                            }
-                        } else {
-                            const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
-                            window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
-                        }
-                    } else {
-                        const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay. Please send payment details.`);
-                        window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
-                        alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nPay online unavailable. Please pay via EFT/SnapScan and WhatsApp us your Order ID.\n\nPrice: ${price}\nProduct: ${title}`);
-                    }
-                }).catch(() => {
-                    alert(`Order created!\n\nOrder ID: ${data.order_id}\n\nPay online unavailable. Please pay via EFT/SnapScan and WhatsApp us your Order ID.`);
-                    const msg = encodeURIComponent(`Hi Vincent IT! I want to purchase the ${title} (${id}).\n\nName: ${name}\nEmail: ${email}\nOrder ID: ${data.order_id}\nPrice: ${price}\n\nI am ready to pay.`);
-                    window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
-                });
-            } else {
-                alert('Error: ' + (data.error || 'Could not create order'));
-            }
-        })
-        .catch(() => alert('Server unavailable. Please contact us on WhatsApp.'));
-    } else {
-        alert('Please go online to purchase templates, or contact us on WhatsApp.');
-    }
+let pendingBuyTemplate = null;
+
+function buyTemplate(templateId, templateTitle, templatePrice) {
+    const modal = document.getElementById('paymentModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.getElementById('paymentModalStep1').style.display = 'block';
+    document.getElementById('paymentModalStep2').style.display = 'none';
+    document.getElementById('payFormMsg').innerHTML = '';
+    document.getElementById('payName').value = '';
+    document.getElementById('payEmail').value = '';
+    document.getElementById('payPhone').value = '';
+    pendingBuyTemplate = { id: templateId, title: templateTitle, price: templatePrice };
 }
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    pendingBuyTemplate = null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('paymentForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('payName').value.trim();
+            const email = document.getElementById('payEmail').value.trim();
+            const phone = document.getElementById('payPhone').value.trim();
+            const msg = document.getElementById('payFormMsg');
+            if (!name || !email || !email.includes('@')) {
+                msg.innerHTML = 'Please enter a valid name and email.';
+                return;
+            }
+            const p = pendingBuyTemplate;
+            if (!p) { msg.innerHTML = 'Session expired. Please try again.'; return; }
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            try {
+                const res = await fetch('/api/templates/purchase', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_name: name, client_email: email, client_phone: phone, template_id: p.id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('paymentModalStep1').style.display = 'none';
+                    document.getElementById('paymentModalStep2').style.display = 'block';
+                    document.getElementById('payOrderRef').textContent = 'Order ID: ' + data.order_id + ' | ' + p.title + ' - ' + p.price;
+                } else {
+                    msg.innerHTML = data.error || 'Could not create order. Please try again.';
+                }
+            } catch {
+                msg.innerHTML = 'Server unavailable. Please use WhatsApp to order.';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-right"></i> Proceed to Payment';
+        });
+    }
+});
 
 function openPayFastPayment(orderId) {
     payWithPayFast(orderId).then(data => {
@@ -302,8 +303,7 @@ function openPayFastPayment(orderId) {
 
 // ===== Cart =====
 let cart = [];
-const COUPONS = { STUDENT10: 10, VIP5: 5, REFER10: 10 };
-let appliedCoupon = null;
+
 
 function saveCart() {
     try { localStorage.setItem('vit_cart', JSON.stringify(cart)); } catch {}
@@ -338,8 +338,6 @@ function updateCartUI() {
     const badge = document.getElementById('cartBadge');
     const totalEl = document.getElementById('cartTotal');
     const total = cart.reduce((sum, c) => sum + parsePrice(services[c.index].price) * c.qty, 0);
-    const discount = appliedCoupon ? Math.round(total * (COUPONS[appliedCoupon] / 100)) : 0;
-    const final = total - discount;
     badge.textContent = cart.reduce((s, c) => s + c.qty, 0);
     if (cart.length === 0) {
         container.innerHTML = '<div class="cart-empty"><i class="fas fa-box-open"></i><p>Your cart is empty</p></div>';
@@ -361,11 +359,7 @@ function updateCartUI() {
     container.querySelectorAll('.cart-item-remove').forEach(btn => {
         btn.addEventListener('click', () => removeFromCart(parseInt(btn.dataset.index)));
     });
-    if (discount > 0) {
-        totalEl.innerHTML = `R${total} <span style="color:var(--accent-1);font-size:0.8rem;">(-R${discount})</span> = <strong>R${final}</strong>`;
-    } else {
-        totalEl.textContent = `R${total}`;
-    }
+    totalEl.textContent = `R${total}`;
 }
 
 function parsePrice(priceStr) {
@@ -386,17 +380,6 @@ function initCart() {
         document.getElementById('cartSidebar').classList.remove('open');
         document.getElementById('cartOverlay').classList.remove('open');
     });
-    document.getElementById('applyCoupon').addEventListener('click', () => {
-        const code = document.getElementById('couponInput').value.trim().toUpperCase();
-        const msg = document.getElementById('couponMsg');
-        if (COUPONS[code]) {
-            appliedCoupon = code;
-            msg.innerHTML = `<span style="color:var(--accent-1)">Coupon applied! ${COUPONS[code]}% off</span>`;
-            updateCartUI();
-        } else {
-            msg.innerHTML = `<span style="color:#ff6b35">Invalid coupon code</span>`;
-        }
-    });
     document.getElementById('cartCheckout').addEventListener('click', () => {
         if (cart.length === 0) { alert('Your cart is empty.'); return; }
         document.getElementById('cartSidebar').classList.remove('open');
@@ -404,23 +387,20 @@ function initCart() {
         document.getElementById('contract').scrollIntoView({ behavior: 'smooth' });
         const msg = cart.map(c => `- ${services[c.index].title} x${c.qty} @ ${services[c.index].price}`).join('\n');
         const total = cart.reduce((s, c) => s + parsePrice(services[c.index].price) * c.qty, 0);
-        const discount = appliedCoupon ? Math.round(total * (COUPONS[appliedCoupon] / 100)) : 0;
-        const final = total - discount;
         document.getElementById('additionalInfo').value =
-            `Cart Order:\n${msg}\nTotal: R${total}${discount ? `\nCoupon (${appliedCoupon}): -R${discount}` : ''}\nFinal: R${final}`;
+            `Cart Order:\n${msg}\nTotal: R${total}`;
     });
 }
 
 // ===== FAQ =====
 const faqs = [
-    { q: 'How do I pay?', a: 'Payments are accepted via EFT, SnapScan, or bank transfer. A 50% deposit is required before remote services begin. Students get 10% off, returning clients 5% off, and referrals 10% off (use codes: STUDENT10, VIP5, REFER10).' },
+    { q: 'How do I pay?', a: 'Payments are accepted via PayShap (number: 067 783 4591) or EFT. A 50% deposit is required before remote services begin. After payment, send your proof of payment via WhatsApp or email.' },
     { q: 'Do I need to be present during the service?', a: 'Yes, you need to be available during the appointment to provide remote access and any necessary information (product keys, etc.).' },
     { q: 'What if the service can\'t be completed?', a: 'If the service cannot be completed due to technical limitations on your device, you receive a full refund of your deposit.' },
     { q: 'How long does each service take?', a: 'Most software activations take 15-45 minutes. Repairs and installations take 1-3 hours. CVs and assignments take 1-5 days depending on complexity.' },
     { q: 'Do you guarantee data recovery?', a: 'Data recovery is performed with care but cannot be guaranteed. We always advise clients to maintain their own backups.' },
     { q: 'Is remote access safe?', a: 'Absolutely. We use encrypted connections via TeamViewer/AnyDesk and your data is never stored or shared. You can revoke access at any time.' },
-    { q: 'What if I\'m not satisfied?', a: 'We strive for 100% satisfaction. If something isn\'t right, contact us within 48 hours and we\'ll make it right at no extra cost.' },
-    { q: 'Can I get a discount for multiple services?', a: 'Yes! Bundle deals are available. Add multiple services to your cart and use coupon codes STUDENT10 (10% off), VIP5 (5% off), or REFER10 (10% off for referrals) for extra savings.' }
+    { q: 'What if I\'m not satisfied?', a: 'We strive for 100% satisfaction. If something isn\'t right, contact us within 48 hours and we\'ll make it right at no extra cost.' }
 ];
 
 function renderFAQ() {
@@ -563,8 +543,7 @@ function generateContractPDF(isClientCopy) {
         '5. Services typically completed within 1-24 hours.',
         '6. Full refund of deposit if service cannot be completed due to client device limitations.',
         '7. All client information kept strictly confidential.',
-        '8. Students & referrals receive 10% discount. Returning clients receive 5% discount.',
-        '9. Governed by the laws of South Africa. Disputes resolved via arbitration in Mahikeng.'
+        '8. Governed by the laws of South Africa. Disputes resolved via arbitration in Mahikeng.'
     ];
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 100);
     terms.forEach(term => {
@@ -718,9 +697,7 @@ function initContractForm() {
                 cart_items: JSON.stringify(cartItems)
             };
             const cartTotal = cartItems.reduce((s, c) => s + c.price * c.qty, 0);
-            const discount = appliedCoupon ? Math.round(cartTotal * (COUPONS[appliedCoupon] / 100)) : 0;
-            const finalTotal = cartTotal - discount;
-            if (cart.length > 0) payload.price = `R${finalTotal}`;
+            if (cart.length > 0) payload.price = `R${cartTotal}`;
             if (navigator.onLine) {
                 const res = await fetch('/api/orders', {
                     method: 'POST',
@@ -759,37 +736,20 @@ function initContractForm() {
         const orderRef = d.orderId ? `\nOrder ID: ${d.orderId}` : '';
         let msg;
         if (d.isRemote) {
-            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract for REMOTE INSTALLATION.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nI am ready to pay the 50% deposit. Please send payment details.`);
+            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract for REMOTE INSTALLATION.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nI am paying the 50% deposit via PayShap (067 783 4591). Here is my proof of payment.`);
         } else {
-            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nPlease proceed with my service.`);
+            msg = encodeURIComponent(`Hello Vincent IT Freelancer! I have signed the contract.\n\nName: ${d.clientName || 'Client'}${orderRef}\n\nI will pay via PayShap (067 783 4591) and send proof. Please proceed.`);
         }
         window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
     });
     function initiatePayment(depositOnly, btn) {
         const d = window.__contractData;
         if (!d || !d.orderId) { alert('No order ID found. Please submit the contract first.'); return; }
-        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting...';
-        fetch('/api/payfast/pay', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order_id: d.orderId, deposit_only: depositOnly })
-        }).then(r => r.json()).then(payData => {
-            if (payData.success && payData.pay_url) {
-                if (payData.form_html) {
-                    const w = window.open('', 'payfast', 'width=800,height=700');
-                    w.document.write(`<html><head><title>PayFast Payment</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:sans-serif}</style></head><body>${payData.form_html}<script>document.getElementById('payfast_form').submit();<\/script></body></html>`);
-                    w.document.close();
-                } else {
-                    window.open(payData.pay_url, '_blank');
-                }
-            } else {
-                alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
-            }
-        }).catch(() => {
-            alert('Online payment unavailable. Please use WhatsApp to arrange payment.');
-        }).finally(() => {
-            btn.disabled = false; btn.innerHTML = depositOnly ? '<i class="fas fa-coins"></i> Pay 50% Deposit' : '<i class="fas fa-credit-card"></i> Pay Full Amount';
-        });
+        const amount = depositOnly ? '50% Deposit' : 'Full Amount';
+        const msg = encodeURIComponent(
+            `Hi Vincent IT! I have signed the contract.\n\nOrder ID: ${d.orderId}\nPayment: ${amount}\n\nI am paying via PayShap. Here is my proof of payment.`
+        );
+        window.open(`https://wa.me/${APP_CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
     }
     document.getElementById('payNowBtn').addEventListener('click', function() { initiatePayment(false, this); });
     document.getElementById('payDepositBtn').addEventListener('click', function() { initiatePayment(true, this); });
@@ -920,21 +880,21 @@ function installPWA() {
     }
 })();
 
-// ===== Init =====
+// ===== Init (page-aware — only inits what exists on the page) =====
 document.addEventListener('DOMContentLoaded', () => {
     initSkeleton();
-    renderServices();
-    renderComparison();
-    renderPricing();
-    renderTemplates();
-    renderFAQ();
+    if (document.getElementById('servicesGrid')) renderServices();
+    if (document.getElementById('compareTable')) renderComparison();
+    if (document.getElementById('pricingGrid')) renderPricing();
+    if (document.getElementById('templatesGrid')) renderTemplates();
+    if (document.getElementById('faqList')) renderFAQ();
+    if (document.getElementById('signaturePad')) initSignaturePad();
+    if (document.getElementById('contractForm')) initContractForm();
+    if (document.getElementById('cartBtn')) initCart();
     loadCart();
-    initCart();
-    initSignaturePad();
-    initContractForm();
     initTheme();
     initNavbar();
     initMobileNav();
     initScrollTop();
-    initCounters();
+    if (document.querySelector('.hero-stat-num')) initCounters();
 });

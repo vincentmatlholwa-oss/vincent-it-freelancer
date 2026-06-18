@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Professional CV templates and website templates - downloadable and ready to use.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-inner">
+            <div class="skeleton-shape skeleton-logo"></div>
+            <div class="skeleton-shape skeleton-title"></div>
+            <div class="skeleton-shape skeleton-text"></div>
+            <div class="skeleton-shape skeleton-text short"></div>
+            <div class="skeleton-cards">
+                <div class="skeleton-shape skeleton-card"></div>
+                <div class="skeleton-shape skeleton-card"></div>
+                <div class="skeleton-shape skeleton-card"></div>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link">Pricing</a>
+                <a href="templates.html" class="nav-link active">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link">Contract</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="blog/" class="nav-link">Blog</a>
+                <a href="client/portal.html" class="nav-link">Portal</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+    <section class="section" id="templates" style="padding-top:8rem">
+        <div class="section-header">
+            <span class="section-badge">Templates</span>
+            <h2 class="section-title">Template Gallery</h2>
+            <p class="section-desc">Professional CV templates (ATS-friendly, downloadable) &amp; pre-built website templates ready to be branded</p>
+        </div>
+        <div class="templates-grid" id="templatesGrid"></div>
+    </section>
+    <!-- Payment Modal -->
+    <div id="paymentModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;font-family:'Inter',sans-serif">
+        <div style="background:#12122a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2rem;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;position:relative">
+            <button onclick="closePaymentModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#b0b0d0;font-size:1.5rem;cursor:pointer">&times;</button>
+            <div id="paymentModalStep1">
+                <h3 style="margin-bottom:1rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-credit-card"></i> Complete Your Purchase</h3>
+                <form id="paymentForm">
+                    <div class="field" style="margin-bottom:1rem">
+                        <label style="display:block;font-size:0.85rem;color:#b0b0d0;margin-bottom:0.3rem">Full Name *</label>
+                        <input type="text" id="payName" required style="width:100%;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-family:inherit;font-size:0.9rem;box-sizing:border-box">
+                    </div>
+                    <div class="field" style="margin-bottom:1rem">
+                        <label style="display:block;font-size:0.85rem;color:#b0b0d0;margin-bottom:0.3rem">Email Address *</label>
+                        <input type="email" id="payEmail" required style="width:100%;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-family:inherit;font-size:0.9rem;box-sizing:border-box">
+                    </div>
+                    <div class="field" style="margin-bottom:1rem">
+                        <label style="display:block;font-size:0.85rem;color:#b0b0d0;margin-bottom:0.3rem">Phone Number</label>
+                        <input type="tel" id="payPhone" style="width:100%;padding:0.7rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#fff;font-family:inherit;font-size:0.9rem;box-sizing:border-box">
+                    </div>
+                    <button type="submit" style="width:100%;padding:0.8rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:1rem"><i class="fas fa-arrow-right"></i> Proceed to Payment</button>
+                    <div id="payFormMsg" style="margin-top:0.5rem;font-size:0.85rem;text-align:center;color:#ff6b35"></div>
+                </form>
+            </div>
+            <div id="paymentModalStep2" style="display:none">
+                <div style="text-align:center">
+                    <i class="fas fa-check-circle" style="font-size:3rem;color:#00c853;margin-bottom:1rem"></i>
+                    <h3 style="margin-bottom:0.5rem;color:#00c853">Order Created!</h3>
+                    <p style="color:#b0b0d0;font-size:0.9rem;margin-bottom:1rem">Please complete your payment via PayShap</p>
+                    <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:1.5rem;margin:1rem 0">
+                        <p style="color:#b0b0d0;font-size:0.85rem;margin-bottom:0.3rem">PayShap Number:</p>
+                        <p style="font-size:1.8rem;font-weight:800;color:#00d4ff;letter-spacing:2px">067 783 4591</p>
+                        <p style="color:#b0b0d0;font-size:0.8rem;margin-top:0.3rem">or EFT to the same number</p>
+                    </div>
+                    <div style="background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.2);border-radius:8px;padding:0.8rem;margin:1rem 0">
+                        <p style="color:#ffc107;font-size:0.85rem"><i class="fas fa-exclamation-triangle"></i> After payment, send your proof of payment to:</p>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
+                        <a href="https://wa.me/27677834591?text=I%20have%20paid%20via%20PayShap.%20Please%20find%20my%20proof%20of%20payment%20attached." target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.2rem;background:#25D366;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.85rem"><i class="fab fa-whatsapp"></i> WhatsApp Proof</a>
+                        <a href="mailto:codingpredators@gmail.com?subject=Proof%20of%20Payment&body=I%20have%20paid%20via%20PayShap.%20Please%20find%20my%20proof%20attached." style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.2rem;background:transparent;border:1px solid #00d4ff;color:#00d4ff;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.85rem"><i class="fas fa-envelope"></i> Email Proof</a>
+                    </div>
+                    <p id="payOrderRef" style="color:#6b6b8d;font-size:0.75rem;margin-top:1rem"></p>
+                    <button onclick="closePaymentModal()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:transparent;border:1px solid rgba(255,255,255,0.15);color:#b0b0d0;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.85rem">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
+            <div class="footer-social">
+                <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/three-background.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
+    </script>
+</body>
+</html>

@@ -48,12 +48,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .page-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin:2rem 0; }
+        .page-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1.5rem; text-align:center; transition:var(--transition); cursor:pointer; }
+        .page-card:hover { transform:translateY(-4px); border-color:var(--accent-1); box-shadow:0 8px 32px rgba(0,212,255,0.15); }
+        .page-card i { font-size:2rem; color:var(--accent-1); margin-bottom:0.5rem; display:block; }
+        .page-card h3 { font-size:1rem; margin-bottom:0.3rem; }
+        .page-card p { color:var(--text-secondary); font-size:0.8rem; }
+    </style>
 </head>
 <body>
-
     <div id="canvas-container"></div>
-
-    <!-- Loading Skeleton -->
     <div class="skeleton-loader" id="skeletonLoader">
         <div class="skeleton-inner">
             <div class="skeleton-shape skeleton-logo"></div>
@@ -67,75 +72,36 @@
             </div>
         </div>
     </div>
-
-    <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="#" class="nav-logo">
-                <i class="fas fa-code"></i>
-                <span>Vincent IT</span>
-            </a>
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
             <div class="nav-menu" id="navMenu">
-                <a href="#services" class="nav-link">Services</a>
-                <a href="#pricing" class="nav-link">Pricing</a>
-                <a href="#templates" class="nav-link">Templates</a>
-                <a href="#compare" class="nav-link">Compare</a>
-                <a href="#faq" class="nav-link">FAQ</a>
-                <a href="#contract" class="nav-link">Contract</a>
-                <a href="#booking" class="nav-link">Booking</a>
-                <a href="#contact" class="nav-link">Contact</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link">Pricing</a>
+                <a href="templates.html" class="nav-link">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link">Contract</a>
+                <a href="contact.html" class="nav-link">Contact</a>
                 <a href="blog/" class="nav-link">Blog</a>
                 <a href="client/portal.html" class="nav-link">Portal</a>
             </div>
             <div class="nav-actions">
-                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button class="cart-btn" id="cartBtn" title="Shopping Cart">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-badge" id="cartBadge">0</span>
-                </button>
-                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp" title="Chat on WhatsApp">
-                    <i class="fab fa-whatsapp"></i>
-                    <span>WhatsApp</span>
-                </a>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme"><i class="fas fa-moon"></i></button>
+                <button class="cart-btn" id="cartBtn" title="Shopping Cart"><i class="fas fa-shopping-cart"></i><span class="cart-badge" id="cartBadge">0</span></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp" title="Chat on WhatsApp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
             </div>
-            <div class="nav-toggle" id="navToggle">
-                <span></span><span></span><span></span>
-            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
         </div>
     </nav>
-
-    <!-- Cart Sidebar -->
     <div class="cart-sidebar" id="cartSidebar">
-        <div class="cart-header">
-            <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
-            <button class="cart-close" id="cartClose">&times;</button>
-        </div>
-        <div class="cart-items" id="cartItems">
-            <div class="cart-empty">
-                <i class="fas fa-box-open"></i>
-                <p>Your cart is empty</p>
-            </div>
-        </div>
+        <div class="cart-header"><h3><i class="fas fa-shopping-cart"></i> Your Cart</h3><button class="cart-close" id="cartClose">&times;</button></div>
+        <div class="cart-items" id="cartItems"><div class="cart-empty"><i class="fas fa-box-open"></i><p>Your cart is empty</p></div></div>
         <div class="cart-footer">
-            <div class="cart-coupon">
-                <input type="text" id="couponInput" placeholder="Coupon code">
-                <button id="applyCoupon">Apply</button>
-            </div>
-            <div class="cart-coupon-msg" id="couponMsg"></div>
-            <div class="cart-total">
-                <span>Total:</span>
-                <span id="cartTotal">R0</span>
-            </div>
-            <button class="btn btn-primary" id="cartCheckout" style="width:100%;justify-content:center;">
-                <i class="fas fa-credit-card"></i> Proceed to Checkout
-            </button>
+            <div class="cart-total"><span>Total:</span><span id="cartTotal">R0</span></div>
+            <button class="btn btn-primary" id="cartCheckout" style="width:100%;justify-content:center"><i class="fas fa-credit-card"></i> View Cart & Checkout</button>
         </div>
     </div>
     <div class="cart-overlay" id="cartOverlay"></div>
-
-    <!-- Hero Section -->
     <section class="hero" id="hero">
         <div class="hero-content">
             <div class="hero-badge">Premium IT Services</div>
@@ -149,311 +115,79 @@
                 Reliable, affordable, and dedicated to getting your tech working.
             </p>
             <div class="hero-buttons">
-                <a href="#services" class="btn btn-primary">
-                    <i class="fas fa-rocket"></i> Explore Services
-                </a>
-                <a href="https://wa.me/27677834591" target="_blank" class="btn btn-whatsapp">
-                    <i class="fab fa-whatsapp"></i> Chat Now
-                </a>
+                <a href="services.html" class="btn btn-primary"><i class="fas fa-rocket"></i> Explore Services</a>
+                <a href="https://wa.me/27677834591" target="_blank" class="btn btn-whatsapp"><i class="fab fa-whatsapp"></i> Chat Now</a>
             </div>
             <div class="hero-stats">
-                <div class="hero-stat">
-                    <span class="hero-stat-num" data-count="10">0</span><span>+</span>
-                    <span class="hero-stat-label">Services Offered</span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-num" data-count="3">0</span><span>+</span>
-                    <span class="hero-stat-label">Years Experience</span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-num" data-count="1">0</span><span> hr</span>
-                    <span class="hero-stat-label">Avg. Response Time</span>
-                </div>
+                <div class="hero-stat"><span class="hero-stat-num" data-count="10">0</span><span>+</span><span class="hero-stat-label">Services Offered</span></div>
+                <div class="hero-stat"><span class="hero-stat-num" data-count="3">0</span><span>+</span><span class="hero-stat-label">Years Experience</span></div>
+                <div class="hero-stat"><span class="hero-stat-num" data-count="1">0</span><span> hr</span><span class="hero-stat-label">Avg. Response Time</span></div>
             </div>
         </div>
     </section>
-
-    <!-- Services Section -->
-    <section class="section" id="services">
+    <section class="section" style="padding-top:2rem">
         <div class="section-header">
-            <span class="section-badge">What I Offer</span>
-            <h2 class="section-title">Professional Services</h2>
-            <p class="section-desc">Comprehensive IT solutions tailored to your needs</p>
+            <span class="section-badge">Quick Links</span>
+            <h2 class="section-title">What We Offer</h2>
+            <p class="section-desc">Everything you need in one place</p>
         </div>
-        <div class="services-grid" id="servicesGrid"></div>
-    </section>
-
-    <!-- Comparison Table -->
-    <section class="section" id="compare">
-        <div class="section-header">
-            <span class="section-badge">Compare</span>
-            <h2 class="section-title">Service Comparison</h2>
-            <p class="section-desc">See what each service includes at a glance</p>
-        </div>
-        <div class="compare-wrapper">
-            <div class="compare-table" id="compareTable"></div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section class="section" id="pricing">
-        <div class="section-header">
-            <span class="section-badge">Pricing</span>
-            <h2 class="section-title">Transparent Pricing</h2>
-            <p class="section-desc">No hidden fees — quality service at fair rates</p>
-        </div>
-        <div class="pricing-grid" id="pricingGrid"></div>
-    </section>
-
-    <!-- Templates Section -->
-    <section class="section lazy-section" id="templates">
-        <div class="section-header">
-            <span class="section-badge">Templates</span>
-            <h2 class="section-title">Template Gallery</h2>
-            <p class="section-desc">Professional CV templates (ATS-friendly, downloadable) &amp; pre-built website templates ready to be branded</p>
-        </div>
-        <div class="templates-grid" id="templatesGrid"></div>
-    </section>
-
-    <!-- FAQ Section -->
-    <section class="section" id="faq">
-        <div class="section-header">
-            <span class="section-badge">FAQ</span>
-            <h2 class="section-title">Frequently Asked Questions</h2>
-            <p class="section-desc">Everything you need to know before booking</p>
-        </div>
-        <div class="faq-list" id="faqList"></div>
-    </section>
-
-    <!-- Contract Section -->
-    <section class="section section-contract" id="contract">
-        <div class="section-header">
-            <span class="section-badge">Legal</span>
-            <h2 class="section-title">Service Contract & Agreement</h2>
-            <p class="section-desc">Review, fill in your details, and sign digitally</p>
-        </div>
-        <div class="contract-container" id="contractContainer">
-            <div class="contract-card">
-                <div class="contract-header">
-                    <i class="fas fa-file-signature"></i>
-                    <h3>Service Agreement</h3>
-                    <p>Between <strong>Vincent IT Freelancer</strong> and the Client</p>
-                </div>
-                <div class="contract-body" id="contractBody">
-                    <div class="contract-terms">
-                        <h4><i class="fas fa-gavel"></i> Terms & Conditions</h4>
-                        <ol>
-                            <li><strong>Scope:</strong> The service includes remote installation and/or activation of Microsoft Office (2013, 2016, 2019, 2021, 2024, 365) and Windows (10, 11), blue screen repair, data recovery, hardware upgrades, CV creation, academic assistance, and website templating.</li>
-                            <li><strong>Payment:</strong> A <strong>50% deposit</strong> is required before any remote service begins. The remaining balance is due upon completion. Payment methods: EFT, SnapScan, or bank transfer. <strong>Students receive 10% discount, existing clients 5%.</strong></li>
-                            <li><strong>Remote Access:</strong> The client agrees to grant remote access via TeamViewer, AnyDesk, or similar software. The client is responsible for backing up important data prior to service.</li>
-                            <li><strong>Data:</strong> Vincent IT Freelancer is not liable for any pre-existing data loss. Data recovery services carry no guarantee of full recovery.</li>
-                            <li><strong>Timeframe:</strong> Services are typically completed within 1–24 hours depending on complexity.</li>
-                            <li><strong>Refund Policy:</strong> Full refund of deposit if service cannot be completed due to client device limitations. No refunds once completed successfully.</li>
-                            <li><strong>Confidentiality:</strong> All client information and data accessed during service are kept strictly confidential.</li>
-                            <li><strong>Client Cooperation:</strong> Client must be available during the agreed appointment and provide necessary information promptly.</li>
-                            <li><strong>Liability:</strong> Liability is limited to the amount paid for the specific service.</li>
-                            <li><strong>Governing Law:</strong> Governed by the laws of South Africa. Disputes resolved via arbitration in Mahikeng, North West.</li>
-                        </ol>
-                    </div>
-                    <form class="contract-form" id="contractForm">
-                        <h4><i class="fas fa-user-edit"></i> Your Details</h4>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="clientName">Full Name *</label>
-                                <input type="text" id="clientName" required placeholder="e.g. John Doe" autocomplete="name">
-                                <i class="fas fa-user form-icon"></i>
-                            </div>
-                            <div class="form-group">
-                                <label for="clientEmail">Email Address *</label>
-                                <input type="email" id="clientEmail" required placeholder="e.g. john@example.com" inputmode="email" autocomplete="email">
-                                <i class="fas fa-envelope form-icon"></i>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="clientPhone">Phone Number *</label>
-                                <input type="tel" id="clientPhone" required placeholder="Your phone number" inputmode="tel" autocomplete="tel">
-                                <i class="fas fa-phone form-icon"></i>
-                            </div>
-                            <div class="form-group">
-                                <label for="serviceType">Service Required *</label>
-                                <select id="serviceType" required>
-                                    <option value="">Select a service...</option>
-                                    <option value="ms-office">MS Office Activation</option>
-                                    <option value="windows-activation">Windows Activation</option>
-                                    <option value="office-windows">Office + Windows Bundle</option>
-                                    <option value="remote-installation">Remote Installation (Office + Windows)</option>
-                                    <option value="bsod-repair">Blue Screen Repair</option>
-                                    <option value="bsod-recovery">BSOD Repair + Data Recovery</option>
-                                    <option value="hardware-upgrade">Desktop Hardware Upgrade</option>
-                                    <option value="cv-creation">CV Creation / Revamp</option>
-                                    <option value="assignment-help">College / School Assignment</option>
-                                    <option value="website-template">Website Template + Customisation</option>
-                                </select>
-                                <i class="fas fa-tools form-icon"></i>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="clientAddress">Physical / Postal Address</label>
-                            <input type="text" id="clientAddress" placeholder="e.g. 123 Main Street, Mahikeng" autocomplete="street-address">
-                            <i class="fas fa-map-marker-alt form-icon"></i>
-                        </div>
-                        <div class="form-group">
-                            <label for="additionalInfo">Additional Information</label>
-                            <textarea id="additionalInfo" rows="3" placeholder="Any special requests or details..."></textarea>
-                        </div>
-                        <div class="form-group agreement-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="agreeTerms" required>
-                                <span class="checkmark"></span>
-                                I have read and agree to the <a href="#" onclick="event.preventDefault(); document.getElementById('contractBody').scrollIntoView({behavior:'smooth'});">Terms & Conditions</a> above *
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label for="signaturePad">Digital Signature *</label>
-                            <p class="sig-hint">Sign below using your mouse, touch, or stylus</p>
-                            <div class="signature-wrapper">
-                                <canvas id="signaturePad" width="600" height="180"></canvas>
-                                <button type="button" class="btn-clear-sig" id="clearSignature">
-                                    <i class="fas fa-eraser"></i> Clear
-                                </button>
-                            </div>
-                            <input type="hidden" id="signatureData" name="signatureData">
-                        </div>
-                        <div class="contract-actions">
-                            <button type="submit" class="btn btn-primary" id="submitContract">
-                                <i class="fas fa-check-circle"></i> Sign & Generate Contract
-                            </button>
-                        </div>
-                    </form>
-                </div>
+        <div class="page-grid">
+            <div class="page-card" onclick="window.location.href='services.html'">
+                <i class="fas fa-cogs"></i>
+                <h3>Services</h3>
+                <p>See all IT services we provide</p>
             </div>
-        </div>
-        <div class="contract-result" id="contractResult" style="display:none;">
-            <div class="contract-card result-card">
-                <div class="result-header">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>Contract Generated Successfully</h3>
-                    <p id="resultOrderId" style="margin-top:0.5rem;font-size:0.9rem;color:var(--accent-1);"></p>
-                </div>
-                <div class="result-actions">
-                    <button class="btn btn-primary" id="payNowBtn">
-                        <i class="fas fa-credit-card"></i> Pay Full Amount
-                    </button>
-                    <button class="btn btn-secondary" id="payDepositBtn">
-                        <i class="fas fa-coins"></i> Pay 50% Deposit
-                    </button>
-                    <button class="btn btn-primary" id="downloadClientPDF">
-                        <i class="fas fa-download"></i> Download My Copy
-                    </button>
-                    <button class="btn btn-secondary" id="downloadVendorPDF">
-                        <i class="fas fa-file-contract"></i> Download Vendor Copy
-                    </button>
-                    <button class="btn btn-primary" id="downloadInvoice">
-                        <i class="fas fa-file-invoice"></i> Download Invoice
-                    </button>
-                    <a href="https://wa.me/27677834591?text=I%20have%20signed%20the%20service%20contract.%20Please%20proceed%20with%20my%20service." target="_blank" class="btn btn-whatsapp" id="proceedWhatsApp">
-                        <i class="fab fa-whatsapp"></i> Proceed on WhatsApp
-                    </a>
-                    <button class="btn btn-outline" id="resetContract">
-                        <i class="fas fa-redo"></i> Start Over
-                    </button>
-                </div>
+            <div class="page-card" onclick="window.location.href='pricing.html'">
+                <i class="fas fa-tags"></i>
+                <h3>Pricing</h3>
+                <p>Transparent pricing with no hidden fees</p>
+            </div>
+            <div class="page-card" onclick="window.location.href='templates.html'">
+                <i class="fas fa-file-download"></i>
+                <h3>Templates</h3>
+                <p>CV & website templates ready to use</p>
+            </div>
+            <div class="page-card" onclick="window.location.href='faq.html'">
+                <i class="fas fa-question-circle"></i>
+                <h3>FAQ</h3>
+                <p>Answers to common questions</p>
+            </div>
+            <div class="page-card" onclick="window.location.href='contract.html'">
+                <i class="fas fa-file-signature"></i>
+                <h3>Contract</h3>
+                <p>Sign a service agreement digitally</p>
+            </div>
+            <div class="page-card" onclick="window.location.href='contact.html'">
+                <i class="fas fa-envelope"></i>
+                <h3>Contact</h3>
+                <p>Get in touch for a free consultation</p>
+            </div>
+            <div class="page-card" onclick="window.location.href='client/portal.html'">
+                <i class="fas fa-user-circle"></i>
+                <h3>Client Portal</h3>
+                <p>Track orders, upload files, manage account</p>
+            </div>
+            <div class="page-card" onclick="window.location.href='blog/'">
+                <i class="fas fa-blog"></i>
+                <h3>Blog</h3>
+                <p>Tech tips, guides, and updates</p>
             </div>
         </div>
     </section>
-
-    <!-- Contact Section -->
-    <section class="section" id="contact">
+    <!-- Reviews Preview -->
+    <section class="section" id="reviews">
         <div class="section-header">
-            <span class="section-badge">Get in Touch</span>
-            <h2 class="section-title">Let's Work Together</h2>
-            <p class="section-desc">Reach out for a free consultation</p>
+            <span class="section-badge">Testimonials</span>
+            <h2 class="section-title">What Clients Say</h2>
+            <p class="section-desc">Real reviews from real customers</p>
         </div>
-        <div class="contact-wrapper">
-            <div class="contact-info">
-                <div class="contact-card-item">
-                    <div class="contact-icon"><i class="fab fa-whatsapp"></i></div>
-                    <h4>WhatsApp</h4>
-                    <a href="https://wa.me/27677834591" target="_blank">Click to Chat <i class="fas fa-external-link-alt" style="font-size:0.7rem;opacity:0.6;"></i></a>
-                </div>
-                <div class="contact-card-item">
-                    <div class="contact-icon"><i class="fas fa-home"></i></div>
-                    <h4>Location</h4>
-                    <p>Home-based, Mahikeng, North West</p>
-                </div>
-                <div class="contact-card-item">
-                    <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-                    <h4>Email</h4>
-                    <a href="mailto:codingpredators@gmail.com">codingpredators@gmail.com</a>
-                </div>
-                <div class="contact-card-item">
-                    <div class="contact-icon"><i class="fas fa-clock"></i></div>
-                    <h4>Response Time</h4>
-                    <p>Usually within 1 hour</p>
-                </div>
-            </div>
-            <div class="contact-form-container">
-                <h3><i class="fas fa-paper-plane"></i> Send a Message</h3>
-                <form id="contactForm" class="contact-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="cfName">Your Name *</label>
-                            <input type="text" id="cfName" required placeholder="e.g. John Doe" autocomplete="name">
-                        </div>
-                        <div class="form-group">
-                            <label for="cfEmail">Email *</label>
-                            <input type="email" id="cfEmail" required placeholder="john@example.com" inputmode="email" autocomplete="email">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="cfPhone">Phone</label>
-                            <input type="tel" id="cfPhone" placeholder="Your number" inputmode="tel" autocomplete="tel">
-                        </div>
-                        <div class="form-group">
-                            <label for="cfSubject">Subject</label>
-                            <input type="text" id="cfSubject" placeholder="What is this about?">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="cfMessage">Message *</label>
-                        <textarea id="cfMessage" rows="4" required placeholder="Tell me about your project or issue..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Message</button>
-                    <div id="contactFormMsg" class="form-message" style="text-align:center;margin-top:0.5rem"></div>
-                </form>
-            </div>
-            <div class="contact-cta">
-                <a href="https://wa.me/27677834591" target="_blank" class="btn btn-whatsapp btn-lg pulse-animation">
-                    <i class="fab fa-whatsapp"></i> Chat on WhatsApp Now
-                </a>
-            </div>
+        <div id="reviewsPreview" style="max-width:600px;margin:0 auto">
+            <p style="text-align:center;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading reviews...</p>
         </div>
     </section>
-
-    <!-- Blog Section -->
-    <section class="section blog-list-section lazy-section" id="blogSection">
-        <div class="section-header">
-            <span class="section-badge" data-i18n="blog.title">Blog</span>
-            <h2 data-i18n="blog.title">Tech Tips & Blog</h2>
-            <p class="section-desc">IT tips, guides, and updates from Vincent IT</p>
-        </div>
-        <div id="blogPreview">
-            <p style="text-align:center;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading posts...</p>
-        </div>
-        <div style="text-align:center;margin-top:1.5rem">
-            <a href="blog/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> View All Posts</a>
-        </div>
-    </section>
-
-    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-brand">
-                <i class="fas fa-code"></i>
-                <span>Vincent IT Freelancer</span>
-            </div>
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
             <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
             <div class="footer-social">
                 <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
@@ -461,7 +195,6 @@
             </div>
         </div>
     </footer>
-
     <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:1rem;right:1rem;z-index:9999;background:linear-gradient(135deg,#12122a,#1a0a2e);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1rem;box-shadow:0 10px 40px rgba(0,0,0,0.5);max-width:300px;font-family:Inter,sans-serif;align-items:center;gap:0.8rem;flex-direction:column;text-align:center">
         <div><strong style="color:#00d4ff">Install Vincent IT</strong><p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem">Install for quick access and offline support</p></div>
         <div style="display:flex;gap:0.5rem">
@@ -469,14 +202,7 @@
             <button onclick="this.closest('#pwaInstallBanner').style.display='none'" style="padding:0.5rem 1.2rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-sec);cursor:pointer;font-family:inherit;font-size:0.8rem">Not now</button>
         </div>
     </div>
-    <button class="scroll-top" id="scrollTop">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Cookie Consent Banner -->
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
     <div id="cookieBanner" style="position:fixed;bottom:0;left:0;right:0;background:#12122a;border-top:1px solid rgba(255,255,255,0.08);padding:1rem 2rem;display:none;z-index:99999;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <p style="color:#b0b0d0;font-size:0.85rem;margin:0;flex:1;min-width:200px">
             <i class="fas fa-cookie-bite" style="color:#00d4ff"></i>
@@ -490,120 +216,33 @@
         if (!localStorage.getItem('vit_cookie_consent')) { document.getElementById('cookieBanner').style.display = 'flex'; }
     </script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="js/three-background.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/lazy-load.js"></script>
-    <script src="js/search-filter.js"></script>
-    <script src="js/quiz.js"></script>
-    <script src="js/chat.js"></script>
-    <script src="js/booking.js"></script>
-    <script src="js/portal.js"></script>
     <script>
-        // Initialize all new features after DOMContentLoaded
         document.addEventListener('DOMContentLoaded', () => {
-            // Re-init with extra features appended to existing init
-            const origInit = window.initExtras || (() => {});
-            window.initExtras = () => {
-                initLazyLoad();
-                initSearchFilter();
-                setTimeout(() => { renderQuiz(); initBooking(); initPortal(); initOrderTracking(); }, 100);
-                initChat();
-                loadBlogPreview();
-                initContactForm();
-
-                // Add lazy-section class to sections
-                document.querySelectorAll('.section:not(.hero):not(.lazy-section)').forEach((el, i) => {
-                    if (i > 1) el.classList.add('lazy-section');
-                });
-                setTimeout(initLazyLoad, 200);
-            };
-            window.initExtras();
-
-            // Register service worker
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-            }
-
-            // Visitor tracking
-            if (navigator.onLine) {
-                fetch('/api/visit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: window.location.pathname })
-                }).catch(() => {});
-            }
-        });
-
-        // Contact Form
-        function initContactForm() {
-            const form = document.getElementById('contactForm');
-            if (!form) return;
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const data = {
-                    name: document.getElementById('cfName').value.trim(),
-                    email: document.getElementById('cfEmail').value.trim(),
-                    phone: document.getElementById('cfPhone').value.trim(),
-                    subject: document.getElementById('cfSubject').value.trim(),
-                    message: document.getElementById('cfMessage').value.trim()
-                };
-                const msg = document.getElementById('contactFormMsg');
-                const btn = form.querySelector('button[type="submit"]');
-                if (!data.name || !data.email || !data.message) {
-                    msg.innerHTML = '<span style="color:#ff6b35">Please fill in required fields</span>'; return;
-                }
-                if (navigator.onLine) {
-                    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                    try {
-                        const res = await fetch('/api/contact', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
-                        });
-                        const result = await res.json();
-                        msg.innerHTML = `<span style="color:var(--accent-1)">${result.message || 'Message sent!'}</span>`;
-                        form.reset();
-                    } catch {
-                        msg.innerHTML = '<span style="color:#ff6b35">Server unavailable. Please use WhatsApp.</span>';
-                    } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message'; }
+            // Load approved reviews
+            fetch('/api/reviews?approved=1').then(r=>r.json()).then(reviews => {
+                const c = document.getElementById('reviewsPreview');
+                if (reviews && reviews.length) {
+                    c.innerHTML = reviews.slice(0, 3).map(r => `
+                        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.5rem;margin-bottom:1rem;text-align:center">
+                            <p style="color:var(--text-secondary);font-style:italic;margin-bottom:0.5rem">"${r.text}"</p>
+                            <strong style="color:var(--accent-1)">${r.client_name}</strong>
+                            <span style="color:#ffc107;display:block;margin-top:0.2rem">${'<i class="fas fa-star" style="font-size:0.75rem"></i>'.repeat(r.rating)}</span>
+                        </div>
+                    `).join('');
                 } else {
-                    msg.innerHTML = '<span style="color:#ff6b35">You are offline. Please use WhatsApp.</span>';
+                    c.innerHTML = '<p style="text-align:center;color:var(--text-muted)">No reviews yet. Be the first!</p>';
                 }
+            }).catch(() => {
+                document.getElementById('reviewsPreview').innerHTML = '<p style="text-align:center;color:var(--text-muted)">Reviews coming soon.</p>';
             });
-        }
-
-        // Blog preview on homepage
-        async function loadBlogPreview() {
-            const container = document.getElementById('blogPreview');
-            if (!container) return;
-            try {
-                const posts = await fetch('/api/blog').then(r => r.json());
-                if (posts.length) {
-                    container.innerHTML = posts.slice(0, 3).map(p => `
-                        <div class="blog-card" onclick="window.location.href='blog/?slug=${p.slug}'">
-                            <h3>${p.title}</h3>
-                            <div class="blog-meta">${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
-                            <p>${p.excerpt}</p>
-                            <div class="blog-tags">${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
-                        </div>
-                    `).join('');
-                    return;
-                }
-            } catch {}
-            try {
-                const localPosts = await fetch('blog/posts.json').then(r => r.json());
-                if (localPosts.length) {
-                    container.innerHTML = localPosts.slice(0, 3).map(p => `
-                        <div class="blog-card" onclick="window.location.href='blog/?slug=${p.slug}'">
-                            <h3>${p.title}</h3>
-                            <div class="blog-meta">${p.author} &middot; ${new Date(p.created_at).toLocaleDateString()}</div>
-                            <p>${p.excerpt}</p>
-                            <div class="blog-tags">${(p.tags||'').split(',').filter(Boolean).map(t => `<span class="blog-tag">${t.trim()}</span>`).join('')}</div>
-                        </div>
-                    `).join('');
-                    return;
-                }
-            } catch {}
-            container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Check back soon for tech tips!</p>';
-        }
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
     </script>
 </body>
 </html>

@@ -134,11 +134,28 @@
                 <button id="showOrders" class="active"><i class="fas fa-shopping-bag"></i> Orders</button>
                 <button id="showUploads"><i class="fas fa-upload"></i> Uploads</button>
                 <button id="showAppts"><i class="fas fa-calendar"></i> Appointments</button>
+                <button id="showProfile"><i class="fas fa-user-cog"></i> Profile</button>
                 <button id="portalLogout" class="logout"><i class="fas fa-sign-out-alt"></i></button>
             </div>
             <div id="portalOrders"></div>
             <div id="portalUploads" style="display:none"></div>
             <div id="portalAppointments" style="display:none"></div>
+            <div id="portalProfile" style="display:none">
+                <div class="portal-card">
+                    <h3 style="margin-bottom:1rem"><i class="fas fa-user-edit"></i> Edit Profile</h3>
+                    <form id="profileForm">
+                        <div class="field"><label>Full Name</label><input type="text" id="profileName" required></div>
+                        <div class="field"><label>Email</label><input type="email" id="profileEmail" required></div>
+                        <div class="field"><label>Phone</label><input type="tel" id="profilePhone"></div>
+                        <hr style="border-color:var(--border-color);margin:1rem 0">
+                        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem">Change Password (leave blank to keep current)</p>
+                        <div class="field"><label>Current Password</label><input type="password" id="profileCurrentPwd" autocomplete="off"></div>
+                        <div class="field"><label>New Password</label><input type="password" id="profileNewPwd" minlength="6" autocomplete="new-password"></div>
+                        <button type="submit" style="width:100%;padding:0.7rem;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.9rem"><i class="fas fa-save"></i> Save Changes</button>
+                        <div id="profileMsg" class="msg"></div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -290,10 +307,62 @@
             loadAppointments();
         });
 
+        document.getElementById('showProfile').addEventListener('click', () => {
+            document.querySelectorAll('.dash-header button').forEach(b => b.classList.remove('active'));
+            document.getElementById('showProfile').classList.add('active');
+            hideAllSections();
+            document.getElementById('portalProfile').style.display = 'block';
+            document.getElementById('profileName').value = client.name || '';
+            document.getElementById('profileEmail').value = client.email || '';
+            document.getElementById('profilePhone').value = client.phone || '';
+            document.getElementById('profileCurrentPwd').value = '';
+            document.getElementById('profileNewPwd').value = '';
+            document.getElementById('profileMsg').innerHTML = '';
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            const msg = document.getElementById('profileMsg');
+            try {
+                const tok = localStorage.getItem('vit_client_token');
+                if (!tok) { msg.innerHTML = '<span style="color:#ff6b35">Session expired. Please log in again.</span>'; btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; return; }
+                const res = await fetch(API+'/api/clients/update', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
+                    body: JSON.stringify({
+                        name: document.getElementById('profileName').value.trim(),
+                        email: document.getElementById('profileEmail').value.trim(),
+                        phone: document.getElementById('profilePhone').value.trim(),
+                        current_password: document.getElementById('profileCurrentPwd').value,
+                        new_password: document.getElementById('profileNewPwd').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    msg.innerHTML = '<span style="color:#00c853">Profile updated successfully!</span>';
+                    client = data.client;
+                    localStorage.setItem('vit_portal_session', JSON.stringify(client));
+                    document.getElementById('portalUserName').textContent = client.name;
+                    document.getElementById('portalRefCode').textContent = client.referral_code;
+                    if (data.token) localStorage.setItem('vit_client_token', data.token);
+                    document.getElementById('profileCurrentPwd').value = '';
+                    document.getElementById('profileNewPwd').value = '';
+                } else {
+                    msg.innerHTML = '<span style="color:#ff6b35">'+data.error+'</span>';
+                }
+            } catch {
+                msg.innerHTML = '<span style="color:#ff6b35">Server unavailable. Try again later.</span>';
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+        });
+
         function hideAllSections() {
             document.getElementById('portalOrders').style.display = 'none';
             document.getElementById('portalUploads').style.display = 'none';
             document.getElementById('portalAppointments').style.display = 'none';
+            document.getElementById('portalProfile').style.display = 'none';
         }
 
         function showDashboard() {
@@ -532,7 +601,17 @@
             c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Appointment tracking coming soon with full calendar integration.</p>';
         }
 
-        if (client) { document.getElementById('showOrders').click(); }
+        // Heartbeat - let server know client is online
+        function startHeartbeat() {
+            const tok = localStorage.getItem('vit_client_token');
+            if (!tok) return;
+            fetch(API+'/api/clients/heartbeat', { method:'POST', headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+tok } }).catch(()=>{});
+        }
+        if (client) {
+            document.getElementById('showOrders').click();
+            startHeartbeat();
+            setInterval(startHeartbeat, 120000);
+        }
     </script>
 </body>
 </html>

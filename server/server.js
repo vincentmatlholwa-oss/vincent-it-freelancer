@@ -960,6 +960,63 @@ app.post('/api/clients/reset-password', async (req, res) => {
     }
 });
 
+// ===== Client Heartbeat (Online Tracking) =====
+app.post('/api/clients/heartbeat', authenticateToken, (req, res) => {
+    if (req.user.role !== 'client') return res.status(403).json({ error: 'Only clients can send heartbeat' });
+    const clients = db.query('clients', c => c.id === req.user.clientId);
+    if (!clients.length) return res.status(404).json({ error: 'Client not found' });
+    db.update('clients', req.user.clientId, { last_seen: new Date().toISOString(), is_online: 1 });
+    res.json({ success: true });
+});
+
+// Admin: get all clients with online status
+app.get('/api/admin/clients', authenticateToken, (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+    const clients = db.query('clients', null);
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const result = clients.map(c => ({
+        id: c.id, name: c.name, email: c.email, phone: c.phone || '',
+        referral_code: c.referral_code, created_at: c.created_at,
+        last_seen: c.last_seen || null,
+        is_online: c.last_seen && c.last_seen > fiveMinAgo ? 1 : 0,
+        deleted: c.deleted || 0
+    })).filter(c => !c.deleted).reverse();
+    res.json(result);
+});
+
+// ===== Client Profile Update =====
+app.patch('/api/clients/update', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'client') return res.status(403).json({ error: 'Only clients can update their profile' });
+    const { name, phone, email, current_password, new_password } = req.body;
+    const clients = db.query('clients', c => c.id === req.user.clientId);
+    if (!clients.length) return res.status(404).json({ error: 'Client not found' });
+    const client = clients[0];
+    const updates = {};
+    if (name) updates.name = name.trim().replace(/<[^>]*>/g, '');
+    if (phone !== undefined) updates.phone = phone.trim().replace(/[^0-9+\-\s]/g, '');
+    if (email) {
+        const emailLower = email.trim().toLowerCase();
+        const existing = db.query('clients', c => c.email.toLowerCase() === emailLower && c.id !== client.id);
+        if (existing.length) return res.status(409).json({ error: 'Email already in use' });
+        updates.email = emailLower;
+    }
+    if (new_password) {
+        if (!current_password) return res.status(400).json({ error: 'Current password required to set new password' });
+        try {
+            const valid = await bcrypt.compare(current_password, client.password);
+            if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+            if (new_password.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+            updates.password = await bcrypt.hash(new_password, 10);
+        } catch {
+            return res.status(500).json({ error: 'Password update failed' });
+        }
+    }
+    if (!Object.keys(updates).length) return res.status(400).json({ error: 'No fields to update' });
+    updates.updated_at = new Date().toISOString();
+    const updated = db.update('clients', client.id, updates);
+    res.json({ success: true, client: { id: updated.id, name: updated.name, email: updated.email, phone: updated.phone, referral_code: updated.referral_code } });
+});
+
 // ===== Account Deletion Requests =====
 app.post('/api/clients/delete-request', async (req, res) => {
     const { email, reason } = req.body;

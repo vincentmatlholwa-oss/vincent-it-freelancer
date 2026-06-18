@@ -94,7 +94,8 @@
             <button class="tab-btn" data-tab="blog"><i class="fas fa-blog"></i> Blog</button>
             <button class="tab-btn" data-tab="templates"><i class="fas fa-file-download"></i> Templates</button>
             <button class="tab-btn" data-tab="uploads"><i class="fas fa-upload"></i> Uploads</button>
-            <button class="tab-btn" data-tab="visitors"><i class="fas fa-users"></i> Visitors</button>
+            <button class="tab-btn" data-tab="clients"><i class="fas fa-user-friends"></i> Clients</button>
+            <button class="tab-btn" data-tab="visitors"><i class="fas fa-globe"></i> Visitors</button>
             <button class="tab-btn" data-tab="deletions"><i class="fas fa-user-slash"></i> Deletions</button>
         </div>
 
@@ -106,6 +107,7 @@
         <div id="panel-blog" class="panel"></div>
         <div id="panel-templates" class="panel"></div>
         <div id="panel-uploads" class="panel"></div>
+        <div id="panel-clients" class="panel"></div>
         <div id="panel-visitors" class="panel"></div>
         <div id="panel-deletions" class="panel"></div>
     </div>
@@ -169,6 +171,7 @@
                 else if (name === 'chat') { const d = await fetch(API+'/api/chat', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderChat(d); }
                 else if (name === 'templates') { const d = await fetch(API+'/api/admin/template-orders', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderTemplateOrders(d); }
                 else if (name === 'uploads') { const d = await fetch(API+'/api/uploads', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderUploads(d); }
+                else if (name === 'clients') { const d = await fetch(API+'/api/admin/clients', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderClients(d); }
                 else if (name === 'visitors') { const d = await fetch(API+'/api/visitors', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderVisitors(d); }
                 else if (name === 'deletions') { const d = await fetch(API+'/api/admin/delete-requests', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()); renderDeletions(d); }
             } catch(e) { document.getElementById('panel-'+name).innerHTML = '<p style="color:#ff6b35">Error loading data. Make sure the server is running.</p>'; }
@@ -338,6 +341,24 @@
                 </tr>`).join('')}
             </tbody></table>
             <p style="color:var(--text-sec);font-size:0.8rem;margin-top:0.5rem">Files are stored on the server. Download via SFTP or server file manager.</p>`;
+        }
+
+        function renderClients(data) {
+            if (!data || !data.length) { document.getElementById('panel-clients').innerHTML = '<p style="color:var(--text-sec)">No registered clients yet</p>'; return; }
+            document.getElementById('panel-clients').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-clients" placeholder="Search clients..." oninput="filterTable('filter-clients','table-clients')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div>
+            <table id="table-clients"><thead><tr><th>Status</th><th>Name</th><th>Email</th><th>Phone</th><th>Ref Code</th><th>Registered</th><th>Last Seen</th></tr></thead><tbody>
+                ${data.map(c => `
+                    <tr>
+                        <td>${c.is_online ? '<span class="status" style="background:rgba(0,200,83,0.15);color:#00c853">● Online</span>' : '<span class="status" style="background:rgba(255,107,53,0.15);color:#ff6b35">○ Offline</span>'}</td>
+                        <td>${c.name}</td>
+                        <td>${c.email}</td>
+                        <td>${c.phone || '-'}</td>
+                        <td style="font-family:monospace;font-size:0.75rem">${c.referral_code || '-'}</td>
+                        <td>${new Date(c.created_at).toLocaleDateString()}</td>
+                        <td>${c.last_seen ? new Date(c.last_seen).toLocaleString() : 'Never'}</td>
+                    </tr>
+                `).join('')}
+            </tbody></table>`;
         }
 
         function renderVisitors(data) {

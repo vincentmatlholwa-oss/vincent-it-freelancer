@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Get in touch with Vincent IT Freelancer in Mahikeng, North West.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-inner">
+            <div class="skeleton-shape skeleton-logo"></div>
+            <div class="skeleton-shape skeleton-title"></div>
+            <div class="skeleton-shape skeleton-text"></div>
+            <div class="skeleton-shape skeleton-text short"></div>
+        </div>
+    </div>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link">Pricing</a>
+                <a href="templates.html" class="nav-link">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link">Contract</a>
+                <a href="contact.html" class="nav-link active">Contact</a>
+                <a href="blog/" class="nav-link">Blog</a>
+                <a href="client/portal.html" class="nav-link">Portal</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+    <section class="section" id="contact" style="padding-top:8rem">
+        <div class="section-header">
+            <span class="section-badge">Get in Touch</span>
+            <h2 class="section-title">Let's Work Together</h2>
+            <p class="section-desc">Reach out for a free consultation</p>
+        </div>
+        <div class="contact-wrapper">
+            <div class="contact-info">
+                <div class="contact-card-item">
+                    <div class="contact-icon"><i class="fab fa-whatsapp"></i></div>
+                    <h4>WhatsApp</h4>
+                    <a href="https://wa.me/27677834591" target="_blank">Click to Chat <i class="fas fa-external-link-alt" style="font-size:0.7rem;opacity:0.6;"></i></a>
+                </div>
+                <div class="contact-card-item">
+                    <div class="contact-icon"><i class="fas fa-home"></i></div>
+                    <h4>Location</h4>
+                    <p>Home-based, Mahikeng, North West</p>
+                </div>
+                <div class="contact-card-item">
+                    <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+                    <h4>Email</h4>
+                    <a href="mailto:codingpredators@gmail.com">codingpredators@gmail.com</a>
+                </div>
+                <div class="contact-card-item">
+                    <div class="contact-icon"><i class="fas fa-clock"></i></div>
+                    <h4>Response Time</h4>
+                    <p>Usually within 1 hour</p>
+                </div>
+            </div>
+            <div class="contact-form-container">
+                <h3><i class="fas fa-paper-plane"></i> Send a Message</h3>
+                <form id="contactForm" class="contact-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cfName">Your Name *</label>
+                            <input type="text" id="cfName" required placeholder="e.g. John Doe" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="cfEmail">Email *</label>
+                            <input type="email" id="cfEmail" required placeholder="john@example.com" inputmode="email" autocomplete="email">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cfPhone">Phone</label>
+                            <input type="tel" id="cfPhone" placeholder="Your number" inputmode="tel" autocomplete="tel">
+                        </div>
+                        <div class="form-group">
+                            <label for="cfSubject">Subject</label>
+                            <input type="text" id="cfSubject" placeholder="What is this about?">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfMessage">Message *</label>
+                        <textarea id="cfMessage" rows="4" required placeholder="Tell me about your project or issue..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Message</button>
+                    <div id="contactFormMsg" class="form-message" style="text-align:center;margin-top:0.5rem"></div>
+                </form>
+            </div>
+            <div class="contact-cta">
+                <a href="https://wa.me/27677834591" target="_blank" class="btn btn-whatsapp btn-lg pulse-animation">
+                    <i class="fab fa-whatsapp"></i> Chat on WhatsApp Now
+                </a>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
+            <div class="footer-social">
+                <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/three-background.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/lazy-load.js"></script>
+    <script src="js/search-filter.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/booking.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initContactForm();
+            initLazyLoad();
+            initSearchFilter();
+            initChat();
+            initBooking();
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
+        function initContactForm() {
+            const form = document.getElementById('contactForm');
+            if (!form) return;
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    name: document.getElementById('cfName').value.trim(),
+                    email: document.getElementById('cfEmail').value.trim(),
+                    phone: document.getElementById('cfPhone').value.trim(),
+                    subject: document.getElementById('cfSubject').value.trim(),
+                    message: document.getElementById('cfMessage').value.trim()
+                };
+                const msg = document.getElementById('contactFormMsg');
+                const btn = form.querySelector('button[type="submit"]');
+                if (!data.name || !data.email || !data.message) {
+                    msg.innerHTML = '<span style="color:#ff6b35">Please fill in required fields</span>'; return;
+                }
+                if (navigator.onLine) {
+                    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                    try {
+                        const res = await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                        const result = await res.json();
+                        msg.innerHTML = '<span style="color:var(--accent-1)">' + (result.message || 'Message sent!') + '</span>';
+                        form.reset();
+                    } catch { msg.innerHTML = '<span style="color:#ff6b35">Server unavailable. Please use WhatsApp.</span>'; }
+                    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message'; }
+                } else { msg.innerHTML = '<span style="color:#ff6b35">You are offline. Please use WhatsApp.</span>'; }
+            });
+        }
+    </script>
+</body>
+</html>

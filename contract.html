@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Contract - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Review and sign the Vincent IT service agreement digitally.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .section-contract { padding-top:8rem; }
+        .contract-container { max-width:800px; margin:0 auto; }
+        .contract-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:2rem; margin-bottom:1rem; }
+        .contract-header { text-align:center; margin-bottom:1.5rem; }
+        .contract-header i { font-size:2.5rem; color:var(--accent-1); }
+        .contract-header h3 { margin-top:0.5rem; font-size:1.4rem; }
+        .contract-header p { color:var(--text-secondary); font-size:0.9rem; }
+        .contract-terms { margin-bottom:2rem; }
+        .contract-terms h4 { color:var(--accent-1); margin-bottom:1rem; }
+        .contract-terms ol { padding-left:1.2rem; }
+        .contract-terms li { color:var(--text-secondary); font-size:0.9rem; margin-bottom:0.5rem; line-height:1.5; }
+        .contract-form h4 { color:var(--accent-1); margin-bottom:1rem; }
+        .form-row { display:flex; gap:1rem; margin-bottom:1rem; }
+        .form-row .form-group { flex:1; }
+        .form-group { margin-bottom:1rem; position:relative; }
+        .form-group label { display:block; font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.3rem; }
+        .form-group input, .form-group select, .form-group textarea { width:100%; padding:0.7rem; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:#fff; font-family:inherit; font-size:0.9rem; box-sizing:border-box; }
+        .form-group input:focus, .form-group select:focus { outline:none; border-color:var(--accent-1); }
+        .form-group textarea { resize:vertical; min-height:60px; }
+        .form-icon { position:absolute; right:1rem; top:2.2rem; color:var(--text-muted); }
+        .agreement-group { margin:1rem 0; }
+        .checkbox-label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.9rem; color:var(--text-secondary); }
+        .checkbox-label input[type="checkbox"] { width:auto; accent-color:var(--accent-1); }
+        .signature-wrapper { position:relative; margin-top:0.5rem; }
+        #signaturePad { width:100%; height:180px; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:crosshair; touch-action:none; }
+        .btn-clear-sig { position:absolute; bottom:0.5rem; right:0.5rem; padding:0.3rem 0.8rem; background:rgba(255,255,255,0.08); border:1px solid var(--border-color); border-radius:6px; color:var(--text-secondary); cursor:pointer; font-size:0.8rem; font-family:inherit; }
+        .sig-hint { color:var(--text-muted); font-size:0.75rem; margin-bottom:0.3rem; }
+        .contract-actions { margin-top:1.5rem; text-align:center; }
+        .result-card { text-align:center; }
+        .result-header i { font-size:3rem; color:#00c853; }
+        .result-header h3 { margin-top:0.5rem; }
+        .result-actions { display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center; margin-top:1.5rem; }
+        .result-actions .btn { min-width:180px; justify-content:center; }
+        .pay-shap-section { width:100%; }
+        @media(max-width:600px) { .form-row { flex-direction:column; gap:0; } }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-inner">
+            <div class="skeleton-shape skeleton-logo"></div>
+            <div class="skeleton-shape skeleton-title"></div>
+            <div class="skeleton-shape skeleton-text"></div>
+            <div class="skeleton-shape skeleton-text short"></div>
+        </div>
+    </div>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link">Pricing</a>
+                <a href="templates.html" class="nav-link">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link active">Contract</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="blog/" class="nav-link">Blog</a>
+                <a href="client/portal.html" class="nav-link">Portal</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+    <section class="section section-contract" id="contract">
+        <div class="section-header">
+            <span class="section-badge">Legal</span>
+            <h2 class="section-title">Service Contract & Agreement</h2>
+            <p class="section-desc">Review, fill in your details, and sign digitally</p>
+        </div>
+        <div class="contract-container" id="contractContainer">
+            <div class="contract-card">
+                <div class="contract-header">
+                    <i class="fas fa-file-signature"></i>
+                    <h3>Service Agreement</h3>
+                    <p>Between <strong>Vincent IT Freelancer</strong> and the Client</p>
+                </div>
+                <div class="contract-body" id="contractBody">
+                    <div class="contract-terms">
+                        <h4><i class="fas fa-gavel"></i> Terms & Conditions</h4>
+                        <ol>
+                            <li><strong>Scope:</strong> The service includes remote installation and/or activation of Microsoft Office (2013, 2016, 2019, 2021, 2024, 365) and Windows (10, 11), blue screen repair, data recovery, hardware upgrades, CV creation, academic assistance, and website templating.</li>
+                            <li><strong>Payment:</strong> A <strong>50% deposit</strong> is required before any remote service begins. The remaining balance is due upon completion. Payment via PayShap (067 783 4591) or EFT.</li>
+                            <li><strong>Remote Access:</strong> The client agrees to grant remote access via TeamViewer, AnyDesk, or similar software. The client is responsible for backing up important data prior to service.</li>
+                            <li><strong>Data:</strong> Vincent IT Freelancer is not liable for any pre-existing data loss. Data recovery services carry no guarantee of full recovery.</li>
+                            <li><strong>Timeframe:</strong> Services are typically completed within 1–24 hours depending on complexity.</li>
+                            <li><strong>Refund Policy:</strong> Full refund of deposit if service cannot be completed due to client device limitations. No refunds once completed successfully.</li>
+                            <li><strong>Confidentiality:</strong> All client information and data accessed during service are kept strictly confidential.</li>
+                            <li><strong>Client Cooperation:</strong> Client must be available during the agreed appointment and provide necessary information promptly.</li>
+                            <li><strong>Liability:</strong> Liability is limited to the amount paid for the specific service.</li>
+                            <li><strong>Governing Law:</strong> Governed by the laws of South Africa. Disputes resolved via arbitration in Mahikeng, North West.</li>
+                        </ol>
+                    </div>
+                    <form class="contract-form" id="contractForm">
+                        <h4><i class="fas fa-user-edit"></i> Your Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="clientName">Full Name *</label>
+                                <input type="text" id="clientName" required placeholder="e.g. John Doe" autocomplete="name">
+                                <i class="fas fa-user form-icon"></i>
+                            </div>
+                            <div class="form-group">
+                                <label for="clientEmail">Email Address *</label>
+                                <input type="email" id="clientEmail" required placeholder="e.g. john@example.com" inputmode="email" autocomplete="email">
+                                <i class="fas fa-envelope form-icon"></i>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="clientPhone">Phone Number *</label>
+                                <input type="tel" id="clientPhone" required placeholder="Your phone number" inputmode="tel" autocomplete="tel">
+                                <i class="fas fa-phone form-icon"></i>
+                            </div>
+                            <div class="form-group">
+                                <label for="serviceType">Service Required *</label>
+                                <select id="serviceType" required>
+                                    <option value="">Select a service...</option>
+                                    <option value="ms-office">MS Office Activation</option>
+                                    <option value="windows-activation">Windows Activation</option>
+                                    <option value="office-windows">Office + Windows Bundle</option>
+                                    <option value="remote-installation">Remote Installation (Office + Windows)</option>
+                                    <option value="bsod-repair">Blue Screen Repair</option>
+                                    <option value="bsod-recovery">BSOD Repair + Data Recovery</option>
+                                    <option value="hardware-upgrade">Desktop Hardware Upgrade</option>
+                                    <option value="cv-creation">CV Creation / Revamp</option>
+                                    <option value="assignment-help">College / School Assignment</option>
+                                    <option value="website-template">Website Template + Customisation</option>
+                                </select>
+                                <i class="fas fa-tools form-icon"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="clientAddress">Physical / Postal Address</label>
+                            <input type="text" id="clientAddress" placeholder="e.g. 123 Main Street, Mahikeng" autocomplete="street-address">
+                            <i class="fas fa-map-marker-alt form-icon"></i>
+                        </div>
+                        <div class="form-group">
+                            <label for="additionalInfo">Additional Information</label>
+                            <textarea id="additionalInfo" rows="3" placeholder="Any special requests or details..."></textarea>
+                        </div>
+                        <div class="form-group agreement-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="agreeTerms" required>
+                                <span class="checkmark"></span>
+                                I have read and agree to the <a href="#" onclick="event.preventDefault(); document.getElementById('contractBody').scrollIntoView({behavior:'smooth'});">Terms & Conditions</a> above *
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="signaturePad">Digital Signature *</label>
+                            <p class="sig-hint">Sign below using your mouse, touch, or stylus</p>
+                            <div class="signature-wrapper">
+                                <canvas id="signaturePad" width="600" height="180"></canvas>
+                                <button type="button" class="btn-clear-sig" id="clearSignature"><i class="fas fa-eraser"></i> Clear</button>
+                            </div>
+                            <input type="hidden" id="signatureData" name="signatureData">
+                        </div>
+                        <div class="contract-actions">
+                            <button type="submit" class="btn btn-primary" id="submitContract"><i class="fas fa-check-circle"></i> Sign & Generate Contract</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="contract-result" id="contractResult" style="display:none;">
+            <div class="contract-card result-card">
+                <div class="result-header">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Contract Generated Successfully</h3>
+                    <p id="resultOrderId" style="margin-top:0.5rem;font-size:0.9rem;color:var(--accent-1);"></p>
+                </div>
+                <div class="result-actions">
+                    <div class="pay-shap-section" style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:0.5rem 0;text-align:center;width:100%">
+                        <p style="font-weight:600;color:var(--accent-1);margin-bottom:0.3rem"><i class="fas fa-mobile-alt"></i> Pay via PayShap</p>
+                        <p style="font-size:1.5rem;font-weight:800;color:#fff;letter-spacing:2px">067 783 4591</p>
+                        <p style="color:var(--text-secondary);font-size:0.8rem;margin:0.5rem 0">Send proof of payment after deposit:</p>
+                        <div style="display:flex;gap:0.5rem;justify-content:center">
+                            <a href="https://wa.me/27677834591?text=I%20have%20paid%20via%20PayShap.%20Please%20find%20my%20proof%20attached." target="_blank" class="btn btn-whatsapp" style="font-size:0.8rem;padding:0.5rem 1rem"><i class="fab fa-whatsapp"></i> WhatsApp Proof</a>
+                            <a href="mailto:codingpredators@gmail.com?subject=Proof%20of%20Payment&body=I%20have%20paid%20via%20PayShap.%20Please%20find%20my%20proof%20attached." style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.5rem 1rem;background:transparent;border:1px solid var(--accent-1);color:var(--accent-1);border-radius:8px;text-decoration:none;font-weight:600;font-size:0.8rem"><i class="fas fa-envelope"></i> Email</a>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="downloadClientPDF"><i class="fas fa-download"></i> Download My Copy</button>
+                    <button class="btn btn-secondary" id="downloadVendorPDF"><i class="fas fa-file-contract"></i> Download Vendor Copy</button>
+                    <button class="btn btn-primary" id="downloadInvoice"><i class="fas fa-file-invoice"></i> Download Invoice</button>
+                    <a href="https://wa.me/27677834591?text=I%20have%20signed%20the%20service%20contract.%20Please%20proceed%20with%20my%20service." target="_blank" class="btn btn-whatsapp" id="proceedWhatsApp"><i class="fab fa-whatsapp"></i> Proceed on WhatsApp</a>
+                    <button class="btn btn-outline" id="resetContract"><i class="fas fa-redo"></i> Start Over</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
+            <div class="footer-social">
+                <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="js/three-background.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
+    </script>
+</body>
+</html>
