@@ -410,6 +410,14 @@ const authLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // ===== Visitor Tracking =====
+function detectDeviceType(ua) {
+    if (!ua) return 'desktop';
+    const d = ua.toLowerCase();
+    if (/ipad|tablet|playbook|silk|android(?!.*mobile)/i.test(d)) return 'tablet';
+    if (/mobi|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop|android.*mobile/i.test(d)) return 'mobile';
+    return 'desktop';
+}
+
 app.post('/api/visit', (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     const ua = req.headers['user-agent'] || 'unknown';
@@ -419,6 +427,7 @@ app.post('/api/visit', (req, res) => {
         id: uuidv4(),
         ip,
         user_agent: ua.substring(0, 300),
+        device_type: detectDeviceType(ua),
         referrer: referrer.substring(0, 500),
         path: path.substring(0, 200),
         created_at: new Date().toISOString()
@@ -429,10 +438,14 @@ app.post('/api/visit', (req, res) => {
 app.get('/api/visitors', authenticateToken, (req, res) => {
     const visitors = db.query('visitors', null);
     const unique = new Set(visitors.map(v => v.ip));
+    const desktop = visitors.filter(v => (v.device_type || 'desktop') === 'desktop').length;
+    const mobile = visitors.filter(v => v.device_type === 'mobile').length;
+    const tablet = visitors.filter(v => v.device_type === 'tablet').length;
     res.json({
         total: visitors.length,
         unique: unique.size,
         today: visitors.filter(v => new Date(v.created_at).toDateString() === new Date().toDateString()).length,
+        desktop, mobile, tablet,
         recent: visitors.slice(-100).reverse()
     });
 });

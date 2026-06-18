@@ -219,7 +219,28 @@ function renderTemplates() {
 
 let pendingBuyTemplate = null;
 
+function isLoggedIn() {
+    try { return !!localStorage.getItem('vit_portal_session'); } catch { return false; }
+}
+
+function requireLogin(action) {
+    let overlay = document.getElementById('authGateOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'authGateOverlay';
+        overlay.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem';
+        overlay.innerHTML = '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:400px;width:100%;text-align:center"><div style="font-size:3rem;margin-bottom:1rem;color:var(--accent-1)"><i class="fas fa-lock"></i></div><h3 style="margin-bottom:0.5rem;color:var(--accent-1)">Sign In Required</h3><p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1.5rem">You need to sign in or create an account to continue with checkout and purchases.</p><div style="display:flex;flex-direction:column;gap:0.8rem"><a href="/client/portal.html" class="btn btn-primary" style="justify-content:center;width:100%"><i class="fas fa-sign-in-alt"></i> Sign In / Register</a><button onclick="closeAuthGate()" class="btn btn-outline" style="width:100%;justify-content:center">Continue Browsing</button></div></div>';
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+}
+
+function closeAuthGate() {
+    document.getElementById('authGateOverlay').style.display = 'none';
+}
+
 function buyTemplate(templateId, templateTitle, templatePrice) {
+    if (!isLoggedIn()) { pendingBuyTemplate = { id: templateId, title: templateTitle, price: templatePrice }; requireLogin(); return; }
     pendingBuyTemplate = { id: templateId, title: templateTitle, price: templatePrice };
     const modal = document.getElementById('paymentModal');
     if (!modal) return;
@@ -437,6 +458,7 @@ function initCart() {
     });
     document.getElementById('cartCheckout').addEventListener('click', () => {
         if (cart.length === 0) { alert('Your cart is empty.'); return; }
+        if (!isLoggedIn()) { requireLogin(); return; }
         document.getElementById('cartSidebar').classList.remove('open');
         document.getElementById('cartOverlay').classList.remove('open');
         document.getElementById('contract').scrollIntoView({ behavior: 'smooth' });

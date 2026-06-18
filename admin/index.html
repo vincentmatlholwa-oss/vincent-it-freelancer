@@ -446,22 +446,29 @@
         }
 
         function renderVisitors(data) {
+            const deviceIcon = { desktop: 'fa-desktop', mobile: 'fa-mobile-alt', tablet: 'fa-tablet-alt' };
             document.getElementById('panel-visitors').innerHTML = `
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem">
                     <div class="stat-card"><div class="stat-num">${data.total}</div><div class="stat-label">Total Views</div></div>
                     <div class="stat-card"><div class="stat-num">${data.unique}</div><div class="stat-label">Unique Visitors</div></div>
                     <div class="stat-card"><div class="stat-num">${data.today}</div><div class="stat-label">Today</div></div>
                 </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+                    <div class="stat-card" style="border-color:rgba(0,200,83,0.2)"><div class="stat-num" style="color:#00c853">${data.desktop || 0}</div><div class="stat-label"><i class="fas fa-desktop"></i> Desktop</div></div>
+                    <div class="stat-card" style="border-color:rgba(0,212,255,0.2)"><div class="stat-num" style="color:#00d4ff">${data.mobile || 0}</div><div class="stat-label"><i class="fas fa-mobile-alt"></i> Mobile</div></div>
+                    <div class="stat-card" style="border-color:rgba(123,47,247,0.2)"><div class="stat-num" style="color:#7b2ff7">${data.tablet || 0}</div><div class="stat-label"><i class="fas fa-tablet-alt"></i> Tablet</div></div>
+                </div>
                 <h4 style="color:var(--accent-1);margin-bottom:1rem"><i class="fas fa-clock"></i> Recent 100 visits</h4>
-                <table><thead><tr><th>Time</th><th>IP</th><th>Path</th><th>Referrer</th></tr></thead><tbody>
+                <table><thead><tr><th>Time</th><th>IP</th><th>Device</th><th>Path</th><th>Referrer</th></tr></thead><tbody>
                 ${data.recent.length ? data.recent.map(v => `
                     <tr>
                         <td>${new Date(v.created_at).toLocaleString()}</td>
                         <td style="font-family:monospace;font-size:0.75rem">${v.ip}</td>
+                        <td style="text-align:center"><i class="fas ${deviceIcon[v.device_type] || 'fa-desktop'}" style="font-size:1rem" title="${v.device_type || 'desktop'}"></i> ${v.device_type || 'desktop'}</td>
                         <td>${v.path}</td>
-                        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${v.referrer || '-'}</td>
+                        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${v.referrer || '-'}</td>
                     </tr>
-                `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-sec)">No visits yet</td></tr>'}
+                `).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-sec)">No visits yet</td></tr>'}
                 </tbody></table>
             `;
         }
