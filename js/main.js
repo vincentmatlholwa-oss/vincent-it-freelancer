@@ -288,7 +288,25 @@ async function loadBankingDetailsTemplate() {
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('paymentForm');
     if (form) {
-        form.addEventListener('submit', async (e) => {
+    document.getElementById('applyDiscountBtn')?.addEventListener('click', async () => {
+        const code = document.getElementById('discountCode').value.trim();
+        const msg = document.getElementById('discountMsg');
+        if (!code) { msg.innerHTML = '<span style="color:#ff6b35">Enter a code</span>'; return; }
+        try {
+            const res = await fetch('/api/validate-discount', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code })
+            });
+            const data = await res.json();
+            if (data.valid) {
+                msg.innerHTML = `<span style="color:#00c853"><i class="fas fa-check-circle"></i> ${data.message}</span>`;
+            } else {
+                msg.innerHTML = `<span style="color:#ff6b35">${data.error}</span>`;
+            }
+        } catch {
+            msg.innerHTML = '<span style="color:#ff6b35">Could not validate code</span>';
+        }
+    });
+    form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('payName').value.trim();
             const email = document.getElementById('payEmail').value.trim();
@@ -765,16 +783,28 @@ function initContractForm() {
                 qty: c.qty,
                 price: parsePrice(services[c.index].price)
             }));
+            const discCode = document.getElementById('discountCode')?.value.trim() || '';
+            let appliedDiscount = 0;
+            if (discCode) {
+                try {
+                    const discRes = await fetch('/api/validate-discount', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: discCode })
+                    });
+                    const discData = await discRes.json();
+                    if (discData.valid) appliedDiscount = discData.discount;
+                } catch {}
+            }
             const payload = {
                 client_name: clientName,
                 client_email: clientEmail,
                 client_phone: clientPhone,
                 service: additionalInfo ? `${serviceLabel} — ${additionalInfo}` : serviceLabel,
                 price: '',
-                cart_items: JSON.stringify(cartItems)
+                cart_items: JSON.stringify(cartItems),
+                discount_code: discCode
             };
             const cartTotal = cartItems.reduce((s, c) => s + c.price * c.qty, 0);
-            if (cart.length > 0) payload.price = `R${cartTotal}`;
+            if (cart.length > 0) payload.price = appliedDiscount ? `R${Math.round(cartTotal * (1 - appliedDiscount / 100))}` : `R${cartTotal}`;
             if (navigator.onLine) {
                 const res = await fetch('/api/orders', {
                     method: 'POST',

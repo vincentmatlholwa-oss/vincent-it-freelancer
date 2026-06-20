@@ -69,6 +69,14 @@
         .notif-bar i { color:var(--accent-1); }
         .notif-bar.enabled { background:rgba(0,200,83,0.1); border-color:rgba(0,200,83,0.2); }
         .notif-bar.enabled i { color:#00c853; }
+        .board-timeline { position:relative; padding-left:2rem; }
+        .board-timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--border-color); }
+        .board-event { position:relative; padding:0.8rem 1rem; margin-bottom:0.8rem; background:rgba(255,255,255,0.02); border-radius:8px; border-left:3px solid var(--accent-1); }
+        .board-event::before { content:''; position:absolute; left:-1.3rem; top:1rem; width:10px; height:10px; border-radius:50%; background:var(--accent-1); border:2px solid #0a0a1a; }
+        .board-event .event-date { font-size:0.7rem; color:var(--text-muted); }
+        .board-event .event-label { font-weight:600; font-size:0.9rem; }
+        .board-event .event-service { font-size:0.8rem; color:var(--text-secondary); }
+        .board-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:1rem; margin-bottom:1rem; }
     </style>
 </head>
 <body>
@@ -134,12 +142,14 @@
 
             <div class="dash-header">
                 <button id="showOrders" class="active"><i class="fas fa-shopping-bag"></i> Orders</button>
+                <button id="showProjectBoard"><i class="fas fa-columns"></i> Project Board</button>
                 <button id="showUploads"><i class="fas fa-upload"></i> Uploads</button>
                 <button id="showAppts"><i class="fas fa-calendar"></i> Appointments</button>
                 <button id="showProfile"><i class="fas fa-user-cog"></i> Profile</button>
                 <button id="portalLogout" class="logout"><i class="fas fa-sign-out-alt"></i></button>
             </div>
             <div id="portalOrders"></div>
+            <div id="portalProjectBoard" style="display:none"></div>
             <div id="portalUploads" style="display:none"></div>
             <div id="portalAppointments" style="display:none"></div>
             <div id="portalProfile" style="display:none">
@@ -293,6 +303,14 @@
             loadOrders();
         });
 
+        document.getElementById('showProjectBoard').addEventListener('click', () => {
+            document.querySelectorAll('.dash-header button').forEach(b => b.classList.remove('active'));
+            document.getElementById('showProjectBoard').classList.add('active');
+            hideAllSections();
+            document.getElementById('portalProjectBoard').style.display = 'block';
+            loadProjectBoard();
+        });
+
         document.getElementById('showUploads').addEventListener('click', () => {
             document.querySelectorAll('.dash-header button').forEach(b => b.classList.remove('active'));
             document.getElementById('showUploads').classList.add('active');
@@ -362,6 +380,7 @@
 
         function hideAllSections() {
             document.getElementById('portalOrders').style.display = 'none';
+            document.getElementById('portalProjectBoard').style.display = 'none';
             document.getElementById('portalUploads').style.display = 'none';
             document.getElementById('portalAppointments').style.display = 'none';
             document.getElementById('portalProfile').style.display = 'none';
@@ -403,6 +422,46 @@
                     </div>
                 `).join('') : '<p style="color:var(--text-secondary);text-align:center">No orders yet. <a href="/#pricing" style="color:var(--accent-1)">Browse services</a></p>';
             } catch { c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Server offline</p>'; }
+        }
+
+        async function loadProjectBoard() {
+            const c = document.getElementById('portalProjectBoard');
+            c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Loading project board...</p>';
+            try {
+                const res = await fetch(API+'/api/project-board/'+encodeURIComponent(client.email));
+                const data = await res.json();
+                if (!data.orders || !data.orders.length) {
+                    c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">No projects yet. <a href="/#pricing" style="color:var(--accent-1)">Start a project</a></p>';
+                    return;
+                }
+                const statusColors = { pending:'#ff6b35', awaiting_confirmation:'#ffc107', paid:'#00c853', in_progress:'#00d4ff', completed:'#7b2ff7', cancelled:'#ff4444' };
+                const statusLabels = { pending:'Pending', awaiting_confirmation:'Awaiting Confirmation', paid:'Paid', in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled' };
+                c.innerHTML = '<h3 style="margin-bottom:1rem"><i class="fas fa-columns"></i> Project Board</h3>' +
+                    data.orders.map(o => {
+                        const history = o.status_history || [];
+                        return `<div class="board-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                                <strong>${o.service}</strong>
+                                <span class="status-badge status-${o.status}">${statusLabels[o.status] || o.status}</span>
+                            </div>
+                            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.5rem">
+                                Price: ${o.price||'N/A'} | Ordered: ${new Date(o.created_at).toLocaleDateString()}
+                            </div>
+                            ${history.length ? `<div class="board-timeline">${history.map(h => `
+                                <div class="board-event">
+                                    <div class="event-date">${new Date(h.at).toLocaleString()}</div>
+                                    <div class="event-label" style="color:${statusColors[h.to]||'var(--text-secondary)'}">
+                                        ${statusLabels[h.from]||h.from} → ${statusLabels[h.to]||h.to}
+                                    </div>
+                                    <div class="event-service">${o.service}</div>
+                                </div>
+                            `).join('')}</div>` : '<p style="color:var(--text-muted);font-size:0.85rem">No status updates yet</p>'}
+                            ${(o.status !== 'completed' && o.status !== 'cancelled') ? `<button class="btn btn-outline" style="font-size:0.8rem;padding:0.3rem 0.8rem;margin-top:0.3rem" onclick="cancelOrder('${o.id}')"><i class="fas fa-times"></i> Cancel</button>` : ''}
+                        </div>`;
+                    }).join('');
+            } catch {
+                c.innerHTML = '<p style="color:var(--text-secondary);text-align:center">Server offline</p>';
+            }
         }
 
         async function cancelOrder(orderId) {
