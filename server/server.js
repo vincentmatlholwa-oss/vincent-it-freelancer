@@ -1726,6 +1726,7 @@ app.post('/api/orders/:id/mark-paid', proofUpload.single('proof'), (req, res) =>
     const { id } = req.params;
     const { client_name, client_email, client_phone, message } = req.body;
     if (!client_name || !client_email) return res.status(400).json({ error: 'Name and email required' });
+    if (!req.file) return res.status(400).json({ error: 'Proof of payment is required. Please upload a screenshot or PDF of your payment.' });
     const orders = db.query('orders', o => o.id === id);
     if (!orders.length) {
         const templateOrders = db.query('template_orders', o => o.id === id);

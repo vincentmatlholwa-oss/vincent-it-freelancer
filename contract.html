@@ -157,6 +157,14 @@
                             <label for="additionalInfo">Additional Information</label>
                             <textarea id="additionalInfo" rows="3" placeholder="Any special requests or details..."></textarea>
                         </div>
+                        <div class="form-group">
+                            <label for="discountCode">Discount Code</label>
+                            <div style="display:flex;gap:0.5rem">
+                                <input type="text" id="discountCode" placeholder="Enter code" style="flex:1">
+                                <button type="button" id="applyDiscountBtn" class="btn btn-outline" style="padding:0.5rem 1rem;font-size:0.85rem">Apply</button>
+                            </div>
+                            <div id="discountMsg" style="font-size:0.8rem;margin-top:0.3rem"></div>
+                        </div>
                         <div class="form-group agreement-group">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="agreeTerms" required>
@@ -191,7 +199,7 @@
                 <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:0.5rem 0;text-align:center">
                     <p style="font-weight:600;color:var(--accent-1);margin-bottom:0.5rem"><i class="fas fa-upload"></i> Step: Upload Proof & Mark as Paid</p>
                     <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.8rem">After paying, upload your proof of payment and click the button below to notify Vincent IT.</p>
-                    <input type="file" id="proofOfPayment" accept="image/*,.pdf" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit;margin-bottom:0.5rem;box-sizing:border-box">
+                    <input type="file" id="proofOfPayment" accept="image/*,.pdf" required style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit;margin-bottom:0.5rem;box-sizing:border-box">
                     <input type="text" id="paidMessage" placeholder="Optional message..." style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:inherit;margin-bottom:0.5rem;box-sizing:border-box">
                     <button class="btn btn-whatsapp" id="markPaidBtn" style="width:100%;justify-content:center"><i class="fab fa-whatsapp"></i> I Have Paid — Notify Admin</button>
                     <div id="paidStatus" style="margin-top:0.5rem"></div>
