@@ -953,22 +953,23 @@ window.addEventListener('beforeinstallprompt', function(e) {
     deferredPrompt = e;
     var banner = document.getElementById('pwaInstallBanner');
     if (banner) banner.style.display = 'flex';
-    if (banner) {
-        banner.onclick = function() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(function(choiceResult) {
-                    if (choiceResult.outcome === 'accepted') banner.style.display = 'none';
-                    deferredPrompt = null;
-                });
-            }
-        };
-    }
 });
 window.addEventListener('appinstalled', function() {
     deferredPrompt = null;
     var banner = document.getElementById('pwaInstallBanner');
     if (banner) banner.style.display = 'none';
+});
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'pwaInstallBtn' || e.target.closest('#pwaInstallBtn')) {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() { deferredPrompt = null; });
+    }
+    if (e.target.id === 'pwaNotNowBtn' || e.target.closest('#pwaNotNowBtn')) {
+        var banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'none';
+        e.stopPropagation();
+    }
 });
 function installPWA() {
     if (!deferredPrompt) return;
