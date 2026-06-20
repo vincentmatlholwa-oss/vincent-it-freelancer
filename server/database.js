@@ -1,105 +1,79 @@
-const { Pool } = require('pg');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
+const path = require('path');
 
-let pool = null;
-let ready = false;
-let cache = {};
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
 
-const ALL_TABLES = [
-  'appointments', 'audit_logs', 'blog_posts', 'chat_messages',
-  'clients', 'contacts', 'delete_requests', 'discount_usage',
-  'followups', 'orders', 'push_subscriptions', 'reviews',
-  'template_orders', 'uploads', 'vault_files', 'visitors'
-];
+let db = null;
+let SQL = null;
 
-function getPool() {
-  if (pool) return pool;
-  const connectionString = process.env.DATABASE_URL || process.env.PG_CONNECTION_STRING || '';
-  if (!connectionString) throw new Error('DATABASE_URL not set');
-  pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
-  pool.on('error', err => console.error('PostgreSQL pool error:', err.message));
-  return pool;
+function getDb() {
+    if (db) return db;
+    throw new Error('Database not initialized. Call load() first.');
 }
 
-async function load() {
-  const p = getPool();
-  try {
-    for (const table of ALL_TABLES) {
-      await p.query(`
-        CREATE TABLE IF NOT EXISTS ${table} (
-          id TEXT PRIMARY KEY,
-          json JSONB NOT NULL DEFAULT '{}'::jsonb,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-      `);
-    }
-    console.log('PostgreSQL tables ready');
-    ready = true;
-    return true;
-  } catch (err) {
-    console.error('Failed to initialize PostgreSQL:', err.message);
-    throw err;
-  }
-}
-
-function insert(collection, item) {
-  if (!cache[collection]) cache[collection] = [];
-  cache[collection].push(item);
-  const p = getPool();
-  const json = JSON.stringify(item);
-  p.query('INSERT INTO ' + collection + ' (id, json) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET json = $2', [item.id, json])
-    .catch(err => console.error('DB insert error [' + collection + ']:', err.message));
-  return item;
-}
-
-function update(collection, id, updates) {
-  const p = getPool();
-  const cached = cache[collection] ? cache[collection].find(i => i.id === id) : null;
-  if (!cached) {
-    p.query('SELECT json FROM ' + collection + ' WHERE id = $1', [id]).then(result => {
-      if (!result.rows.length) return null;
-      const existing = result.rows[0].json;
-      const updated = { ...existing, ...updates };
-      if (cache[collection]) cache[collection] = cache[collection].map(i => i.id === id ? updated : i);
-      p.query('UPDATE ' + collection + ' SET json = $1 WHERE id = $2', [JSON.stringify(updated), id])
-        .catch(err => console.error('DB update error [' + collection + ']:', err.message));
-      return updated;
-    }).catch(err => console.error('DB update error [' + collection + ']:', err.message));
-    return null;
-  }
-  const updated = { ...cached, ...updates };
-  if (cache[collection]) cache[collection] = cache[collection].map(i => i.id === id ? updated : i);
-  p.query('UPDATE ' + collection + ' SET json = $1 WHERE id = $2', [JSON.stringify(updated), id])
-    .catch(err => console.error('DB update error [' + collection + ']:', err.message));
-  return updated;
-}
-
-async function query(collection, filterFn) {
-  if (!cache[collection]) cache[collection] = [];
-  const p = getPool();
-  try {
-    const result = await p.query('SELECT json FROM ' + collection + ' ORDER BY created_at');
-    const items = result.rows.map(r => r.json);
-    cache[collection] = items;
-    if (filterFn) return items.filter(filterFn);
-    return items;
-  } catch (err) {
-    console.error('DB query error [' + collection + ']:', err.message);
-    const cached = cache[collection] || [];
-    if (filterFn) return cached.filter(filterFn);
-    return cached;
-  }
-}
-
-function getCollection(name) {
-  return query(name, null);
-}
-
-function run(sql, params) {
-  const p = getPool();
-  p.query(sql, params).catch(err => console.error('DB run error:', err.message));
+function load() {
+    return new Promise(async (resolve) => {
+        SQL = await initSqlJs();
+        try {
+            if (fs.existsSync(DB_PATH)) {
+                const buffer = fs.readFileSync(DB_PATH);
+                db = new SQL.Database(buffer);
+            } else {
+                db = new SQL.Database();
+            }
+        } catch (e) {
+            console.error('Error loading DB, creating fresh:', e.message);
+            db = new SQL.Database();
+        }
+        db.run(`CREATE TABLE IF NOT EXISTS data (
+            collection TEXT NOT NULL,
+            id TEXT NOT NULL,
+            json TEXT NOT NULL,
+            PRIMARY KEY (collection, id)
+        )`);
+        db.run(`CREATE INDEX IF NOT EXISTS idx_collection ON data(collection)`);
+        resolve(true);
+    });
 }
 
 function save() {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    const tmp = DB_PATH + '.tmp';
+    fs.writeFileSync(tmp, buffer);
+    fs.renameSync(tmp, DB_PATH);
 }
 
-module.exports = { getCollection, insert, update, query, load, run, save };
+function insert(collection, item) {
+    const d = getDb();
+    d.run('INSERT OR REPLACE INTO data (collection, id, json) VALUES (?, ?, ?)', [collection, item.id, JSON.stringify(item)]);
+    save();
+    return item;
+}
+
+function update(collection, id, updates) {
+    const d = getDb();
+    const row = d.exec('SELECT json FROM data WHERE collection = ? AND id = ?', [collection, id]);
+    if (!row.length) return null;
+    const existing = JSON.parse(row[0].values[0][0]);
+    const updated = { ...existing, ...updates };
+    d.run('UPDATE data SET json = ? WHERE collection = ? AND id = ?', [JSON.stringify(updated), collection, id]);
+    save();
+    return updated;
+}
+
+function query(collection, filterFn) {
+    const d = getDb();
+    const rows = d.exec('SELECT json FROM data WHERE collection = ?', [collection]);
+    if (!rows.length) return [];
+    const items = rows[0].values.map(row => JSON.parse(row[0]));
+    if (filterFn) return items.filter(filterFn);
+    return items;
+}
+
+function getCollection(name) {
+    return query(name, null);
+}
+
+module.exports = { getCollection, insert, update, query, load, run: (sql, params) => { const d = getDb(); d.run(sql, params); }, save };
