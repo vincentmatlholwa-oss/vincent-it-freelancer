@@ -71,38 +71,51 @@ function backupDatabase() {
     }
 }
 
-// Email transporter
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+// Email sending via Brevo API (uses HTTPS — never blocked by hosts)
+function sendEmailViaAPI({ to, subject, html, attachment } = {}) {
+    const apiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS;
+    if (!apiKey) return;
+    const recipients = Array.isArray(to) ? to : [{ email: to || ADMIN_EMAIL }];
+    const payload = {
+        sender: { name: 'Vincent IT', email: 'codingpredators@gmail.com' },
+        to: typeof recipients === 'string' ? [{ email: recipients }] : recipients,
+        subject,
+        htmlContent: html
+    };
+    if (attachment) {
+        payload.attachment = [{
+            name: attachment.filename,
+            content: attachment.content.toString('base64')
+        }];
     }
-});
+    const https = require('https');
+    const data = JSON.stringify(payload);
+    const req = https.request({
+        hostname: 'api.brevo.com',
+        port: 443,
+        path: '/v3/smtp/email',
+        method: 'POST',
+        headers: {
+            'api-key': apiKey,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data)
+        }
+    });
+    req.on('error', err => console.error('Email send failed:', err.message));
+    req.write(data);
+    req.end();
+}
 
 function sendEmailAlert({ subject, html, to }) {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+    if (!process.env.BREVO_API_KEY && !process.env.SMTP_PASS) return;
     const recipients = to || ADMIN_EMAIL;
     const prefix = to ? '' : '[Vincent IT] ';
-    transporter.sendMail({
-        from: `"Vincent IT" <${process.env.SMTP_USER}>`,
-        to: recipients,
-        subject: `${prefix}${subject}`,
-        html
-    }).catch(err => console.error('Email alert failed:', err.message));
+    sendEmailViaAPI({ to: recipients, subject: `${prefix}${subject}`, html });
 }
 
 function sendEmailWithAttachment({ to, subject, html, attachment }) {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
-    transporter.sendMail({
-        from: `"Vincent IT" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        html,
-        attachments: attachment ? [{ filename: attachment.filename, content: attachment.content, contentType: attachment.contentType }] : []
-    }).catch(err => console.error('Email send failed:', err.message));
+    if (!process.env.BREVO_API_KEY && !process.env.SMTP_PASS) return;
+    sendEmailViaAPI({ to, subject, html, attachment });
 }
 
 function generateInvoicePDF(order, items) {
@@ -624,17 +637,87 @@ app.post('/api/admin/orders/confirm-payment', authenticateToken, (req, res) => {
     backupDatabase();
     const { order_id } = req.body;
     if (!order_id) return res.status(400).json({ error: 'Order ID required' });
-    const updated = db.update('orders', order_id, { payment_status: 'paid', status: 'paid', updated_at: new Date().toISOString() });
+    const now = new Date().toISOString();
+    const existing = db.query('orders', o => o.id === order_id);
+    const history = existing.length ? (existing[0].status_history || []) : [];
+    history.push({ from: existing[0].status, to: 'paid', at: now });
+    const updated = db.update('orders', order_id, { payment_status: 'paid', status: 'paid', status_history: history, updated_at: now });
     if (!updated) return res.status(404).json({ error: 'Order not found' });
     notifyClient(order_id, 'paid');
     res.json({ success: true, message: 'Payment confirmed.' });
 });
 
+// ===== Automated Follow-ups =====
+function scheduleFollowUp({ orderId, clientName, clientEmail, clientPhone, type, delayMs }) {
+    const at = new Date(Date.now() + delayMs).toISOString();
+    db.insert('followups', {
+        id: uuidv4(),
+        order_id: orderId,
+        client_name: clientName,
+        client_email: clientEmail,
+        client_phone: clientPhone,
+        type,
+        status: 'pending',
+        scheduled_at: at,
+        created_at: new Date().toISOString()
+    });
+}
+
+function processFollowUps() {
+    const now = new Date().toISOString();
+    const due = db.query('followups', f => f.status === 'pending' && f.scheduled_at <= now);
+    due.forEach(f => {
+        try {
+            if (f.type === 'review_request') {
+                const reviewUrl = (process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com') + '/#reviews';
+                notifyCustomer({
+                    name: f.client_name, email: f.client_email, phone: f.client_phone,
+                    message: `Hi ${f.client_name},\n\nYour order was completed recently. We'd love to hear your feedback!\n\nLeave a review here: ${reviewUrl}\n\nYour review helps others trust us. Thank you!\n\n- Vincent IT Freelancer`
+                });
+                sendEmailAlert({
+                    to: f.client_email,
+                    subject: 'How was your experience? Leave a review!',
+                    html: `<h2>We value your feedback!</h2><p>Hi ${f.client_name},</p><p>Your recent order was completed. We'd love to hear about your experience.</p><p><a href="${reviewUrl}" style="display:inline-block;padding:0.6rem 1.5rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);color:#fff;text-decoration:none;border-radius:8px;font-weight:600;margin-top:0.5rem">Leave a Review</a></p><p>– Vincent IT Freelancer</p>`
+                });
+            } else if (f.type === 'discount_offer') {
+                const discountCode = 'VIN10-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                notifyCustomer({
+                    name: f.client_name, email: f.client_email, phone: f.client_phone,
+                    message: `Hi ${f.client_name},\n\nAs a thank you for your recent order, here's a special 10% discount on your next service!\n\nDiscount Code: ${discountCode}\n\nUse this code when placing your next order to save 10%.\n\nValid for your next service within 90 days.\n\n- Vincent IT Freelancer`
+                });
+                sendEmailAlert({
+                    to: f.client_email,
+                    subject: '10% Discount – Thank you for your order!',
+                    html: `<h2>Exclusive Discount Just for You!</h2><p>Hi ${f.client_name},</p><p>Thanks for choosing Vincent IT! As a token of appreciation, here's <strong>10% off</strong> your next service.</p><p><strong>Discount Code:</strong> <span style="font-size:1.2rem;background:#12122a;padding:0.3rem 0.8rem;border-radius:6px;border:1px dashed #00d4ff;color:#00d4ff;font-weight:700;letter-spacing:1px">${discountCode}</span></p><p>Valid for 90 days on any service.</p><p>– Vincent IT Freelancer</p>`
+                });
+            } else if (f.type === 'followup_check') {
+                const orderInquiries = db.query('orders', o => o.id === f.order_id);
+                if (orderInquiries.length && orderInquiries[0].status === 'completed') {
+                    notifyCustomer({
+                        name: f.client_name, email: f.client_email, phone: f.client_phone,
+                        message: `Hi ${f.client_name},\n\nJust checking in! Hope everything is working well with your order.\n\nIf you have any questions or need further assistance, reply to this message or WhatsApp 067 783 4591.\n\n- Vincent IT Freelancer`
+                    });
+                }
+            }
+            db.update('followups', f.id, { status: 'sent', sent_at: new Date().toISOString() });
+        } catch (e) {
+            console.error('Follow-up send failed:', e.message);
+            db.update('followups', f.id, { status: 'failed', error: e.message });
+        }
+    });
+}
+
 // Admin: mark service order as completed
 app.post('/api/admin/orders/complete', authenticateToken, (req, res) => {
     const { order_id } = req.body;
     if (!order_id) return res.status(400).json({ error: 'Order ID required' });
-    const updated = db.update('orders', order_id, { status: 'completed', updated_at: new Date().toISOString() });
+    const now = new Date().toISOString();
+    const existing = db.query('orders', o => o.id === order_id);
+    if (!existing.length) return res.status(404).json({ error: 'Order not found' });
+    const order = existing[0];
+    const history = order.status_history || [];
+    history.push({ from: order.status, to: 'completed', at: now });
+    const updated = db.update('orders', order_id, { status: 'completed', status_history: history, updated_at: now });
     if (!updated) return res.status(404).json({ error: 'Order not found' });
     notifyClient(order_id, 'completed');
     sendEmailAlert({
@@ -642,6 +725,9 @@ app.post('/api/admin/orders/complete', authenticateToken, (req, res) => {
         subject: 'Order Completed – ' + order_id.slice(0, 8),
         html: `<h2>Service Completed!</h2><p>Hi ${updated.client_name},</p><p>Your order <strong>${order_id.slice(0, 8)}</strong> has been marked as completed.</p><p>Your item/service is ready. Contact us on WhatsApp if you need anything else.</p><p>– Vincent IT Freelancer</p>`
     });
+    scheduleFollowUp({ orderId: order_id, clientName: updated.client_name, clientEmail: updated.client_email, clientPhone: updated.client_phone || '', type: 'review_request', delayMs: 60 * 60 * 1000 });
+    scheduleFollowUp({ orderId: order_id, clientName: updated.client_name, clientEmail: updated.client_email, clientPhone: updated.client_phone || '', type: 'discount_offer', delayMs: 3 * 24 * 60 * 60 * 1000 });
+    scheduleFollowUp({ orderId: order_id, clientName: updated.client_name, clientEmail: updated.client_email, clientPhone: updated.client_phone || '', type: 'followup_check', delayMs: 7 * 24 * 60 * 60 * 1000 });
     res.json({ success: true, message: 'Order marked as completed.' });
 });
 
@@ -719,6 +805,14 @@ app.post('/api/orders', validate([
             if (!item.title || !item.price || item.price <= 0) return res.status(400).json({ error: 'Invalid cart item data' });
         }
     }
+    const discountCode = req.body.discount_code || '';
+    if (discountCode) {
+        const used = db.query('discount_usage', d => d.code === discountCode);
+        if (!used.length) {
+            db.insert('discount_usage', { id: uuidv4(), code: discountCode, order_id: id, used_at: new Date().toISOString(), client_email: (client_email || '').trim().toLowerCase() });
+        }
+    }
+    const now = new Date().toISOString();
     db.insert('orders', {
         id,
         client_name: client_name.trim().replace(/<[^>]*>/g, ''),
@@ -727,11 +821,13 @@ app.post('/api/orders', validate([
         service: service.trim(),
         price: (price || '').trim(),
         cart_items: items.length ? JSON.stringify(items) : '',
+        discount_code: discountCode,
         status: 'pending',
         payment_status: 'unpaid',
         deposit_paid: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        status_history: [{ from: 'created', to: 'pending', at: now }],
+        created_at: now,
+        updated_at: now
     });
     sendEmailAlert({
         subject: `New Order from ${client_name}`,
@@ -817,18 +913,63 @@ app.post('/api/appointments/:id/cancel', (req, res) => {
 });
 
 app.patch('/api/orders/:id', authenticateToken, (req, res) => {
+    const now = new Date().toISOString();
+    const existing = db.query('orders', o => o.id === req.params.id);
+    const history = existing.length ? (existing[0].status_history || []) : [];
     const updates = {};
-    if (req.body.status) updates.status = req.body.status;
+    if (req.body.status) {
+        updates.status = req.body.status;
+        history.push({ from: existing[0].status, to: req.body.status, at: now });
+    }
     if (req.body.payment_status) updates.payment_status = req.body.payment_status;
     if (req.body.deposit_paid !== undefined) updates.deposit_paid = req.body.deposit_paid ? 1 : 0;
     if (req.body.client_message) updates.client_message = req.body.client_message;
-    updates.updated_at = new Date().toISOString();
+    updates.status_history = history;
+    updates.updated_at = now;
     db.update('orders', req.params.id, updates);
     // Notify client via push if status changed
     if (updates.status || updates.payment_status) {
         notifyClient(req.params.id, updates.status || updates.payment_status);
     }
     res.json({ success: true });
+});
+
+// ===== Project Board API =====
+app.get('/api/project-board/:email', (req, res) => {
+    const { email } = req.params;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
+    const timeline = [];
+    orders.forEach(o => {
+        const history = o.status_history || [];
+        history.forEach(h => {
+            timeline.push({
+                order_id: o.id.slice(0, 8),
+                service: o.service,
+                from: h.from,
+                to: h.to,
+                at: h.at,
+                client_name: o.client_name
+            });
+        });
+    });
+    timeline.sort((a, b) => new Date(a.at) - new Date(b.at));
+    res.json({ orders: orders.reverse(), timeline: timeline.reverse() });
+});
+
+// ===== Discount Code Validation =====
+app.post('/api/validate-discount', (req, res) => {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Code required' });
+    const match = code.match(/^VIN10-([A-Z0-9]{6})$/);
+    if (!match) return res.json({ valid: false, error: 'Invalid discount code' });
+    const used = db.query('discount_usage', d => d.code === code);
+    if (used.length) return res.json({ valid: false, error: 'Discount code already used' });
+    const issued = db.query('followups', f => {
+        try { return JSON.stringify(f).includes(code); } catch { return false; }
+    });
+    if (!issued.length) return res.json({ valid: false, error: 'Discount code not found' });
+    res.json({ valid: true, discount: 10, message: '10% discount applied!' });
 });
 
 // ===== File Upload =====
@@ -1673,6 +1814,9 @@ if (require.main === module) {
         
         // Auto backup every hour
         setInterval(backupDatabase, 60 * 60 * 1000);
+        // Process follow-ups every 30 minutes
+        setInterval(processFollowUps, 30 * 60 * 1000);
+        setTimeout(processFollowUps, 30000);
         // Initial backup after 10 seconds
         setTimeout(backupDatabase, 10000);
 
