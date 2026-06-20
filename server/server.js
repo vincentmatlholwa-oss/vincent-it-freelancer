@@ -102,6 +102,17 @@ function sendEmailViaAPI({ to, subject, html, attachment } = {}) {
         }
     });
     req.on('error', err => console.error('Email send failed:', err.message));
+    req.on('response', res => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+                console.log('Email sent successfully via Brevo');
+            } else {
+                console.error('Brevo API error [' + res.statusCode + ']:', body.substring(0, 500));
+            }
+        });
+    });
     req.write(data);
     req.end();
 }
