@@ -216,7 +216,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // Health check (MUST be first route — Render uses this before any middleware)
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
@@ -516,8 +516,16 @@ app.get('/api/visitors', authenticateToken, (req, res) => {
 const chatUploadsDir = path.join(__dirname, '..', 'uploads', 'chat');
 if (!fs.existsSync(chatUploadsDir)) fs.mkdirSync(chatUploadsDir, { recursive: true });
 
-// Static files
-app.use(express.static(path.join(__dirname, '..')));
+// Static files — serve root but block sensitive directories
+const publicRoot = path.join(__dirname, '..');
+const blockedPrefixes = ['/server', '/node_modules', '/.git', '/.env', '/uploads/.gitkeep'];
+app.use((req, res, next) => {
+    if (blockedPrefixes.some(p => req.path.startsWith(p) || req.path === p)) {
+        return res.status(404).send('Not found');
+    }
+    next();
+});
+app.use(express.static(publicRoot));
 // Serve chat uploads
 app.use('/uploads/chat', express.static(chatUploadsDir));
 
@@ -1820,7 +1828,7 @@ const proofUpload = multer({
     fileFilter: (req, file, cb) => {
         const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
         const ext = path.extname(file.originalname).toLowerCase();
-        cb(null, allowed.includes(ext) || !ext);
+        cb(null, allowed.includes(ext));
     }
 });
 

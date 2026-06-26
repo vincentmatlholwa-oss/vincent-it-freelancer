@@ -37,12 +37,22 @@ function load() {
     });
 }
 
+let saveTimer = null;
+
 function save() {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    const tmp = DB_PATH + '.tmp';
-    fs.writeFileSync(tmp, buffer);
-    fs.renameSync(tmp, DB_PATH);
+    if (saveTimer) return;
+    saveTimer = setTimeout(() => {
+        saveTimer = null;
+        const data = db.export();
+        const buffer = Buffer.from(data);
+        const tmp = DB_PATH + '.tmp';
+        try {
+            fs.writeFileSync(tmp, buffer);
+            fs.renameSync(tmp, DB_PATH);
+        } catch (e) {
+            console.error('DB save failed:', e.message);
+        }
+    }, 500);
 }
 
 function insert(collection, item) {
