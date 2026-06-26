@@ -32,3 +32,5 @@ services:
         sync: false
       - key: PAYFAST_SANDBOX
         value: "true"
+      - key: SITE_URL
+        value: "https://vincent-it-freelancer.onrender.com"

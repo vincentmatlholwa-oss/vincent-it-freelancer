@@ -512,6 +512,10 @@ app.get('/api/visitors', authenticateToken, (req, res) => {
     });
 });
 
+// Chat uploads directory
+const chatUploadsDir = path.join(__dirname, '..', 'uploads', 'chat');
+if (!fs.existsSync(chatUploadsDir)) fs.mkdirSync(chatUploadsDir, { recursive: true });
+
 // Static files
 app.use(express.static(path.join(__dirname, '..')));
 // Serve chat uploads
@@ -1598,9 +1602,6 @@ app.get('/api/chat', authenticateToken, (req, res) => {
 });
 
 // Chat image upload — save to disk, store path in DB
-const chatUploadsDir = path.join(__dirname, '..', 'uploads', 'chat');
-if (!fs.existsSync(chatUploadsDir)) fs.mkdirSync(chatUploadsDir, { recursive: true });
-
 app.post('/api/chat/upload', (req, res) => {
     const { sender, image, is_admin } = req.body;
     if (!image) return res.status(400).json({ error: 'Image required' });
@@ -1967,8 +1968,11 @@ app.get('/blog/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'blog', 'index.html'));
 });
 
-// Health check
+// Health check (both /api/health and /healthz for Render)
 app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get('/healthz', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
