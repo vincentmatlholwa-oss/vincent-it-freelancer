@@ -906,7 +906,7 @@ function initContractForm() {
         btn.disabled = false; btn.innerHTML = '<i class="fab fa-whatsapp"></i> I Have Paid — Notify Admin';
     });
 
-    document.getElementById('payfastPayBtn').addEventListener('click', () => {
+    document.getElementById('payfastPayBtn')?.addEventListener('click', () => {
         const d = window.__contractData || {};
         const name = document.getElementById('clientName')?.value?.trim() || d.clientName || '';
         const email = document.getElementById('clientEmail')?.value?.trim() || d.clientEmail || '';
