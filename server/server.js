@@ -221,6 +221,7 @@ app.use(express.json({ limit: '10mb' }));
 // Health check (MUST be first route — Render uses this before any middleware)
 app.get('/healthz', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // ===== SMS via Africa's Talking (free tier) =====
 const AT_USERNAME = process.env.AT_USERNAME || 'sandbox';
