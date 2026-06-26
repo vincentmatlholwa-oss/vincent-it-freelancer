@@ -84,14 +84,26 @@
                 <div style="text-align:center">
                     <i class="fas fa-check-circle" style="font-size:3rem;color:#00c853;margin-bottom:1rem"></i>
                     <h3 style="margin-bottom:0.5rem;color:#00c853">Order Created!</h3>
-                    <p style="color:#b0b0d0;font-size:0.9rem;margin-bottom:1rem">Pay and upload your proof below</p>
+                    <p style="color:#b0b0d0;font-size:0.9rem;margin-bottom:1rem">Choose how to pay</p>
                     <p id="payOrderRef" style="color:#6b6b8d;font-size:0.75rem;margin-bottom:1rem"></p>
+                </div>
+                <div id="payfastTemplateSection" style="display:none;margin-bottom:0.5rem">
+                    <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.2);border-radius:12px;padding:1rem;text-align:center">
+                        <p style="font-weight:700;color:#00c853;margin-bottom:0.5rem"><i class="fas fa-bolt"></i> Pay Instantly with Card</p>
+                        <button class="btn btn-primary" id="payfastTemplateBtn" style="width:100%;justify-content:center;padding:0.8rem"><i class="fas fa-credit-card"></i> Pay with Card — PayFast</button>
+                        <div id="payfastTemplateStatus" style="margin-top:0.5rem;font-size:0.85rem"></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1rem;color:#6b6b8d;font-size:0.85rem;padding:0.5rem 0">
+                        <hr style="flex:1;border:none;border-top:1px solid rgba(255,255,255,0.08)">
+                        <span>OR</span>
+                        <hr style="flex:1;border:none;border-top:1px solid rgba(255,255,255,0.08)">
+                    </div>
                 </div>
             </div>
             <div id="paymentModalStep3" style="display:none">
                 <div id="bankingDetailsTemplate"></div>
                 <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.12);border-radius:12px;padding:1rem;margin:0.5rem 0;text-align:center">
-                    <p style="font-weight:600;color:var(--accent-1);margin-bottom:0.5rem"><i class="fas fa-upload"></i> Upload Proof & Notify</p>
+                    <p style="font-weight:600;color:var(--accent-1);margin-bottom:0.5rem"><i class="fas fa-upload"></i> EFT Payment — Upload Proof & Notify</p>
                     <input type="hidden" id="templateOrderId">
                     <input type="hidden" id="templateClientName">
                     <input type="hidden" id="templateClientEmail">

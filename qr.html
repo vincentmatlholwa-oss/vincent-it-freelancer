@@ -158,7 +158,7 @@
             <canvas id="qrCanvas" width="280" height="280"></canvas>
         </div>
         <div class="scan-label">Scan Me</div>
-        <div class="url-text">https://vincent-it-freelancer.onrender.com</div>
+        <div class="url-text" id="urlText">https://vincent-it-freelancer.onrender.com</div>
         <div class="actions">
             <button class="btn btn-success" id="downloadBtn">
                 <i class="fas fa-download"></i> Download
@@ -177,7 +177,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        const siteUrl = 'https://vincent-it-freelancer.onrender.com';
+        const siteUrl = window.location.origin || 'https://vincent-it-freelancer.onrender.com';
+        document.getElementById('urlText').textContent = siteUrl;
         const canvas = document.getElementById('qrCanvas');
 
         function generateQR() {

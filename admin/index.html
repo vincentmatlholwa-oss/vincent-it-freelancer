@@ -252,20 +252,25 @@
         setInterval(loadStats, 30000);
 
         function renderContacts(data) {
-            if (!data.length) { document.getElementById('panel-contacts').innerHTML = '<p style="color:var(--text-sec)">No messages yet</p>'; return; }
+            const items = data.data || data;
+            const total = data.total != null ? data.total : items.length;
+            if (!items.length) { document.getElementById('panel-contacts').innerHTML = '<p style="color:var(--text-sec)">No messages yet</p>'; return; }
             document.getElementById('panel-contacts').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-contacts" placeholder="Search contacts..." oninput="filterTable('filter-contacts','table-contacts')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-contacts"><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Subject</th><th>Message</th></tr></thead><tbody>
-                ${data.map(c => `<tr><td>${new Date(c.created_at).toLocaleDateString()}</td><td>${c.name}</td><td>${c.email}</td><td>${c.phone||'-'}</td><td>${c.subject||'-'}</td><td><div class="msg">${c.message}</div></td></tr>`).join('')}
-            </tbody></table>`;
+                ${items.map(c => `<tr><td>${new Date(c.created_at).toLocaleDateString()}</td><td>${c.name}</td><td>${c.email}</td><td>${c.phone||'-'}</td><td>${c.subject||'-'}</td><td><div class="msg">${c.message}</div></td></tr>`).join('')}
+            </tbody></table><div style="margin-top:0.5rem;color:var(--text-sec);font-size:0.8rem">${total} total</div>`;
         }
 
         function renderOrders(data) {
-            if (!data.length) { document.getElementById('panel-orders').innerHTML = '<p style="color:var(--text-sec)">No orders yet</p>'; return; }
-            document.getElementById('panel-orders').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-orders" placeholder="Search orders..." oninput="filterTable('filter-orders','table-orders')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-orders"><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Status</th><th>Payment</th><th>Client Message</th><th>Actions</th></tr></thead><tbody>
-                ${data.map(o => `<tr>
+            const items = data.data || data;
+            const total = data.total != null ? data.total : items.length;
+            if (!items.length) { document.getElementById('panel-orders').innerHTML = '<p style="color:var(--text-sec)">No orders yet</p>'; return; }
+            document.getElementById('panel-orders').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-orders" placeholder="Search orders..." oninput="filterTable('filter-orders','table-orders')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-orders"><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Method</th><th>Status</th><th>Payment</th><th>Client Message</th><th>Actions</th></tr></thead><tbody>
+                ${items.map(o => `<tr>
                     <td>${new Date(o.created_at).toLocaleDateString()}</td>
                     <td>${o.client_name}<br><small>${o.client_email}</small></td>
                     <td>${o.service}</td>
                     <td>${o.price||'-'}</td>
+                    <td>${o.payment_method ? `<span class="status approved">${o.payment_method}</span>` : '<span class="status pending">EFT</span>'}</td>
                     <td><span class="status ${o.status}">${o.status}</span></td>
                     <td><span class="status ${o.payment_status === 'paid' || o.payment_status === 'client_marked_paid' ? 'approved' : 'pending'}">${o.payment_status === 'client_marked_paid' ? 'Client says PAID' : o.payment_status}</span></td>
                     <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${o.client_message || '-'}</td>
@@ -275,7 +280,7 @@
                         <button class="action-btn" onclick="completeOrder('${o.id}')">Deliver Item</button>
                     </td>
                 </tr>`).join('')}
-            </tbody></table>`;
+            </tbody></table><div style="margin-top:0.5rem;color:var(--text-sec);font-size:0.8rem">${total} total</div>`;
         }
 
         async function confirmOrderPayment(id) {
@@ -299,9 +304,11 @@
         }
 
         function renderAppointments(data) {
-            if (!data.length) { document.getElementById('panel-appointments').innerHTML = '<p style="color:var(--text-sec)">No appointments yet</p>'; return; }
+            const items = data.data || data;
+            const total = data.total != null ? data.total : items.length;
+            if (!items.length) { document.getElementById('panel-appointments').innerHTML = '<p style="color:var(--text-sec)">No appointments yet</p>'; return; }
             document.getElementById('panel-appointments').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-appointments" placeholder="Search appointments..." oninput="filterTable('filter-appointments','table-appointments')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-appointments"><thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-                ${data.map(a => `<tr>
+                ${items.map(a => `<tr>
                     <td>${a.date}</td><td>${a.time}</td>
                     <td>${a.client_name}<br><small>${a.client_email}</small></td>
                     <td>${a.service}</td>
@@ -312,7 +319,7 @@
                         <button class="action-btn" onclick="updateAppt('${a.id}','cancelled')">Cancel</button>
                     </td>
                 </tr>`).join('')}
-            </tbody></table>`;
+            </tbody></table><div style="margin-top:0.5rem;color:var(--text-sec);font-size:0.8rem">${total} total</div>`;
         }
 
         async function updateAppt(id, status) {
@@ -344,8 +351,8 @@
             document.getElementById('panel-chat').innerHTML = `<div id="adminChatMessages" style="max-height:500px;overflow-y:auto;margin-bottom:1rem">
                 ${data.map(m => `<div style="padding:0.5rem;border-bottom:1px solid var(--border);${m.is_admin ? 'background:rgba(0,212,255,0.05)' : ''}">
                     <strong style="color:var(--accent-1)">${m.sender}</strong> <small style="color:var(--text-sec)">${new Date(m.created_at).toLocaleString()}</small>
-                    ${m.image
-                        ? `<img src="${m.image}" alt="Shared image" style="max-width:200px;border-radius:8px;margin-top:0.3rem;display:block">`
+                    ${m.image_url
+                        ? `<img src="${m.image_url}" alt="Shared image" style="max-width:200px;border-radius:8px;margin-top:0.3rem;display:block">`
                         : `<p style="margin-top:0.2rem;color:var(--text-sec)">${m.message}</p>`
                     }
                     ${!m.is_admin && m.read ? '<span style="font-size:0.6rem;color:var(--accent-1)"><i class="fas fa-check-double"></i> Read</span>' : ''}
@@ -381,12 +388,13 @@
 
         function renderTemplateOrders(data) {
             if (!data || !data.length) { document.getElementById('panel-templates').innerHTML = '<p style="color:var(--text-sec)">No template orders yet</p>'; return; }
-            document.getElementById('panel-templates').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-templates" placeholder="Search template orders..." oninput="filterTable('filter-templates','table-templates')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-templates"><thead><tr><th>Date</th><th>Client</th><th>Template</th><th>Price</th><th>Payment</th><th>Status</th><th>Download Token</th><th>Actions</th></tr></thead><tbody>
+            document.getElementById('panel-templates').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-templates" placeholder="Search template orders..." oninput="filterTable('filter-templates','table-templates')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-templates"><thead><tr><th>Date</th><th>Client</th><th>Template</th><th>Price</th><th>Method</th><th>Payment</th><th>Status</th><th>Download Token</th><th>Actions</th></tr></thead><tbody>
                 ${data.map(o => `<tr>
                     <td>${new Date(o.created_at).toLocaleDateString()}</td>
                     <td>${o.client_name}<br><small>${o.client_email}</small></td>
                     <td>${o.template_id}</td>
                     <td>${o.price}</td>
+                    <td>${o.payment_method ? `<span class="status approved">${o.payment_method}</span>` : '<span class="status pending">EFT</span>'}</td>
                     <td><span class="status ${o.payment_status === 'paid' ? 'approved' : 'pending'}">${o.payment_status}</span></td>
                     <td><span class="status ${o.status}">${o.status}</span></td>
                     <td style="font-size:0.7rem;font-family:monospace;max-width:120px;overflow:hidden;text-overflow:ellipsis">${o.download_token || '-'}</td>
@@ -416,15 +424,17 @@
         }
 
         function renderUploads(data) {
-            if (!data || !data.length) { document.getElementById('panel-uploads').innerHTML = '<p style="color:var(--text-sec)">No client file uploads yet</p>'; return; }
+            const items = data.data || data;
+            const total = data.total != null ? data.total : (items ? items.length : 0);
+            if (!items || !items.length) { document.getElementById('panel-uploads').innerHTML = '<p style="color:var(--text-sec)">No client file uploads yet</p>'; return; }
             document.getElementById('panel-uploads').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-uploads" placeholder="Search uploads..." oninput="filterTable('filter-uploads','table-uploads')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-uploads"><thead><tr><th>Date</th><th>Client</th><th>Files</th></tr></thead><tbody>
-                ${data.map(u => `<tr>
+                ${items.map(u => `<tr>
                     <td>${new Date(u.created_at).toLocaleDateString()}</td>
                     <td>${u.client_name || u.client_email || 'Unknown'}</td>
                     <td>${u.files.map(f => `${f.original} (${(f.size/1024).toFixed(0)} KB)`).join('<br>')}</td>
                 </tr>`).join('')}
             </tbody></table>
-            <p style="color:var(--text-sec);font-size:0.8rem;margin-top:0.5rem">Files are stored on the server. Download via SFTP or server file manager.</p>`;
+            <p style="color:var(--text-sec);font-size:0.8rem;margin-top:0.5rem">${total} total &mdash; Files are stored on the server. Download via SFTP or server file manager.</p>`;
         }
 
         function renderClients(data) {

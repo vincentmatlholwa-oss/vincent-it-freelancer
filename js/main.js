@@ -330,6 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('paymentModalStep1').style.display = 'none';
                     document.getElementById('paymentModalStep2').style.display = 'block';
                     document.getElementById('paymentModalStep3').style.display = 'block';
+                    document.getElementById('payfastTemplateSection').style.display = 'block';
                     document.getElementById('payOrderRef').textContent = 'Order ID: ' + data.order_id + ' | ' + p.title + ' - ' + p.price;
                     document.getElementById('templateOrderId').value = data.order_id;
                     document.getElementById('templateClientName').value = name;
@@ -356,6 +357,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Template PayFast
+    document.getElementById('payfastTemplateBtn')?.addEventListener('click', function() {
+        const orderId = document.getElementById('templateOrderId').value;
+        const name = document.getElementById('templateClientName').value;
+        const email = document.getElementById('templateClientEmail').value;
+        const phone = document.getElementById('templateClientPhone').value;
+        payWithPayFast(orderId, name, email, phone, document.getElementById('payfastTemplateStatus'));
+    });
     // Template mark paid
     const markPaidBtn = document.getElementById('markPaidTemplate');
     if (markPaidBtn) {
@@ -489,7 +498,7 @@ function initCart() {
 
 // ===== FAQ =====
 const faqs = [
-    { q: 'How do I pay?', a: 'Pay via PayShap to <strong>0677834591</strong> or EFT to TymeBank (account: 51135445245, branch: 678910). After payment, upload your proof in the checkout and click "I Have Paid — Notify Admin".' },
+    { q: 'How do I pay?', a: 'Pay instantly with your credit/debit card via <strong>PayFast</strong> (click "Pay with Card" at checkout), OR pay via EFT/PayShap to TymeBank (account: 51135445245) or PayShap <strong>0677834591</strong>. After EFT, upload proof and click "I Have Paid".' },
     { q: 'Do I need to be present during the service?', a: 'Yes, you need to be available during the appointment to provide remote access and any necessary information (product keys, etc.).' },
     { q: 'What if the service can\'t be completed?', a: 'If the service cannot be completed due to technical limitations on your device, you receive a full refund.' },
     { q: 'How long does each service take?', a: 'Most software activations take 15-45 minutes. Repairs and installations take 1-3 hours. CVs and assignments take 1-5 days depending on complexity.' },
@@ -897,6 +906,14 @@ function initContractForm() {
         btn.disabled = false; btn.innerHTML = '<i class="fab fa-whatsapp"></i> I Have Paid — Notify Admin';
     });
 
+    document.getElementById('payfastPayBtn').addEventListener('click', () => {
+        const d = window.__contractData || {};
+        const name = document.getElementById('clientName')?.value?.trim() || d.clientName || '';
+        const email = document.getElementById('clientEmail')?.value?.trim() || d.clientEmail || '';
+        const phone = document.getElementById('clientPhone')?.value?.trim() || d.clientPhone || '';
+        if (!d.orderId) { alert('No order found. Please submit the contract first.'); return; }
+        payWithPayFast(d.orderId, name, email, phone, document.getElementById('payfastStatus'));
+    });
     document.getElementById('resetContract').addEventListener('click', () => {
         contractContainer.style.display = 'block'; resultDiv.style.display = 'none';
         form.reset();
@@ -1027,6 +1044,46 @@ function installPWA() {
         });
     }
 })();
+
+// ===== PayFast Payment Gateway =====
+async function payWithPayFast(orderId, clientName, clientEmail, clientPhone, statusEl) {
+    if (!orderId) { setStatus(statusEl, 'No order ID. Create the order first.', 'error'); return; }
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-1)"><i class="fas fa-spinner fa-spin"></i> Contacting payment gateway...</span>';
+    try {
+        const res = await fetch('/api/payfast/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: orderId, client_name: clientName, client_email: clientEmail, client_phone: clientPhone })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            setStatus(statusEl, data.error || 'Failed to initialize payment. Use EFT instead.', 'error');
+            return;
+        }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = data.process_url;
+        form.style.display = 'none';
+        Object.entries(data.payment_data).forEach(([key, val]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = val;
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-1)"><i class="fas fa-spinner fa-spin"></i> Redirecting to PayFast...</span>';
+        form.submit();
+    } catch (e) {
+        setStatus(statusEl, 'Could not reach payment server. Use EFT instead.', 'error');
+    }
+}
+
+function setStatus(el, msg, type) {
+    if (!el) return;
+    const color = type === 'error' ? '#ff6b35' : type === 'success' ? '#00c853' : 'var(--accent-1)';
+    el.innerHTML = `<span style="color:${color}">${msg}</span>`;
+}
 
 // ===== Init (page-aware — only inits what exists on the page) =====
 document.addEventListener('DOMContentLoaded', () => {

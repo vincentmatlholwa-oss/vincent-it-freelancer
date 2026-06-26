@@ -100,6 +100,12 @@
                         <label for="cfMessage">Message *</label>
                         <textarea id="cfMessage" rows="4" required placeholder="Tell me about your project or issue..."></textarea>
                     </div>
+                    <div class="form-group" id="captchaContainer" style="display:none">
+                        <label>Verify you are human *</label>
+                        <div id="captchaSvg" style="background:#1a1a3e;border-radius:6px;padding:0.5rem;margin-bottom:0.5rem;display:inline-block"></div>
+                        <input type="text" id="cfCaptchaAnswer" required placeholder="Enter answer" style="max-width:120px" autocomplete="off">
+                        <input type="hidden" id="cfCaptchaId" value="">
+                    </div>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Message</button>
                     <div id="contactFormMsg" class="form-message" style="text-align:center;margin-top:0.5rem"></div>
                 </form>
@@ -140,9 +146,17 @@
             if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
             if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
         });
+        function loadCaptcha() {
+            fetch('/api/captcha').then(r=>r.json()).then(c => {
+                document.getElementById('captchaContainer').style.display = '';
+                document.getElementById('captchaSvg').innerHTML = c.svg;
+                document.getElementById('cfCaptchaId').value = c.id;
+            }).catch(() => {});
+        }
         function initContactForm() {
             const form = document.getElementById('contactForm');
             if (!form) return;
+            loadCaptcha();
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const data = {
@@ -150,20 +164,31 @@
                     email: document.getElementById('cfEmail').value.trim(),
                     phone: document.getElementById('cfPhone').value.trim(),
                     subject: document.getElementById('cfSubject').value.trim(),
-                    message: document.getElementById('cfMessage').value.trim()
+                    message: document.getElementById('cfMessage').value.trim(),
+                    captcha_id: document.getElementById('cfCaptchaId').value,
+                    captcha_answer: document.getElementById('cfCaptchaAnswer').value.trim()
                 };
                 const msg = document.getElementById('contactFormMsg');
                 const btn = form.querySelector('button[type="submit"]');
                 if (!data.name || !data.email || !data.message) {
                     msg.innerHTML = '<span style="color:#ff6b35">Please fill in required fields</span>'; return;
                 }
+                if (!data.captcha_answer) {
+                    msg.innerHTML = '<span style="color:#ff6b35">Please complete the captcha</span>'; return;
+                }
                 if (navigator.onLine) {
                     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                     try {
                         const res = await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                         const result = await res.json();
-                        msg.innerHTML = '<span style="color:var(--accent-1)">' + (result.message || 'Message sent!') + '</span>';
-                        form.reset();
+                        if (result.success) {
+                            msg.innerHTML = '<span style="color:var(--accent-1)">' + (result.message || 'Message sent!') + '</span>';
+                            form.reset();
+                            loadCaptcha();
+                        } else {
+                            msg.innerHTML = '<span style="color:#ff6b35">' + (result.error || 'Submission failed') + '</span>';
+                            loadCaptcha();
+                        }
                     } catch { msg.innerHTML = '<span style="color:#ff6b35">Server unavailable. Please use WhatsApp.</span>'; }
                     finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message'; }
                 } else { msg.innerHTML = '<span style="color:#ff6b35">You are offline. Please use WhatsApp.</span>'; }

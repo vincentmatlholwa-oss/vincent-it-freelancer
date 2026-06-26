@@ -16,7 +16,9 @@ const crypto = require('crypto');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const PDFDocument = require('pdfkit');
+const payfast = require('./payfast');
 const db = require('./database');
+const svgCaptcha = require('svg-captcha');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -431,7 +433,43 @@ const authLimiter = rateLimit({
     max: 10,
     message: { error: 'Too many login attempts, please try again later' }
 });
+const paymentLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    message: { error: 'Too many payment submissions. Please contact us on WhatsApp.' }
+});
+const formLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 20,
+    message: { error: 'Too many submissions. Please try again later.' }
+});
 app.use('/api/', apiLimiter);
+
+// CAPTCHA store (in-memory)
+const captchaStore = new Map();
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, val] of captchaStore) {
+        if (now - val.ts > 600000) captchaStore.delete(key);
+    }
+}, 120000);
+
+// Generate CAPTCHA
+app.get('/api/captcha', (req, res) => {
+    const captcha = svgCaptcha.createMathExpr({ mathMin: 1, mathMax: 20, mathOperator: '+', fontSize: 50 });
+    const id = uuidv4();
+    captchaStore.set(id, { text: captcha.text, ts: Date.now() });
+    res.json({ id, svg: captcha.data });
+});
+
+// Verify CAPTCHA (used server-side by contact/register endpoints)
+function verifyCaptcha(id, answer) {
+    if (!id || !answer) return false;
+    const entry = captchaStore.get(id);
+    if (!entry) return false;
+    captchaStore.delete(id);
+    return entry.text.toString() === answer.toString().trim();
+}
 
 // ===== Visitor Tracking =====
 function detectDeviceType(ua) {
@@ -476,6 +514,8 @@ app.get('/api/visitors', authenticateToken, (req, res) => {
 
 // Static files
 app.use(express.static(path.join(__dirname, '..')));
+// Serve chat uploads
+app.use('/uploads/chat', express.static(chatUploadsDir));
 
 // Serve favicon.ico from SVG icon
 app.get('/favicon.ico', (req, res) => {
@@ -534,12 +574,15 @@ app.post('/api/admin/login', authLimiter, async (req, res) => {
 });
 
 // ===== Contacts =====
-app.post('/api/contact', validate([
+app.post('/api/contact', formLimiter, validate([
     { name: 'name', label: 'Name', required: true, maxLength: 100 },
     { name: 'email', label: 'Email', required: true, type: 'email', maxLength: 200 },
     { name: 'message', label: 'Message', required: true, maxLength: 5000 }
 ]), (req, res) => {
-    const { name, email, phone, subject, message } = req.body;
+    const { name, email, phone, subject, message, captcha_id, captcha_answer } = req.body;
+    if (!verifyCaptcha(captcha_id, captcha_answer)) {
+        return res.status(400).json({ error: 'Invalid captcha. Please try again.' });
+    }
     const sanitized = {
         name: name.trim().replace(/<[^>]*>/g, ''),
         email: email.trim().toLowerCase(),
@@ -557,8 +600,13 @@ app.post('/api/contact', validate([
 });
 
 app.get('/api/contacts', authenticateToken, (req, res) => {
-    const contacts = db.query('contacts', null);
-    res.json(contacts.reverse());
+    let contacts = db.query('contacts', null);
+    contacts.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const total = contacts.length;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const offset = parseInt(req.query.offset) || 0;
+    contacts = contacts.slice(offset, offset + limit);
+    res.json({ data: contacts, total, limit, offset });
 });
 
 // ===== Template Downloads =====
@@ -569,7 +617,7 @@ function generateToken() {
 // Purchase a template - creates an order and generates download token
 const templatePrices = { 'cv-classic': 'R150', 'cv-modern': 'R150', 'cv-executive': 'R200', 'cv-minimal': 'R100', 'pulse': 'R500', 'fitforge': 'R700', 'portfolio': 'R500' };
 
-app.post('/api/templates/purchase', validate([
+app.post('/api/templates/purchase', formLimiter, validate([
     { name: 'client_name', label: 'Client name', required: true, maxLength: 100 },
     { name: 'client_email', label: 'Email', required: true, type: 'email', maxLength: 200 },
     { name: 'template_id', label: 'Template ID', required: true, maxLength: 50 }
@@ -749,7 +797,7 @@ app.get('/api/admin/template-orders', authenticateToken, (req, res) => {
 });
 
 // ===== Appointments =====
-app.post('/api/appointments', validate([
+app.post('/api/appointments', formLimiter, validate([
     { name: 'client_name', label: 'Client name', required: true, maxLength: 100 },
     { name: 'client_email', label: 'Email', required: true, type: 'email', maxLength: 200 },
     { name: 'service', label: 'Service', required: true, maxLength: 100 },
@@ -781,9 +829,14 @@ app.post('/api/appointments', validate([
 });
 
 app.get('/api/appointments', authenticateToken, (req, res) => {
-    const { email } = req.query;
-    const appointments = db.query('appointments', email ? a => a.client_email.toLowerCase() === email.toLowerCase() : null);
-    res.json(appointments.reverse());
+    const { email, limit: reqLimit, offset: reqOffset } = req.query;
+    let appointments = db.query('appointments', email ? a => a.client_email.toLowerCase() === email.toLowerCase() : null);
+    appointments.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const total = appointments.length;
+    const limit = Math.min(parseInt(reqLimit) || 50, 200);
+    const offset = parseInt(reqOffset) || 0;
+    appointments = appointments.slice(offset, offset + limit);
+    res.json({ data: appointments, total, limit, offset });
 });
 
 app.patch('/api/appointments/:id', authenticateToken, (req, res) => {
@@ -875,7 +928,9 @@ app.post('/api/orders', validate([
 });
 
 app.get('/api/orders', (req, res) => {
-    const { email } = req.query;
+    const { email, limit: reqLimit, offset: reqOffset } = req.query;
+    const limit = Math.min(parseInt(reqLimit) || 50, 200);
+    const offset = parseInt(reqOffset) || 0;
     if (email) {
         const authHeader = req.headers['authorization'];
         if (!authHeader) return res.status(401).json({ error: 'Authentication required' });
@@ -885,8 +940,11 @@ app.get('/api/orders', (req, res) => {
             if (decoded.role !== 'admin' && decoded.email && decoded.email.toLowerCase() !== email.toLowerCase()) {
                 return res.status(403).json({ error: 'Email mismatch' });
             }
-            const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
-            res.json(orders.reverse());
+            let orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
+            orders.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            const total = orders.length;
+            orders = orders.slice(offset, offset + limit);
+            res.json({ data: orders, total, limit, offset });
         });
     }
     const authHeader = req.headers['authorization'];
@@ -894,8 +952,11 @@ app.get('/api/orders', (req, res) => {
     const token = authHeader.split(' ')[1];
     jwt.verify(token, JWT_SECRET, (err) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
-        const orders = db.query('orders', null);
-        res.json(orders.reverse());
+        let orders = db.query('orders', null);
+        orders.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        const total = orders.length;
+        orders = orders.slice(offset, offset + limit);
+        res.json({ data: orders, total, limit, offset });
     });
 });
 
@@ -1018,8 +1079,13 @@ app.post('/api/client/upload', (req, res) => {
 });
 
 app.get('/api/uploads', authenticateToken, (req, res) => {
-    const uploads = db.query('uploads', null);
-    res.json(uploads.reverse());
+    let uploads = db.query('uploads', null);
+    uploads.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const total = uploads.length;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const offset = parseInt(req.query.offset) || 0;
+    uploads = uploads.slice(offset, offset + limit);
+    res.json({ data: uploads, total, limit, offset });
 });
 
 app.get('/api/client/uploads', (req, res) => {
@@ -1108,7 +1174,7 @@ app.get('/sitemap.xml', (req, res) => {
 const QRCode = require('qrcode');
 
 app.get('/api/qr', (req, res) => {
-    const url = req.query.url || 'https://vincent-it-freelancer.onrender.com';
+    const url = req.query.url || process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com';
     const size = parseInt(req.query.size) || 300;
     QRCode.toDataURL(url, { width: size, margin: 2, color: { dark: '#0a0a1a', light: '#ffffff' } })
         .then(dataUrl => {
@@ -1125,7 +1191,7 @@ app.get('/api/qr', (req, res) => {
 });
 
 app.get('/api/qr/svg', (req, res) => {
-    const url = req.query.url || 'https://vincent-it-freelancer.onrender.com';
+    const url = req.query.url || process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com';
     QRCode.toString(url, { type: 'svg', width: 400, margin: 2, color: { dark: '#0a0a1a', light: '#ffffff' } })
         .then(svg => {
             const styled = svg.replace('<svg', '<svg style="display:block;margin:auto;max-width:100%;height:auto"');
@@ -1508,9 +1574,17 @@ app.post('/api/chat', validate([
 
 app.get('/api/chat', authenticateToken, (req, res) => {
     const messages = db.query('chat_messages', null).map(m => {
-        // Only include image for admin; strip for others
-        const { image, ...rest } = m;
-        return req.user.role === 'admin' ? m : rest;
+        // Transform image_path to full URL
+        const result = { ...m };
+        if (result.image_path) {
+            result.image_url = '/uploads/chat/' + result.image_path;
+        }
+        delete result.image;
+        // Strip image_path for non-admin
+        if (req.user.role !== 'admin') {
+            delete result.image_path;
+        }
+        return result;
     });
     // Mark all unread as read for admin
     if (req.user.role === 'admin') {
@@ -1523,28 +1597,46 @@ app.get('/api/chat', authenticateToken, (req, res) => {
     res.json(messages);
 });
 
-// Chat image upload
+// Chat image upload — save to disk, store path in DB
+const chatUploadsDir = path.join(__dirname, '..', 'uploads', 'chat');
+if (!fs.existsSync(chatUploadsDir)) fs.mkdirSync(chatUploadsDir, { recursive: true });
+
 app.post('/api/chat/upload', (req, res) => {
     const { sender, image, is_admin } = req.body;
     if (!image) return res.status(400).json({ error: 'Image required' });
-    // Store image as base64 in chat_messages
+    const matches = image.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!matches) return res.status(400).json({ error: 'Invalid image format' });
+    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+    const buffer = Buffer.from(matches[2], 'base64');
+    const filename = uuidv4() + '.' + ext;
+    const filePath = path.join(chatUploadsDir, filename);
+    fs.writeFileSync(filePath, buffer);
     const id = uuidv4();
     db.insert('chat_messages', {
         id,
         sender: (sender || 'Website Visitor').trim().replace(/<[^>]*>/g, ''),
         message: '[Image]',
-        image: image.substring(0, 500000),
+        image_path: filename,
         is_admin: is_admin ? 1 : 0,
         read: 0,
         created_at: new Date().toISOString()
     });
-    res.json({ success: true, id });
-    if (broadcastChat) broadcastChat({ type: 'chat_image', sender, url: image, is_admin: is_admin ? 1 : 0 });
+    const imageUrl = '/uploads/chat/' + filename;
+    res.json({ success: true, id, image_url: imageUrl });
+    if (broadcastChat) broadcastChat({ type: 'chat_image', sender, url: imageUrl, is_admin: is_admin ? 1 : 0 });
 });
 
 // Public chat endpoint for visitor polling (last 50 admin messages)
 app.get('/api/chat/public', (req, res) => {
-    const messages = db.query('chat_messages', m => m.is_admin === 1);
+    const messages = db.query('chat_messages', m => m.is_admin === 1).map(m => {
+        const result = { ...m };
+        if (result.image_path) {
+            result.image_url = '/uploads/chat/' + result.image_path;
+        }
+        delete result.image;
+        delete result.image_path;
+        return result;
+    });
     res.json(messages.slice(-50));
 });
 
@@ -1698,6 +1790,15 @@ app.get('/api/admin/analytics', authenticateToken, (req, res) => {
     });
 });
 
+// ===== PayFast Status Check =====
+app.get('/api/payfast/status', (req, res) => {
+    res.json({
+        configured: !!process.env.PAYFAST_MERCHANT_ID,
+        sandbox: payfast.isSandbox(),
+        merchant_id: process.env.PAYFAST_MERCHANT_ID ? (process.env.PAYFAST_MERCHANT_ID.substring(0, 4) + '...') : null
+    });
+});
+
 // ===== Banking Details (replaces payment gateway) =====
 app.get('/api/banking-details', (req, res) => {
     res.json({
@@ -1722,7 +1823,7 @@ const proofUpload = multer({
     }
 });
 
-app.post('/api/orders/:id/mark-paid', proofUpload.single('proof'), (req, res) => {
+app.post('/api/orders/:id/mark-paid', paymentLimiter, proofUpload.single('proof'), (req, res) => {
     const { id } = req.params;
     const { client_name, client_email, client_phone, message } = req.body;
     if (!client_name || !client_email) return res.status(400).json({ error: 'Name and email required' });
@@ -1761,6 +1862,100 @@ app.post('/api/orders/:id/mark-paid', proofUpload.single('proof'), (req, res) =>
 app.post('/api/admin/backup', authenticateToken, (req, res) => {
     backupDatabase();
     res.json({ success: true, message: 'Backup created' });
+});
+
+// ===== PayFast Payment Gateway =====
+app.post('/api/payfast/init', validate([
+    { name: 'order_id', label: 'Order ID', required: true, maxLength: 100 },
+    { name: 'client_name', label: 'Name', required: true, maxLength: 100 },
+    { name: 'client_email', label: 'Email', required: true, type: 'email', maxLength: 200 }
+]), (req, res) => {
+    const { order_id, client_name, client_email, client_phone, amount } = req.body;
+    if (!payfast.getMerchantId()) return res.status(400).json({ error: 'PayFast not configured. Contact admin.' });
+    let order = null;
+    let o = db.query('orders', o2 => o2.id === order_id);
+    if (o.length) order = o[0];
+    if (!order) { o = db.query('template_orders', o2 => o2.id === order_id); if (o.length) order = o[0]; }
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.payment_status === 'paid') return res.status(400).json({ error: 'Order already paid' });
+    const payAmount = amount || parseFloat(String(order.price || '0').replace(/[^0-9.]/g, '')) || 0;
+    if (payAmount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    const nameParts = client_name.trim().split(/\s+/);
+    const nameFirst = nameParts[0];
+    const nameLast = nameParts.slice(1).join(' ') || nameFirst;
+    const siteUrl = process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com';
+    const paymentData = payfast.buildPaymentData({
+        orderId: order_id,
+        amount: payAmount,
+        itemName: order.service || order.template_id || 'Service',
+        itemDescription: `Vincent IT Freelancer - ${order.service || order.template_id || 'Service'}`,
+        nameFirst, nameLast,
+        email: client_email,
+        cell: (client_phone || '').replace(/[^0-9]/g, ''),
+        returnUrl: `${siteUrl}/api/payfast/return?order_id=${order_id}`,
+        cancelUrl: `${siteUrl}/api/payfast/cancel?order_id=${order_id}`,
+        notifyUrl: `${siteUrl}/api/payfast/itn`
+    });
+    res.json({
+        success: true,
+        payment_data: paymentData,
+        process_url: payfast.getProcessUrl(),
+        sandbox: payfast.isSandbox()
+    });
+});
+
+app.post('/api/payfast/itn', (req, res) => {
+    const pfData = req.body;
+    if (!pfData || !pfData.m_payment_id) { res.status(400).send('INVALID'); return; }
+    const orderId = pfData.m_payment_id;
+    payfast.verifyITN(pfData).then(valid => {
+        if (!valid) { console.error('PayFast ITN verification failed for order:', orderId); res.status(200).send('INVALID'); return; }
+        if (pfData.payment_status !== 'COMPLETE') { res.status(200).send('NOT COMPLETE'); return; }
+        let order = null;
+        let o = db.query('orders', o2 => o2.id === orderId);
+        if (o.length) order = o[0];
+        let isTemplate = false;
+        if (!order) { o = db.query('template_orders', o2 => o2.id === orderId); if (o.length) { order = o[0]; isTemplate = true; } }
+        if (!order) { res.status(200).send('ORDER NOT FOUND'); return; }
+        if (order.payment_status === 'paid') { res.status(200).send('OK'); return; }
+        const pfAmount = parseFloat(pfData.amount_gross || pfData.amount || 0);
+        const orderAmount = parseFloat(String(order.price || '0').replace(/[^0-9.]/g, '')) || 0;
+        if (pfAmount < orderAmount * 0.98) { console.error('PayFast amount mismatch:', pfAmount, orderAmount); res.status(200).send('AMOUNT MISMATCH'); return; }
+        const now = new Date().toISOString();
+        if (isTemplate) {
+            db.update('template_orders', orderId, { payment_status: 'paid', status: 'completed', payment_method: 'PayFast', pf_transaction_id: pfData.pf_payment_id || '', updated_at: now });
+            notifyCustomer({
+                name: order.client_name, email: order.client_email, phone: order.client_phone,
+                message: `Hi ${order.client_name},\n\nYour PayFast payment for template ${order.template_id} is confirmed!\nDownload link: ${process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com'}/api/templates/download/${order.download_token}\n\nThank you!\n- Vincent IT Freelancer`
+            });
+            sendEmailAlert({
+                to: order.client_email,
+                subject: 'Payment Confirmed via PayFast – Download Your Template',
+                html: `<h2>Payment Confirmed!</h2><p>Hi ${order.client_name},</p><p>Your PayFast payment for <strong>${order.template_id}</strong> is confirmed.</p><p>Download: <a href="${process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com'}/api/templates/download/${order.download_token}">Download Link</a></p><p>– Vincent IT Freelancer</p>`
+            });
+        } else {
+            const history = order.status_history || [];
+            history.push({ from: order.status, to: 'paid', at: now });
+            db.update('orders', orderId, { payment_status: 'paid', status: 'paid', status_history: history, payment_method: 'PayFast', pf_transaction_id: pfData.pf_payment_id || '', updated_at: now });
+            notifyClient(orderId, 'paid');
+        }
+        notifyAdminWhatsApp(`PayFast Payment Received!\nOrder: ${orderId.slice(0, 8)}...\nClient: ${order.client_name}\nAmount: R${pfAmount}\nTransaction: ${pfData.pf_payment_id || 'N/A'}`);
+        addAuditLog({ action: 'PayFast payment', details: `Order ${orderId} paid R${pfAmount} via PayFast (${pfData.pf_payment_id || ''})`, admin: 'system' });
+        res.status(200).send('OK');
+    }).catch(err => {
+        console.error('PayFast ITN error:', err.message);
+        res.status(200).send('ERROR');
+    });
+});
+
+app.get('/api/payfast/return', (req, res) => {
+    const orderId = req.query.order_id || '';
+    res.redirect(`/payment-success.html?order_id=${orderId}&method=payfast`);
+});
+
+app.get('/api/payfast/cancel', (req, res) => {
+    const orderId = req.query.order_id || '';
+    res.redirect(`/payment-cancel.html?order_id=${orderId}&method=payfast`);
 });
 
 // SEO-friendly blog URLs
