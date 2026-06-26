@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Portfolio of IT work by Vincent IT Freelancer — Office activation, PC repair, CV design, website templates, and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .pf-page { padding-top:8rem; }
+        .pf-filters { display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:2rem; }
+        .pf-filter { padding:0.5rem 1.2rem; border:1px solid var(--border-color); border-radius:50px; background:transparent; color:var(--text-secondary); cursor:pointer; font-family:inherit; font-size:0.85rem; transition:0.3s; }
+        .pf-filter:hover, .pf-filter.active { border-color:var(--accent-1); color:var(--accent-1); background:rgba(0,212,255,0.05); }
+        .pf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.5rem; }
+        .pf-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; transition:var(--transition); }
+        .pf-card:hover { transform:translateY(-4px); border-color:var(--accent-1); box-shadow:0 8px 32px rgba(0,212,255,0.12); }
+        .pf-card-img { height:200px; background:linear-gradient(135deg,var(--bg-secondary),#1a0a2e); display:flex; align-items:center; justify-content:center; font-size:3rem; color:var(--accent-1); position:relative; overflow:hidden; }
+        .pf-card-img .pf-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; opacity:0; transition:0.3s; }
+        .pf-card:hover .pf-overlay { opacity:1; }
+        .pf-card-body { padding:1.2rem; }
+        .pf-card-body h3 { font-size:1rem; margin-bottom:0.3rem; }
+        .pf-card-body .pf-cat { font-size:0.7rem; color:var(--accent-1); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+        .pf-card-body p { color:var(--text-secondary); font-size:0.85rem; margin:0.3rem 0; line-height:1.5; }
+        .pf-card-body .pf-tags { display:flex; gap:0.3rem; flex-wrap:wrap; margin-top:0.5rem; }
+        .pf-card-body .pf-tags span { padding:0.1rem 0.4rem; border-radius:4px; font-size:0.65rem; background:rgba(0,212,255,0.08); color:var(--accent-1); }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-inner">
+            <div class="skeleton-shape skeleton-logo"></div>
+            <div class="skeleton-shape skeleton-title"></div>
+            <div class="skeleton-shape skeleton-text"></div>
+        </div>
+    </div>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link">Pricing</a>
+                <a href="templates.html" class="nav-link">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link">Contract</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="blog/" class="nav-link">Blog</a>
+                <a href="portfolio.html" class="nav-link active">Portfolio</a>
+                <a href="client/portal.html" class="nav-link">Portal</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+    <section class="section pf-page">
+        <div class="section-header">
+            <span class="section-badge">My Work</span>
+            <h2 class="section-title">Portfolio</h2>
+            <p class="section-desc">A showcase of IT services, templates, and solutions delivered to clients</p>
+        </div>
+        <div class="pf-filters" id="pfFilters"></div>
+        <div class="pf-grid" id="pfGrid"></div>
+        <div style="text-align:center;margin-top:2rem">
+            <p style="color:var(--text-muted);font-size:0.9rem">Want similar work done for you?</p>
+            <a href="https://wa.me/27677834591" target="_blank" class="btn btn-whatsapp" style="margin-top:0.5rem;display:inline-flex"><i class="fab fa-whatsapp"></i> Let's Chat</a>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
+            <div class="footer-social">
+                <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+    <div id="cookieBanner" style="position:fixed;bottom:0;left:0;right:0;background:#12122a;border-top:1px solid rgba(255,255,255,0.08);padding:1rem 2rem;display:none;z-index:99999;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <p style="color:#b0b0d0;font-size:0.85rem;margin:0;flex:1;min-width:200px"><i class="fas fa-cookie-bite" style="color:#00d4ff"></i> This site uses minimal cookies for functionality. By continuing, you accept our <a href="/privacy.html" style="color:#00d4ff">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem"><button onclick="localStorage.setItem('vit_cookie_consent','true');this.parentElement.parentElement.style.display='none'" style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.85rem">Got it</button></div>
+    </div>
+    <script>if (!localStorage.getItem('vit_cookie_consent')) { document.getElementById('cookieBanner').style.display = 'flex'; }</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script defer src="js/three-background.js"></script>
+    <script defer src="js/main.js"></script>
+    <script>
+        const portfolioItems = [
+            { title:'MS Office Activation — 50+ Clients', cat:'software', icon:'fa-brands fa-microsoft', desc:'Successfully activated Microsoft Office (2013-2024 & 365) for over 50 clients in Mahikeng. Lifetime activation with genuine licenses.', tags:['Office','Activation','Windows'] },
+            { title:'Windows 10/11 Activation', cat:'software', icon:'fa-brands fa-windows', desc:'Professional Windows activation for Home and Pro editions. Digital license linked to motherboard for hassle-free reinstalls.', tags:['Windows','License','Digital'] },
+            { title:'BSOD Repair & Data Recovery', cat:'repair', icon:'fa-solid fa-triangle-exclamation', desc:'Diagnosed and resolved critical blue screen errors, recovering valuable data for clients. Restored systems to full working order.', tags:['BSOD','Repair','Recovery'] },
+            { title:'PC Performance Optimization', cat:'repair', icon:'fa-solid fa-gauge-high', desc:'Upgraded HDD to SSD, added RAM, cleaned malware, and optimized startup for clients. Transformed slow PCs into fast machines.', tags:['Speed','Upgrade','Optimization'] },
+            { title:'Desktop Hardware Upgrades', cat:'repair', icon:'fa-solid fa-microchip', desc:'Fitted RAM upgrades, SSD replacements, and GPU installations. Thermal paste refresh and full performance testing included.', tags:['Hardware','RAM','SSD'] },
+            { title:'Professional CV Design', cat:'design', icon:'fa-solid fa-file-pen', desc:'Created ATS-friendly, professionally designed CVs for job seekers across South Africa. Multiple formats available.', tags:['CV','Resume','ATS'] },
+            { title:'Pulse — SaaS Landing Page', cat:'template', icon:'fa-solid fa-bolt', desc:'Modern SaaS landing page with dark/light modes, pricing tiers, testimonials carousel, and smooth scroll animations.', tags:['SaaS','Landing Page','Responsive'], link:'/templates/pulse/' },
+            { title:'FitForge — Fitness Coach Website', cat:'template', icon:'fa-solid fa-dumbbell', desc:'Multi-niche config-driven website template. Supports fitness, restaurant, agency themes. Includes gallery, booking, testimonials.', tags:['Fitness','Business','Multi-niche'], link:'/templates/fitforge/' },
+            { title:'Interactive Portfolio Template', cat:'template', icon:'fa-solid fa-user-astronaut', desc:'Personal portfolio with typewriter effect, filterable project gallery, skills showcase, and dark mode. Perfect for creatives.', tags:['Portfolio','Creative','Developer'], link:'/templates/portfolio/' },
+            { title:'Academic Assignments Completed', cat:'academic', icon:'fa-solid fa-graduation-cap', desc:'Helped college and university students with research papers, assignments, and projects across various subjects. Plagiarism-free.', tags:['Assignments','Research','Academic'] },
+            { title:'Website Customization & Setup', cat:'template', icon:'fa-solid fa-laptop-code', desc:'Customized website templates for small businesses in Mahikeng. Branding, content setup, domain & hosting guidance included.', tags:['Web Dev','Customization','Business'] },
+            { title:'Remote IT Support Sessions', cat:'software', icon:'fa-solid fa-headset', desc:'Provided remote troubleshooting and support for various IT issues — from printer setup to software installation and email configuration.', tags:['Support','Remote','Troubleshooting'] },
+        ];
+
+        const categories = [...new Set(portfolioItems.map(i => i.cat))];
+
+        function renderPortfolio(cat) {
+            const grid = document.getElementById('pfGrid');
+            const items = cat && cat !== 'all' ? portfolioItems.filter(i => i.cat === cat) : portfolioItems;
+            grid.innerHTML = items.map(i => `
+                <div class="pf-card">
+                    <div class="pf-card-img">
+                        <i class="${i.icon}" style="opacity:0.6"></i>
+                        <div class="pf-overlay">
+                            ${i.link ? `<a href="${i.link}" target="_blank" class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.85rem"><i class="fas fa-eye"></i> View</a>` : `<a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%27m%20interested%20in%20${encodeURIComponent(i.title)}." target="_blank" class="btn btn-whatsapp" style="padding:0.5rem 1rem;font-size:0.85rem"><i class="fab fa-whatsapp"></i> Enquire</a>`}
+                        </div>
+                    </div>
+                    <div class="pf-card-body">
+                        <span class="pf-cat">${i.cat}</span>
+                        <h3>${i.title}</h3>
+                        <p>${i.desc}</p>
+                        <div class="pf-tags">${i.tags.map(t => `<span>${t}</span>`).join('')}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderFilters() {
+            const container = document.getElementById('pfFilters');
+            container.innerHTML = '<button class="pf-filter active" data-cat="all" onclick="setFilter(this,\'all\')">All</button>' +
+                categories.map(c => `<button class="pf-filter" data-cat="${c}" onclick="setFilter(this,'${c}')">${c.charAt(0).toUpperCase()+c.slice(1)}</button>`).join('');
+        }
+
+        function setFilter(el, cat) {
+            document.querySelectorAll('.pf-filter').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderPortfolio(cat);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { renderFilters(); renderPortfolio('all'); });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
+    </script>
+</body>
+</html>

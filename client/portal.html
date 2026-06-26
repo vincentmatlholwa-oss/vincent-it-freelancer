@@ -120,6 +120,7 @@
                     <div class="field"><label>Email</label><input type="email" id="regEmail" required></div>
                     <div class="field"><label>Phone</label><input type="tel" id="regPhone"></div>
                     <div class="field"><label>Password</label><input type="password" id="regPassword" required minlength="4"></div>
+                    <div class="field"><label>Referral Code (optional)</label><input type="text" id="regReferral" placeholder="VIN-XXXX"></div>
                     <button type="submit"><i class="fas fa-user-plus"></i> Create Account</button>
                     <div id="regMsg" class="msg"></div>
                 </form>
@@ -225,7 +226,8 @@
             try {
                 const res = await fetch(API+'/api/clients/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
                     name: document.getElementById('regName').value, email: document.getElementById('regEmail').value,
-                    phone: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value
+                    phone: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value,
+                    referral_code: document.getElementById('regReferral').value.trim()
                 })});
                 const data = await res.json();
                 if (data.success) { client = data.client; if (data.token) localStorage.setItem('vit_client_token', data.token); localStorage.setItem('vit_portal_session', JSON.stringify(client)); showDashboard(); }

@@ -219,8 +219,8 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 
 // Health check (MUST be first route — Render uses this before any middleware)
-app.get('/healthz', (req, res) => res.status(200).send('ok'));
-app.get('/health', (req, res) => res.status(200).send('ok'));
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // ===== SMS via Africa's Talking (free tier) =====
 const AT_USERNAME = process.env.AT_USERNAME || 'sandbox';
@@ -682,6 +682,7 @@ app.get('/api/templates/download/:token', (req, res) => {
     if (!fileInfo) return res.status(404).json({ error: 'Template file not found' });
     const absPath = path.join(__dirname, '..', fileInfo.path);
     if (!fs.existsSync(absPath)) return res.status(404).json({ error: 'Template file not found on server' });
+    res.setHeader('Cache-Control', 'public, max-age=86400');
     res.download(absPath, fileInfo.name);
 });
 
@@ -740,7 +741,7 @@ function processFollowUps() {
     due.forEach(f => {
         try {
             if (f.type === 'review_request') {
-                const reviewUrl = (process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com') + '/#reviews';
+                const reviewUrl = (process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com') + '/contact.html';
                 notifyCustomer({
                     name: f.client_name, email: f.client_email, phone: f.client_phone,
                     message: `Hi ${f.client_name},\n\nYour order was completed recently. We'd love to hear your feedback!\n\nLeave a review here: ${reviewUrl}\n\nYour review helps others trust us. Thank you!\n\n- Vincent IT Freelancer`
@@ -760,6 +761,16 @@ function processFollowUps() {
                     to: f.client_email,
                     subject: '10% Discount – Thank you for your order!',
                     html: `<h2>Exclusive Discount Just for You!</h2><p>Hi ${f.client_name},</p><p>Thanks for choosing Vincent IT! As a token of appreciation, here's <strong>10% off</strong> your next service.</p><p><strong>Discount Code:</strong> <span style="font-size:1.2rem;background:#12122a;padding:0.3rem 0.8rem;border-radius:6px;border:1px dashed #00d4ff;color:#00d4ff;font-weight:700;letter-spacing:1px">${discountCode}</span></p><p>Valid for 90 days on any service.</p><p>– Vincent IT Freelancer</p>`
+                });
+            } else if (f.type === 'payment_reminder') {
+                notifyCustomer({
+                    name: f.client_name, email: f.client_email, phone: f.client_phone,
+                    message: `Hi ${f.client_name},\n\nThis is a friendly reminder that payment for your order is still pending.\n\nOrder: ${f.order_id ? f.order_id.slice(0, 8) : 'N/A'}\n\nPlease complete your payment via TymeBank a/c 51135445245 or PayShap 0677834591.\n\nAfter payment, upload proof on the website.\n\n- Vincent IT Freelancer`
+                });
+                sendEmailAlert({
+                    to: f.client_email,
+                    subject: 'Payment Reminder – Order ' + (f.order_id ? f.order_id.slice(0, 8) : ''),
+                    html: `<h2>Payment Reminder</h2><p>Hi ${f.client_name},</p><p>This is a friendly reminder that your order is awaiting payment.</p><p><strong>Banking Details:</strong></p><p>TymeBank a/c 51135445245 (branch 678910)<br>PayShap: 0677834591</p><p>Upload proof of payment on the website after paying.</p><p>– Vincent IT Freelancer</p>`
                 });
             } else if (f.type === 'followup_check') {
                 const orderInquiries = db.query('orders', o => o.id === f.order_id);
@@ -867,7 +878,7 @@ app.post('/api/orders', validate([
     { name: 'service', label: 'Service', required: true, maxLength: 500 }
 ]), (req, res) => {
     backupDatabase();
-    const { client_name, client_email, client_phone, service, price, cart_items } = req.body;
+    const { client_name, client_email, client_phone, service, price, cart_items, urgent } = req.body;
     if (price) {
         const priceNum = parseFloat(String(price).replace(/[^0-9.]/g, ''));
         if (isNaN(priceNum) || priceNum <= 0) return res.status(400).json({ error: 'Invalid price' });
@@ -889,6 +900,14 @@ app.post('/api/orders', validate([
         }
     }
     const now = new Date().toISOString();
+    const isUrgent = urgent === true || urgent === 'true' || urgent === 1;
+    if (isUrgent) {
+        sendEmailAlert({
+            subject: `URGENT Order from ${client_name}`,
+            html: `<h2 style="color:#ff4444">URGENT ORDER</h2><p><strong>Client:</strong> ${client_name}</p><p><strong>Email:</strong> ${client_email}</p><p><strong>Phone:</strong> ${client_phone || 'N/A'}</p><p><strong>Service:</strong> ${service}</p><p><strong>Price:</strong> ${price || 'N/A'}</p><p><strong>Order ID:</strong> ${id}</p><p style="color:#ff4444;font-weight:700">This order has been flagged as URGENT — prioritize immediately!</p>`
+        });
+        notifyAdminWhatsApp(`URGENT ORDER!\n${client_name}\n${service}\nR${price || 'N/A'}\nOrder: ${id.slice(0,8)}...\n⚠️ Prioritize this order!`);
+    }
     db.insert('orders', {
         id,
         client_name: client_name.trim().replace(/<[^>]*>/g, ''),
@@ -898,6 +917,7 @@ app.post('/api/orders', validate([
         price: (price || '').trim(),
         cart_items: items.length ? JSON.stringify(items) : '',
         discount_code: discountCode,
+        urgent: isUrgent ? 1 : 0,
         status: 'pending',
         payment_status: 'unpaid',
         deposit_paid: 0,
@@ -921,6 +941,9 @@ app.post('/api/orders', validate([
         name: client_name, email: client_email, phone: client_phone,
         message: `Hi ${client_name},\n\nYour order is confirmed!\nOrder ID: ${id}\nService: ${service}\nPrice: ${price || 'N/A'}\n\nPay via TymeBank a/c 51135445245 or PayShap 0677834591. Upload proof on the website.\nTrack your order in the Client Portal.\n\n- Vincent IT Freelancer`
     });
+    // Schedule payment reminders
+    scheduleFollowUp({ orderId: id, clientName: client_name.trim(), clientEmail: client_email.trim().toLowerCase(), clientPhone: (client_phone || '').trim(), type: 'payment_reminder', delayMs: 24 * 60 * 60 * 1000 });
+    scheduleFollowUp({ orderId: id, clientName: client_name.trim(), clientEmail: client_email.trim().toLowerCase(), clientPhone: (client_phone || '').trim(), type: 'payment_reminder', delayMs: 3 * 24 * 60 * 60 * 1000 });
     try {
         generateInvoicePDF({
             client_name: client_name.trim(),
@@ -1338,7 +1361,7 @@ app.post('/api/clients/register', validate([
     { name: 'email', label: 'Email', required: true, type: 'email', maxLength: 200 },
     { name: 'password', label: 'Password', required: true, maxLength: 128 }
 ]), async (req, res) => {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password, referral_code } = req.body;
     const emailLower = email.trim().toLowerCase();
     const existing = db.query('clients', c => c.email.toLowerCase() === emailLower);
     if (existing.length) return res.status(409).json({ error: 'Email already registered' });
@@ -1346,12 +1369,18 @@ app.post('/api/clients/register', validate([
         const hashedPassword = await bcrypt.hash(password, 10);
         const id = uuidv4();
         const refCode = 'VIN-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+        let referredBy = '';
+        if (referral_code) {
+            const referrer = db.query('clients', c => c.referral_code === referral_code.trim().toUpperCase());
+            if (referrer.length) referredBy = referrer[0].email;
+        }
         db.insert('clients', {
             id, name: name.trim().replace(/<[^>]*>/g, ''),
             email: emailLower,
             phone: (phone || '').trim().replace(/[^0-9+\-\s]/g, ''),
             password: hashedPassword,
             referral_code: refCode,
+            referred_by: referredBy,
             created_at: new Date().toISOString()
         });
         const verificationToken = uuidv4() + '-' + Math.random().toString(36).substr(2, 8);
@@ -1976,12 +2005,114 @@ app.get('/blog/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'blog', 'index.html'));
 });
 
-// Health check (both /api/health and /healthz for Render)
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// ===== Monthly Performance PDF Report =====
+app.get('/api/admin/monthly-report', authenticateToken, async (req, res) => {
+    try {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const monthLabel = now.toLocaleString('en-ZA', { month: 'long', year: 'numeric' });
+        const orders = db.query('orders', o => o.created_at >= monthStart);
+        const templateOrders = db.query('template_orders', o => o.created_at >= monthStart);
+        const newClients = db.query('clients', c => c.created_at >= monthStart);
+        const paidOrders = orders.filter(o => o.payment_status === 'paid');
+        const paidTemplates = templateOrders.filter(o => o.payment_status === 'paid');
+        const totalRevenue = [...paidOrders, ...paidTemplates].reduce((sum, o) => {
+            const match = String(o.price || '').match(/\d+/);
+            return sum + (match ? parseInt(match[0]) : 0);
+        }, 0);
+        const doc = new PDFDocument({ margin: 50 });
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+            const pdfBuffer = Buffer.concat(buffers);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=Monthly-Report-${monthLabel.replace(/ /g,'-')}.pdf`);
+            res.send(pdfBuffer);
+        });
+        const primaryColor = [0, 212, 255], darkColor = [10, 10, 26];
+        doc.fontSize(22).font('Helvetica-Bold').fillColor(...primaryColor).text('Monthly Performance Report', { align: 'center' });
+        doc.fontSize(12).font('Helvetica').fillColor(100, 100, 100).text(monthLabel, { align: 'center' });
+        doc.moveDown(2);
+        doc.fontSize(11).fillColor(0, 0, 0);
+        doc.text('Summary for ' + monthLabel, { underline: true });
+        doc.moveDown(0.5);
+        doc.fontSize(10).fillColor(50, 50, 50);
+        doc.text('Total Orders: ' + orders.length);
+        doc.text('Paid Orders: ' + paidOrders.length);
+        doc.text('Template Sales: ' + paidTemplates.length);
+        doc.text('Total Revenue: R' + totalRevenue);
+        doc.text('New Clients Registered: ' + newClients.length);
+        doc.moveDown(1);
+        doc.text('Top Services This Month:', { underline: true });
+        const serviceCounts = {};
+        orders.forEach(o => {
+            const svc = o.service || 'Unknown';
+            serviceCounts[svc] = (serviceCounts[svc] || 0) + 1;
+        });
+        const topServices = Object.entries(serviceCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        doc.moveDown(0.5);
+        topServices.forEach(([name, count], i) => {
+            doc.text(`${i + 1}. ${name} — ${count} order(s)`);
+        });
+        if (!topServices.length) doc.text('No services this month.');
+        doc.moveDown(2);
+        doc.fontSize(8).fillColor('#666').text('Auto-generated by Vincent IT Freelancer • ' + new Date().toLocaleString('en-ZA'), { align: 'center' });
+        doc.end();
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to generate report: ' + e.message });
+    }
 });
-app.get('/healthz', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+
+// ===== Referral Tracking =====
+app.get('/api/client/referrals', (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const clients = db.query('clients', null);
+    const referred = clients.filter(c => c.referred_by && c.referred_by.toLowerCase() === email.toLowerCase());
+    const orders = db.query('orders', o => o.client_email.toLowerCase() === email.toLowerCase());
+    const paidOrders = orders.filter(o => o.payment_status === 'paid');
+    const earnings = referred.length * 10;
+    res.json({
+        referral_code: clients.find(c => c.email.toLowerCase() === email.toLowerCase())?.referral_code || '',
+        total_referred: referred.length,
+        referred_clients: referred.map(r => ({ name: r.name, email: r.email, date: r.created_at })),
+        total_orders: orders.length,
+        paid_orders: paidOrders.length,
+        referral_earnings: earnings
+    });
+});
+
+// ===== Automated 24h Appointment Reminders =====
+function checkAndSendReminders() {
+    const now = new Date();
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = in24h.toISOString().slice(0, 10);
+    const appointments = db.query('appointments', a =>
+        a.status === 'confirmed' && a.date === tomorrowStr && !a.reminder_sent
+    );
+    appointments.forEach(a => {
+        const reminderMsg = `Hi ${a.client_name},\n\nReminder: You have an appointment tomorrow!\nService: ${a.service}\nDate: ${a.date}\nTime: ${a.time}\n\nReply or WhatsApp 067 783 4591 if you need to reschedule.\n\n- Vincent IT Freelancer`;
+        notifyCustomer({
+            name: a.client_name,
+            email: a.client_email,
+            phone: a.client_phone,
+            message: reminderMsg
+        });
+        sendEmailAlert({
+            to: a.client_email,
+            subject: 'Appointment Reminder – Tomorrow at ' + a.time,
+            html: `<h2>Appointment Reminder</h2><p>Hi ${a.client_name},</p><p>This is a reminder that you have an appointment <strong>tomorrow</strong>:</p><p><strong>Service:</strong> ${a.service}<br><strong>Date:</strong> ${a.date}<br><strong>Time:</strong> ${a.time}</p><p>Please be available at the scheduled time. Reply if you need to reschedule.</p><p>– Vincent IT Freelancer</p>`
+        });
+        notifyAdminWhatsApp(`Reminder sent: ${a.client_name}'s ${a.service} appointment is tomorrow at ${a.time}`);
+        db.update('appointments', a.id, { reminder_sent: 1 });
+        console.log('Reminder sent for appointment:', a.id.slice(0, 8));
+    });
+}
+
+// ===== Appointment Reminder Check (already auto-scheduled, explicit endpoint for manual trigger) =====
+app.post('/api/admin/check-reminders', authenticateToken, (req, res) => {
+    checkAndSendReminders();
+    res.json({ success: true, message: 'Reminder check triggered' });
 });
 
 // Custom 404 handler - serve static 404.html for unmatched HTML requests
@@ -2039,32 +2170,6 @@ if (require.main === module) {
         // Initial backup after 10 seconds
         setTimeout(backupDatabase, 10000);
 
-        // ===== Automated 24h Appointment Reminders =====
-        function checkAndSendReminders() {
-            const now = new Date();
-            const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            const tomorrowStr = in24h.toISOString().slice(0, 10);
-            const appointments = db.query('appointments', a =>
-                a.status === 'confirmed' && a.date === tomorrowStr && !a.reminder_sent
-            );
-            appointments.forEach(a => {
-                const reminderMsg = `Hi ${a.client_name},\n\nReminder: You have an appointment tomorrow!\nService: ${a.service}\nDate: ${a.date}\nTime: ${a.time}\n\nReply or WhatsApp 067 783 4591 if you need to reschedule.\n\n- Vincent IT Freelancer`;
-                notifyCustomer({
-                    name: a.client_name,
-                    email: a.client_email,
-                    phone: a.client_phone,
-                    message: reminderMsg
-                });
-                sendEmailAlert({
-                    to: a.client_email,
-                    subject: 'Appointment Reminder – Tomorrow at ' + a.time,
-                    html: `<h2>Appointment Reminder</h2><p>Hi ${a.client_name},</p><p>This is a reminder that you have an appointment <strong>tomorrow</strong>:</p><p><strong>Service:</strong> ${a.service}<br><strong>Date:</strong> ${a.date}<br><strong>Time:</strong> ${a.time}</p><p>Please be available at the scheduled time. Reply if you need to reschedule.</p><p>– Vincent IT Freelancer</p>`
-                });
-                notifyAdminWhatsApp(`Reminder sent: ${a.client_name}'s ${a.service} appointment is tomorrow at ${a.time}`);
-                db.update('appointments', a.id, { reminder_sent: 1 });
-                console.log('Reminder sent for appointment:', a.id.slice(0, 8));
-            });
-        }
         // Check reminders every 30 minutes
         setInterval(checkAndSendReminders, 30 * 60 * 1000);
         checkAndSendReminders();

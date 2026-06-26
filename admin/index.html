@@ -266,8 +266,8 @@
             const total = data.total != null ? data.total : items.length;
             if (!items.length) { document.getElementById('panel-orders').innerHTML = '<p style="color:var(--text-sec)">No orders yet</p>'; return; }
             document.getElementById('panel-orders').innerHTML = `<div style="margin-bottom:0.5rem"><input id="filter-orders" placeholder="Search orders..." oninput="filterTable('filter-orders','table-orders')" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;font-family:inherit"></div><table id="table-orders"><thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Price</th><th>Method</th><th>Status</th><th>Payment</th><th>Client Message</th><th>Actions</th></tr></thead><tbody>
-                ${items.map(o => `<tr>
-                    <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                ${items.map(o => `<tr${o.urgent ? ' style="border-left:3px solid #ff4444;background:rgba(255,68,68,0.05)"' : ''}>
+                    <td>${new Date(o.created_at).toLocaleDateString()}${o.urgent ? ' <span style="color:#ff4444;font-weight:700;font-size:0.7rem"><i class="fas fa-exclamation-triangle"></i> URGENT</span>' : ''}</td>
                     <td>${h(o.client_name)}<br><small>${h(o.client_email)}</small></td>
                     <td>${h(o.service)}</td>
                     <td>${h(o.price||'-')}</td>

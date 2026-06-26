@@ -16,8 +16,15 @@
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Vincent IT Freelancer - Professional Tech Services">
     <meta name="twitter:description" content="Professional IT services in Mahikeng, North West - Office activation, PC repair, CV creation, website templates and more.">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YJWVKDNM5C"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YJWVKDNM5C');</script>
     <link rel="canonical" href="https://vincent-it-freelancer.onrender.com">
     <meta name="robots" content="index, follow">
+    <meta name="geo.region" content="ZA-NW">
+    <meta name="geo.placename" content="Mahikeng">
+    <meta name="geo.position" content="-25.8658;25.6394">
+    <meta name="ICBM" content="-25.8658, 25.6394">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -83,6 +90,8 @@
                 <a href="contract.html" class="nav-link">Contract</a>
                 <a href="contact.html" class="nav-link">Contact</a>
                 <a href="blog/" class="nav-link">Blog</a>
+                <a href="knowledge-base.html" class="nav-link">Guides</a>
+                <a href="portfolio.html" class="nav-link">Portfolio</a>
                 <a href="client/portal.html" class="nav-link">Portal</a>
             </div>
             <div class="nav-actions">
@@ -191,6 +200,15 @@
             <button id="pwaNotNowBtn" style="padding:0.5rem 1.2rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-sec);cursor:pointer;font-family:inherit;font-size:0.8rem">Not now</button>
         </div>
     </div>
+    <!-- Exit-Intent Lead Capture -->
+    <div id="exitPopup" style="display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#12122a,#1a0a2e);border:1px solid rgba(0,212,255,0.2);border-radius:16px;padding:1.5rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center;font-family:Inter,sans-serif">
+        <button onclick="closeExitPopup()" style="position:absolute;top:0.5rem;right:0.8rem;background:none;border:none;color:#6b6b8d;font-size:1.2rem;cursor:pointer;font-family:inherit">&times;</button>
+        <div style="font-size:2.5rem;margin-bottom:0.5rem">💻</div>
+        <h3 style="color:#00d4ff;margin-bottom:0.3rem;font-size:1.1rem">Need IT Help?</h3>
+        <p style="color:#b0b0d0;font-size:0.85rem;margin-bottom:1rem;line-height:1.5">Get instant help with Office activation, PC repair, CV creation & more. Chat with me on WhatsApp now!</p>
+        <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20need%20help%20with..." target="_blank" class="btn btn-whatsapp" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.5rem;background:#25D366;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;font-family:inherit"><i class="fab fa-whatsapp" style="font-size:1.2rem"></i> Chat on WhatsApp Now</a>
+        <p style="color:#6b6b8d;font-size:0.7rem;margin-top:0.8rem">Responses within 1 hour • Mahikeng-based</p>
+    </div>
     <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
     <div id="cookieBanner" style="position:fixed;bottom:0;left:0;right:0;background:#12122a;border-top:1px solid rgba(255,255,255,0.08);padding:1rem 2rem;display:none;z-index:99999;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <p style="color:#b0b0d0;font-size:0.85rem;margin:0;flex:1;min-width:200px">
@@ -210,6 +228,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script defer src="js/three-background.js"></script>
     <script defer src="js/main.js"></script>
+    <script>
+        // Exit-intent popup
+        let exitShown = false;
+        document.addEventListener('mouseleave', function(e) {
+            if (exitShown) return;
+            if (e.clientY > 0) return;
+            const popup = document.getElementById('exitPopup');
+            if (popup) { popup.style.display = 'block'; exitShown = true; }
+        });
+        function closeExitPopup() {
+            document.getElementById('exitPopup').style.display = 'none';
+        }
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }

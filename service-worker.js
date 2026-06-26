@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vincent-it-v4';
+const CACHE_NAME = 'vincent-it-v5';
 const ASSETS = [
     '/',
     '/index.html',
@@ -16,7 +16,15 @@ const ASSETS = [
     '/blog/posts.json',
     '/client/portal.html',
     '/admin/index.html',
-    '/manifest.json'
+    '/manifest.json',
+    '/knowledge-base.html',
+    '/portfolio.html',
+    '/services.html',
+    '/pricing.html',
+    '/templates.html',
+    '/faq.html',
+    '/contact.html',
+    '/contract.html'
 ];
 
 self.addEventListener('install', event => {

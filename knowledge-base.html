@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Base - Vincent IT Freelancer</title>
+    <link rel="icon" type="image/svg+xml" href="/img/icon-192.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Self-service guides and tutorials for Microsoft Office activation, Windows setup, PC repair, CV writing and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .kb-page { padding-top:8rem; }
+        .kb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; margin-top:1.5rem; }
+        .kb-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1.5rem; transition:var(--transition); cursor:pointer; }
+        .kb-card:hover { transform:translateY(-3px); border-color:var(--accent-1); box-shadow:0 8px 32px rgba(0,212,255,0.1); }
+        .kb-card-icon { font-size:2rem; color:var(--accent-1); margin-bottom:0.5rem; }
+        .kb-card h3 { font-size:1rem; margin-bottom:0.3rem; }
+        .kb-card p { color:var(--text-secondary); font-size:0.85rem; margin-bottom:0.5rem; line-height:1.5; }
+        .kb-card .kb-tag { display:inline-block; padding:0.15rem 0.5rem; border-radius:50px; font-size:0.65rem; font-weight:600; background:rgba(0,212,255,0.1); color:var(--accent-1); margin-right:0.3rem; }
+        .kb-search { width:100%; max-width:600px; margin:0 auto; display:block; padding:0.8rem 1rem; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:#fff; font-family:inherit; font-size:1rem; text-align:center; }
+        .kb-search:focus { outline:none; border-color:var(--accent-1); }
+        .kb-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:100000; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem; }
+        .kb-modal-content { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:2rem; max-width:700px; width:100%; max-height:80vh; overflow-y:auto; }
+        .kb-modal-content h2 { color:var(--accent-1); margin-bottom:0.5rem; }
+        .kb-modal-content .kb-body { color:var(--text-secondary); font-size:0.9rem; line-height:1.8; }
+        .kb-modal-content .kb-body strong { color:#fff; }
+        .kb-modal-content .kb-body code { background:rgba(0,0,0,0.3); padding:0.1rem 0.4rem; border-radius:4px; font-size:0.85rem; color:var(--accent-1); }
+        .kb-modal-content .kb-body ul { padding-left:1.2rem; margin:0.5rem 0; }
+        .kb-modal-content .kb-body ul li { margin-bottom:0.3rem; list-style:disc; }
+        .kb-close { position:sticky; top:0; float:right; background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer; }
+        .kb-close:hover { color:var(--accent-1); }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="skeleton-loader" id="skeletonLoader">
+        <div class="skeleton-inner">
+            <div class="skeleton-shape skeleton-logo"></div>
+            <div class="skeleton-shape skeleton-title"></div>
+            <div class="skeleton-shape skeleton-text"></div>
+        </div>
+    </div>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo"><i class="fas fa-code"></i><span>Vincent IT</span></a>
+            <div class="nav-menu" id="navMenu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="services.html" class="nav-link">Services</a>
+                <a href="pricing.html" class="nav-link">Pricing</a>
+                <a href="templates.html" class="nav-link">Templates</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="contract.html" class="nav-link">Contract</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="blog/" class="nav-link">Blog</a>
+                <a href="knowledge-base.html" class="nav-link active">Guides</a>
+                <a href="client/portal.html" class="nav-link">Portal</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <a href="https://wa.me/27677834591" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+            </div>
+            <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+    <section class="section kb-page">
+        <div class="section-header">
+            <span class="section-badge">Self-Help</span>
+            <h2 class="section-title">Knowledge Base</h2>
+            <p class="section-desc">Guides and tutorials to help you solve common issues yourself</p>
+        </div>
+        <input type="text" class="kb-search" id="kbSearch" placeholder="Search guides... (e.g. Office activation, slow PC, CV tips)" oninput="filterKB(this.value)">
+        <div class="kb-grid" id="kbGrid"></div>
+        <p style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-top:1rem">Still stuck? <a href="https://wa.me/27677834591" target="_blank" style="color:var(--accent-1)">Chat with me on WhatsApp</a> — I'm here to help!</p>
+    </section>
+    <div class="kb-modal" id="kbModal">
+        <div class="kb-modal-content">
+            <button class="kb-close" onclick="closeKB()">&times;</button>
+            <h2 id="kbModalTitle"></h2>
+            <div class="kb-body" id="kbModalBody"></div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fas fa-code"></i><span>Vincent IT Freelancer</span></div>
+            <p class="footer-copy">&copy; 2025-2026 Vincent IT Freelancer. All rights reserved. <a href="/privacy.html" style="color:var(--accent-1);text-decoration:underline;font-size:0.8rem">Privacy Policy</a></p>
+            <div class="footer-social">
+                <a href="https://wa.me/27677834591" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:codingpredators@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+    <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+    <div id="cookieBanner" style="position:fixed;bottom:0;left:0;right:0;background:#12122a;border-top:1px solid rgba(255,255,255,0.08);padding:1rem 2rem;display:none;z-index:99999;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <p style="color:#b0b0d0;font-size:0.85rem;margin:0;flex:1;min-width:200px"><i class="fas fa-cookie-bite" style="color:#00d4ff"></i> This site uses minimal cookies for functionality. By continuing, you accept our <a href="/privacy.html" style="color:#00d4ff">privacy policy</a>.</p>
+        <div style="display:flex;gap:0.5rem"><button onclick="localStorage.setItem('vit_cookie_consent','true');this.parentElement.parentElement.style.display='none'" style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.85rem">Got it</button></div>
+    </div>
+    <script>if (!localStorage.getItem('vit_cookie_consent')) { document.getElementById('cookieBanner').style.display = 'flex'; }</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script defer src="js/three-background.js"></script>
+    <script defer src="js/main.js"></script>
+    <script>
+        const kbArticles = [
+            { title:'How to Activate Microsoft Office 2013/2016/2019/2021/2024', tags:['office','activation','microsoft','license'], icon:'fa-brands fa-microsoft',
+              body:'<p><strong>Step 1:</strong> Open any Office app (Word, Excel, or PowerPoint).</p><p><strong>Step 2:</strong> Go to <strong>File > Account</strong> (or Office Account).</p><p><strong>Step 3:</strong> Click <strong>Change Product Key</strong> or <strong>Activate</strong>.</p><p><strong>Step 4:</strong> Enter the product key you received from Vincent IT.</p><p><strong>Step 5:</strong> Follow the on-screen prompts. If activation fails, ensure you\'re connected to the internet.</p><hr><p><strong>Still having issues?</strong> Contact me on <a href="https://wa.me/27677834591" target="_blank" style="color:var(--accent-1)">WhatsApp</a> for remote assistance.</p>' },
+            { title:'Windows 10 & 11 Activation Guide', tags:['windows','activation','license','microsoft'], icon:'fa-brands fa-windows',
+              body:'<p><strong>Step 1:</strong> Press <code>Windows Key + I</code> to open Settings.</p><p><strong>Step 2:</strong> Go to <strong>Update & Security > Activation</strong>.</p><p><strong>Step 3:</strong> Click <strong>Change product key</strong>.</p><p><strong>Step 4:</strong> Enter the license key provided.</p><p><strong>Step 5:</strong> Click Next and follow prompts.</p><p><strong>Troubleshooting:</strong> If you see "Windows is activated with a digital license", you\'re all set. If not, try the <strong>Activation Troubleshooter</strong>.</p><hr><p>Need help? <a href="https://wa.me/27677834591" target="_blank" style="color:var(--accent-1)">Chat on WhatsApp</a></p>' },
+            { title:'My PC is Running Slow — What to Do?', tags:['pc','slow','performance','speed','optimize'], icon:'fa-solid fa-gauge-high',
+              body:'<p><strong>1. Restart your PC</strong> — This clears temporary memory and fixes many slowdowns.</p><p><strong>2. Check startup programs:</strong> Press <code>Ctrl+Shift+Esc</code> > Startup tab > Disable unnecessary programs.</p><p><strong>3. Free up disk space:</strong> Open Settings > System > Storage > Turn on Storage Sense.</p><p><strong>4. Scan for malware:</strong> Run Windows Security > Virus & threat protection > Quick scan.</p><p><strong>5. Upgrade hardware:</strong> Adding an SSD or more RAM can dramatically speed up an old PC. <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20need%20a%20PC%20speed%20up%20service." target="_blank" style="color:var(--accent-1)">Book a hardware upgrade</a>.</p>' },
+            { title:'How to Write an ATS-Friendly CV', tags:['cv','resume','job','ats','career'], icon:'fa-solid fa-file-pen',
+              body:'<p><strong>ATS (Applicant Tracking Systems)</strong> scan CVs before humans see them. Follow these tips:</p><ul><li>Use a <strong>simple layout</strong> — no columns, tables, or graphics</li><li>Use <strong>standard section headings</strong> (Experience, Education, Skills)</li><li>Include <strong>keywords from the job description</strong></li><li>Save as <strong>.docx or .pdf</strong> (check the job ad for preference)</li><li>Keep it to <strong>1-2 pages</strong></li><li>Use a <strong>professional font</strong> like Calibri, Arial, or Helvetica</li></ul><p>I offer professional CV creation starting at <strong>R150</strong>. <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20want%20a%20professional%20CV." target="_blank" style="color:var(--accent-1)">Order yours today</a>.</p>' },
+            { title:'Blue Screen of Death (BSOD) — Common Fixes', tags:['bsod','blue screen','crash','error','windows'], icon:'fa-solid fa-triangle-exclamation',
+              body:'<p><strong>Stop code errors</strong> like <code>IRQL_NOT_LESS_OR_EQUAL</code> or <code>PAGE_FAULT_IN_NONPAGED_AREA</code> can be caused by:</p><ul><li><strong>Faulty drivers</strong> — Boot in Safe Mode and uninstall recent drivers</li><li><strong>Failing RAM</strong> — Run Windows Memory Diagnostic</li><li><strong>Corrupt system files</strong> — Run <code>sfc /scannow</code> in Command Prompt (Admin)</li><li><strong>Overheating</strong> — Clean dust from fans and ensure proper ventilation</li></ul><p>If BSODs persist, I offer <strong>BSOD repair and data recovery</strong>. <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20have%20a%20blue%20screen%20error." target="_blank" style="color:var(--accent-1)">Contact me for help</a>.</p>' },
+            { title:'How to Back Up Your Data Before Service', tags:['backup','data','files','important','safety'], icon:'fa-solid fa-database',
+              body:'<p>Before any PC repair, always back up your important files:</p><ul><li><strong>External drive:</strong> Copy Documents, Pictures, Desktop folders to an external HDD/SSD</li><li><strong>Cloud backup:</strong> Use OneDrive, Google Drive, or Dropbox for important files</li><li><strong>Windows Backup:</strong> Go to Settings > Update & Security > Backup > Back up to an external drive</li></ul><p><strong>What to back up:</strong></p><ul><li>Documents and spreadsheets</li><li>Photos and videos</li><li>Browser bookmarks</li><li>Any work projects or assignments</li></ul><p>I\'m not liable for pre-existing data loss, so please back up before service!</p>' },
+            { title:'Microsoft Office 365 vs Perpetual License — Which to Choose?', tags:['office','365','license','subscription','buying'], icon:'fa-solid fa-gem',
+              body:'<p><strong>Office 365 (Subscription):</strong> Pay monthly/yearly. Always up to date. Includes 1TB OneDrive storage. Works on multiple devices. ~R100-150/month.</p><p><strong>Office 2021/2024 (Perpetual):</strong> One-time payment. No updates after support ends. Works on 1 PC. R300-R350 via Vincent IT.</p><p><strong>My recommendation:</strong> If you need the latest features and cloud storage, go with 365. If you want a one-time affordable solution, a perpetual license from me is perfect.</p><p><a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20want%20to%20buy%20Office." target="_blank" style="color:var(--accent-1)">Order Office activation on WhatsApp</a></p>' },
+            { title:'How to Prepare for a Remote IT Session', tags:['remote','teamviewer','anydesk','session','preparation'], icon:'fa-solid fa-laptop-code',
+              body:'<p><strong>Before your remote session:</strong></p><ul><li>Ensure you have a <strong>stable internet connection</strong></li><li>Download <strong>TeamViewer</strong> or <strong>AnyDesk</strong> beforehand</li><li><strong>Back up</strong> your important files</li><li>Have your <strong>product key</strong> ready (if applicable)</li><li>Make sure you\'re <strong>available for the full session</strong></li></ul><p><strong>During the session:</strong></p><ul><li>Watch the technician\'s screen — you\'ll see everything they do</li><li>You can <strong>revoke access anytime</strong> by closing the remote software</li><li>Have your phone nearby in case we need to call</li></ul><p><a href="https://wa.me/27677834591" target="_blank" style="color:var(--accent-1)">Book a remote session</a></p>' },
+            { title:'Common Assignment Writing Tips', tags:['assignment','academic','college','university','writing'], icon:'fa-solid fa-graduation-cap',
+              body:'<p><strong>Tips for better academic writing:</strong></p><ul><li><strong>Read the brief carefully</strong> — understand the question before writing</li><li><strong>Plan your structure:</strong> Introduction, body paragraphs, conclusion</li><li><strong>Cite sources properly</strong> — Harvard, APA, or MLA as required</li><li><strong>Check plagiarism</strong> before submitting — use free tools like SmallSEOTools</li><li><strong>Proofread</strong> — read aloud or use Grammarly</li></ul><p>I offer <strong>assignment assistance</strong> from R300. <a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20need%20help%20with%20an%20assignment." target="_blank" style="color:var(--accent-1)">Order assignment help</a></p>' },
+            { title:'Understanding Different CV Formats', tags:['cv','resume','format','chronological','functional','hybrid'], icon:'fa-solid fa-file-lines',
+              body:'<p><strong>1. Chronological CV:</strong> Lists experience in reverse order. Best for those with consistent work history. Preferred by most recruiters.</p><p><strong>2. Functional CV:</strong> Focuses on skills rather than timeline. Good for career changers or employment gaps.</p><p><strong>3. Hybrid CV:</strong> Combines both — highlights skills and shows chronological experience. Versatile and effective.</p><hr><p><strong>Which should you choose?</strong> For most South African jobs, a <strong>chronological or hybrid</strong> format works best. I create all three formats starting at <strong>R150</strong>.</p><p><a href="https://wa.me/27677834591?text=Hi%20Vincent%20IT!%20I%20want%20a%20CV." target="_blank" style="color:var(--accent-1)">Order a professional CV</a></p>' },
+        ];
+
+        function filterKB(q) {
+            const cards = document.querySelectorAll('.kb-card');
+            const query = q.toLowerCase();
+            cards.forEach(c => {
+                const text = c.dataset.search.toLowerCase();
+                c.style.display = !query || text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function renderKB() {
+            const grid = document.getElementById('kbGrid');
+            grid.innerHTML = kbArticles.map((a, i) => `
+                <div class="kb-card" data-index="${i}" data-search="${a.title} ${a.tags.join(' ')}" onclick="openKB(${i})">
+                    <div class="kb-card-icon"><i class="${a.icon}"></i></div>
+                    <h3>${a.title}</h3>
+                    <p>${a.body.replace(/<[^>]*>/g,'').substring(0,120)}...</p>
+                    <div>${a.tags.map(t => `<span class="kb-tag">${t}</span>`).join('')}</div>
+                </div>
+            `).join('');
+        }
+
+        function openKB(i) {
+            const a = kbArticles[i];
+            document.getElementById('kbModalTitle').textContent = a.title;
+            document.getElementById('kbModalBody').innerHTML = a.body;
+            document.getElementById('kbModal').style.display = 'flex';
+        }
+
+        function closeKB() {
+            document.getElementById('kbModal').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', renderKB);
+        document.getElementById('kbModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeKB();
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').catch(()=>{}); }
+            if (navigator.onLine) { fetch('/api/visit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:window.location.pathname}) }).catch(()=>{}); }
+        });
+    </script>
+</body>
+</html>

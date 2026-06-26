@@ -75,12 +75,15 @@ function initPortal() {
                 <div class="portal-tabs">
                     <button class="portal-tab active" data-section="orders" data-i18n="portal.orders">My Orders</button>
                     <button class="portal-tab" data-section="appointments" data-i18n="portal.appointments">My Appointments</button>
+                    <button class="portal-tab" data-section="referrals">Referrals</button>
                     <button class="portal-tab" data-section="account">Account</button>
                 </div>
                 <div id="portalOrders" class="portal-section-content"></div>
                 <div id="portalAppointments" class="portal-section-content" style="display:none;"></div>
+                <div id="portalReferrals" class="portal-section-content" style="display:none;"></div>
                 <div id="portalAccount" class="portal-section-content" style="display:none;">
-                    <p>Referral Code: <strong id="portalRefCode"></strong></p>
+                    <p>Referral Code: <strong id="portalRefCode" style="color:var(--accent-1);letter-spacing:1px"></strong></p>
+                    <p style="color:var(--text-muted);font-size:0.8rem">Share your code — earn R10 per referral!</p>
                     <p><a href="#" id="showForgotPasswordDash" style="color:var(--accent-1);font-size:0.85rem">Change Password</a></p>
                     <button class="btn btn-outline" id="portalLogout" data-i18n="portal.logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
@@ -115,6 +118,7 @@ function bindPortalEvents() {
             if (sec) sec.style.display = 'block';
             if (tab.dataset.section === 'orders') loadPortalOrders();
             if (tab.dataset.section === 'appointments') loadPortalAppointments();
+            if (tab.dataset.section === 'referrals') loadPortalReferrals();
         });
     });
 
@@ -242,6 +246,39 @@ function savePortalSession() {
 function checkPortalSession() {
     const saved = localStorage.getItem('vit_portal_session');
     if (saved) { portalClient = JSON.parse(saved); showPortalDashboard(); }
+}
+
+function loadPortalReferrals() {
+    const container = document.getElementById('portalReferrals');
+    container.innerHTML = '<p style="color:var(--text-muted)">Loading referrals...</p>';
+    if (navigator.onLine && portalClient?.email) {
+        fetch(`/api/client/referrals?email=${encodeURIComponent(portalClient.email)}`)
+            .then(r => r.json())
+            .then(data => {
+                const shareLink = `https://wa.me/27677834591?text=${encodeURIComponent('Use my referral code ' + data.referral_code + ' when ordering from Vincent IT Freelancer and we both save!')}`;
+                container.innerHTML = `
+                    <div class="portal-card">
+                        <div class="portal-card-header"><strong><i class="fas fa-gift" style="color:var(--accent-1)"></i> Your Referral Program</strong></div>
+                        <div class="portal-card-body">
+                            <p style="margin-bottom:0.5rem">Your referral code: <strong style="color:var(--accent-1);font-size:1.2rem;letter-spacing:2px">${data.referral_code}</strong></p>
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:1rem 0;text-align:center">
+                                <div style="background:rgba(0,212,255,0.06);border-radius:8px;padding:0.8rem"><div style="font-size:1.5rem;font-weight:900;color:var(--accent-1)">${data.total_referred}</div><div style="font-size:0.75rem;color:var(--text-muted)">Referred</div></div>
+                                <div style="background:rgba(0,200,83,0.06);border-radius:8px;padding:0.8rem"><div style="font-size:1.5rem;font-weight:900;color:#00c853">R${data.referral_earnings}</div><div style="font-size:0.75rem;color:var(--text-muted)">Earned</div></div>
+                                <div style="background:rgba(123,47,247,0.06);border-radius:8px;padding:0.8rem"><div style="font-size:1.5rem;font-weight:900;color:#7b2ff7">${data.paid_orders}</div><div style="font-size:0.75rem;color:var(--text-muted)">Orders Paid</div></div>
+                            </div>
+                            ${data.referred_clients && data.referred_clients.length ? `
+                                <p style="font-weight:600;color:var(--accent-1);margin-top:0.5rem">People you referred:</p>
+                                ${data.referred_clients.map(r => `<p style="font-size:0.85rem;color:var(--text-muted)">• ${r.name} — ${new Date(r.date).toLocaleDateString()}</p>`).join('')}
+                            ` : '<p style="color:var(--text-muted);font-size:0.85rem">No referrals yet. Share your code!</p>'}
+                            <a href="${shareLink}" target="_blank" class="btn btn-whatsapp" style="margin-top:1rem;display:inline-flex;justify-content:center;width:100%"><i class="fab fa-whatsapp"></i> Share Referral Code on WhatsApp</a>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(() => { container.innerHTML = '<p style="color:var(--text-muted)">Could not load referral data.</p>'; });
+    } else {
+        container.innerHTML = '<p style="color:var(--text-muted)">Log in to view your referrals.</p>';
+    }
 }
 
 function showPortalDashboard() {

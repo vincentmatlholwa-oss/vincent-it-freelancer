@@ -803,6 +803,8 @@ function initContractForm() {
                     if (discData.valid) appliedDiscount = discData.discount;
                 } catch {}
             }
+            const urgentCheck = document.getElementById('urgentOrder');
+            const isUrgent = urgentCheck ? urgentCheck.checked : false;
             const payload = {
                 client_name: clientName,
                 client_email: clientEmail,
@@ -810,7 +812,8 @@ function initContractForm() {
                 service: additionalInfo ? `${serviceLabel} — ${additionalInfo}` : serviceLabel,
                 price: '',
                 cart_items: JSON.stringify(cartItems),
-                discount_code: discCode
+                discount_code: discCode,
+                urgent: isUrgent
             };
             const cartTotal = cartItems.reduce((s, c) => s + c.price * c.qty, 0);
             if (cart.length > 0) payload.price = appliedDiscount ? `R${Math.round(cartTotal * (1 - appliedDiscount / 100))}` : `R${cartTotal}`;
