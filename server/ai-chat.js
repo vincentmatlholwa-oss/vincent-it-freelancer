@@ -1,8 +1,9 @@
 const https = require('https');
 
 const CHATBOT_ENABLED = process.env.CHATBOT_ENABLED !== 'false';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const AI_API_KEY = process.env.AI_API_KEY || '';
+const AI_PROVIDER = (process.env.AI_PROVIDER || 'groq').toLowerCase();
+const AI_MODEL = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
 
 const SYSTEM_CONTEXT = `You are Vincent IT's customer support assistant for a South African IT freelancer business.
 
@@ -71,7 +72,7 @@ function isEnabled() {
 }
 
 function usesAI() {
-    return CHATBOT_ENABLED && GEMINI_API_KEY.length > 0;
+    return CHATBOT_ENABLED && AI_API_KEY.length > 0;
 }
 
 function getConfig() {
@@ -81,51 +82,55 @@ function getConfig() {
 async function generateResponse(userMessage, conversationHistory) {
     if (usesAI()) {
         try {
-            return await callGemini(userMessage, conversationHistory);
+            return await callAI(userMessage, conversationHistory);
         } catch (e) {
-            console.error('Gemini API error, falling back to keyword:', e.message);
+            console.error('AI API error, falling back to keyword:', e.message);
             return keywordResponse(userMessage);
         }
     }
     return keywordResponse(userMessage);
 }
 
-function callGemini(userMessage, conversationHistory) {
+function callAI(userMessage, conversationHistory) {
     return new Promise((resolve, reject) => {
-        const contents = [{ role: 'user', parts: [{ text: SYSTEM_CONTEXT }] }];
-        contents.push({ role: 'model', parts: [{ text: 'Understood. I will assist customers professionally and concisely.' }] });
+        const messages = [{ role: 'system', content: SYSTEM_CONTEXT }];
         const recent = (conversationHistory || []).slice(-10);
         recent.forEach(msg => {
-            contents.push({
-                role: msg.is_admin ? 'model' : 'user',
-                parts: [{ text: msg.message }]
+            messages.push({
+                role: msg.is_admin ? 'assistant' : 'user',
+                content: msg.message
             });
         });
         if (!recent.length || recent[recent.length - 1].message !== userMessage) {
-            contents.push({ role: 'user', parts: [{ text: userMessage }] });
+            messages.push({ role: 'user', content: userMessage });
         }
         const payload = JSON.stringify({
-            contents,
-            generationConfig: { temperature: 0.7, maxOutputTokens: 300, topP: 0.9 }
+            model: AI_MODEL,
+            messages,
+            temperature: 0.7,
+            max_tokens: 300,
+            top_p: 0.9
         });
+
+        const { hostname, path, headers } = getAPIEndpoint();
         const req = https.request({
-            hostname: 'generativelanguage.googleapis.com',
+            hostname,
             port: 443,
-            path: `/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+            path,
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+            headers: { ...headers, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
         }, (res) => {
             let body = '';
             res.on('data', chunk => body += chunk);
             res.on('end', () => {
                 try {
                     const data = JSON.parse(body);
-                    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                        const text = data.candidates[0].content.parts.map(p => p.text).join('').trim();
+                    if (data.choices && data.choices[0] && data.choices[0].message) {
+                        const text = data.choices[0].message.content.trim();
                         if (text) return resolve(text);
                     }
-                    if (data.error) return reject(new Error(data.error.message));
-                    reject(new Error('No response from Gemini'));
+                    if (data.error) return reject(new Error(data.error.message || JSON.stringify(data.error)));
+                    reject(new Error('No response from AI provider'));
                 } catch (e) {
                     reject(new Error('Parse error: ' + e.message));
                 }
@@ -135,6 +140,22 @@ function callGemini(userMessage, conversationHistory) {
         req.write(payload);
         req.end();
     });
+}
+
+function getAPIEndpoint() {
+    if (AI_PROVIDER === 'openai') {
+        return {
+            hostname: 'api.openai.com',
+            path: '/v1/chat/completions',
+            headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+        };
+    }
+    // Default: Groq (free, OpenAI-compatible)
+    return {
+        hostname: 'api.groq.com',
+        path: '/openai/v1/chat/completions',
+        headers: { 'Authorization': `Bearer ${AI_API_KEY}` }
+    };
 }
 
 function keywordResponse(input) {
