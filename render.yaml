@@ -34,3 +34,13 @@ services:
         value: "true"
       - key: SITE_URL
         value: "https://vincent-it-freelancer.onrender.com"
+      - key: CHATBOT_ENABLED
+        value: "true"
+      - key: AI_PROVIDER
+        value: "groq"
+      - key: AI_MODEL
+        value: "llama-3.3-70b-versatile"
+      - key: AI_API_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
