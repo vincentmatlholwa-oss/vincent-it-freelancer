@@ -1196,7 +1196,7 @@ function notifyClient(orderId, status) {
 // ===== Sitemap =====
 app.get('/sitemap.xml', (req, res) => {
     const siteUrl = process.env.SITE_URL || 'https://vincent-it-freelancer.onrender.com';
-    const pages = ['/', '/client/portal.html', '/qr.html', '/privacy.html', '/payment-success.html', '/payment-cancel.html', '/blog/'];
+    const pages = ['/', '/client/portal.html', '/qr.html', '/privacy.html', '/terms.html', '/about.html', '/payment-success.html', '/payment-cancel.html', '/blog/'];
     const blogPosts = db.query('blog_posts', p => p.published !== 0);
     let xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     pages.forEach(p => { xml += `<url><loc>${siteUrl}${p}</loc><priority>0.8</priority></url>`; });

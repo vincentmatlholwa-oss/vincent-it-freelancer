@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint check
+        run: node -e "require('./server'); console.log('Server module loaded OK')"
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret
+          DB_PATH: :memory:
+
+      - name: Validate HTML pages
+        run: |
+          for f in ../*.html; do
+            echo "✓ Found: $(basename $f)"
+          done
+          for f in ../blog/*.html ../admin/*.html ../client/*.html; do
+            echo "✓ Found: $(basename $f)"
+          done

@@ -24,7 +24,9 @@ const ASSETS = [
     '/templates.html',
     '/faq.html',
     '/contact.html',
-    '/contract.html'
+    '/contract.html',
+    '/about.html',
+    '/terms.html'
 ];
 
 self.addEventListener('install', event => {

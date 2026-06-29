@@ -1,6 +1,6 @@
 const translations = {
     en: {
-        nav: { services: 'Services', pricing: 'Pricing', compare: 'Compare', portfolio: 'Portfolio', faq: 'FAQ', contract: 'Contract', contact: 'Contact' },
+        nav: { about: 'About', services: 'Services', pricing: 'Pricing', compare: 'Compare', portfolio: 'Portfolio', faq: 'FAQ', contract: 'Contract', contact: 'Contact' },
         hero: { badge: 'Premium IT Services', title1: 'Vincent IT', title2: 'Freelancer', desc: 'Professional tech solutions — from Microsoft Office activation to hardware upgrades, CV creation, and academic assistance. Based in <strong>Mahikeng, North West</strong>.', btn1: 'Explore Services', btn2: 'Chat Now' },
         services: { badge: 'What I Offer', title: 'Professional Services', desc: 'Comprehensive IT solutions tailored to your needs' },
         pricing: { badge: 'Pricing', title: 'Transparent Pricing', desc: 'No hidden fees — quality service at fair rates', student: 'Student 10% off', returning: 'Returning 5% off', addCart: 'Add to Cart', popular: 'Popular', deposit: '50% deposit to start' },
@@ -26,7 +26,7 @@ const translations = {
     },
 
     af: {
-        nav: { services: 'Dienste', pricing: 'Pryse', compare: 'Vergelyk', portfolio: 'Portefeulje', faq: 'Gereelde Vrae', contract: 'Kontrak', contact: 'Kontak' },
+        nav: { about: 'Oor My', services: 'Dienste', pricing: 'Pryse', compare: 'Vergelyk', portfolio: 'Portefeulje', faq: 'Gereelde Vrae', contract: 'Kontrak', contact: 'Kontak' },
         hero: { badge: 'Premium IT-dienste', title1: 'Vincent IT', title2: 'Vryskut', desc: 'Professionele tegniese oplossings — van Microsoft Office-aktivering tot hardeware-opgraderings, CV-skepping en akademiese bystand. Gebaseer in <strong>Mahikeng, Noordwes</strong>.', btn1: 'Verken Dienste', btn2: 'Praat Nou' },
         services: { badge: 'Wat Ek Bied', title: 'Professionele Dienste', desc: 'Omvattende IT-oplossings aangepas by jou behoeftes' },
         pricing: { badge: 'Pryse', title: 'Deursigtige Pryse', desc: 'Geen verborge fooie nie — kwaliteit diens teen billike tariewe', student: 'Student 10% afslag', returning: 'Terugkerend 5% afslag', addCart: 'Voeg by Mandjie', popular: 'Gewild', deposit: '50% deposito om te begin' },
@@ -52,7 +52,7 @@ const translations = {
     },
 
     ts: {
-        nav: { services: 'Tirheko', pricing: 'Nxavo', compare: 'Pfananisa', portfolio: 'Phorifiliyo', faq: 'Swivutiso swa Kahle', contract: 'Kontiraka', contact: 'Tihlanganise' },
+        nav: { about: 'Hi Mina', services: 'Tirheko', pricing: 'Nxavo', compare: 'Pfananisa', portfolio: 'Phorifiliyo', faq: 'Swivutiso swa Kahle', contract: 'Kontiraka', contact: 'Tihlanganise' },
         hero: { badge: 'Tirheko ta IT ta le henhla', title1: 'Vincent IT', title2: 'Mutirhi wa Ntshunxeko', desc: 'Tinhleletiso ta thekinoloji ta xiyimo xa le henhla — ku sukela eku pfumeleleriweni ka Microsoft Office ku ya eka ku antswisiwa ka hardware, ku tumbuluxiwa ka CV, na mpfuno wa tidyondzo. Yi tumbuluxiwile e <strong>Mahikeng, North West</strong>.', btn1: 'Hlola Tirheko', btn2: 'Pfuneta Sweswi' },
         services: { badge: 'Leswi Ndzi Nykaka Swona', title: 'Tirheko ta Xiyimo xa le Henhla', desc: 'Tinhleletiso ta IT leti hetisekeke leti lulameriweke eka swilaveko swa wena' },
         pricing: { badge: 'Nxavo', title: 'Nxavo Wo Veka Erihatla', desc: 'A ku na mahumelelo ya le ndhundhuni — tirheko ya xiyimo xa le henhla eka nxavo wo lulama', student: 'Mudyondi 10% endlelo', returning: 'Muendzi loyi a tlheleke 5% endlelo', addCart: 'Engetela eka Kaleni', popular: 'Rhandzeka', deposit: '50% diphositi ku sungula' },
