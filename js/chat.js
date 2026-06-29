@@ -2,6 +2,8 @@ let chatPollInterval = null;
 let chatSocket = null;
 let chatTypingTimer = null;
 let chatReadReceipts = {};
+let serverAIEnabled = false;
+let awaitingAIResponse = false;
 
 function initWebSocket() {
     if (chatSocket && chatSocket.readyState === 1) return;
@@ -14,19 +16,21 @@ function initWebSocket() {
                 const data = JSON.parse(event.data);
                 if (data.type === 'new_message' && data.is_admin) {
                     const box = document.getElementById('chatBox');
-                    const existing = document.querySelectorAll('#chatMessages .chat-msg.admin');
+                    const existing = document.querySelectorAll('#chatMessages .chat-msg.admin:not(:first-child)');
                     let alreadyExists = false;
                     existing.forEach(el => {
                         const p = el.querySelector('p');
                         if (p && p.textContent === data.message) alreadyExists = true;
                     });
                     if (!alreadyExists) {
+                        removeTypingIndicator();
                         appendMessage('Vincent IT', data.message, 'admin');
                         saveChatToLocal(data.message, 'admin');
                         if (!box || !box.classList.contains('open')) {
                             document.getElementById('chatNotif').style.display = 'inline';
                         }
                     }
+                    if (data.ai_responded) awaitingAIResponse = false;
                 } else if (data.type === 'typing' && data.is_admin) {
                     showTypingIndicator(data.sender || 'Vincent IT');
                 } else if (data.type === 'read_receipt' && data.is_admin) {
@@ -59,6 +63,11 @@ function initWebSocket() {
     } catch (e) {
         chatSocket = null;
     }
+}
+
+function removeTypingIndicator() {
+    const el = document.getElementById('chatTypingIndicator');
+    if (el) el.remove();
 }
 
 function showTypingIndicator(sender) {
@@ -131,7 +140,7 @@ function initChat() {
                 <i class="fas fa-robot"></i>
                 <div>
                     <strong data-i18n="chat.title">Live Chat</strong>
-                    <small>Vincent IT</small>
+                    <small>Vincent IT <span id="chatAIBadge" style="display:none;font-size:0.6rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);padding:0.1rem 0.4rem;border-radius:4px;color:#fff;font-weight:600;margin-left:0.3rem">AI</span></small>
                 </div>
                 <button class="chat-close" id="chatClose">&times;</button>
             </div>
@@ -152,6 +161,10 @@ function initChat() {
         </div>
     `;
     document.body.appendChild(chatContainer);
+    fetch('/api/chatbot/config').then(r => r.json()).then(cfg => {
+        serverAIEnabled = cfg.enabled;
+        if (cfg.usesAI) document.getElementById('chatAIBadge').style.display = 'inline';
+    }).catch(() => {});
     bindChatEvents();
     loadChatHistory();
     initWebSocketWithFallback();
@@ -258,11 +271,20 @@ function pollAdminReplies() {
             }).catch(() => {});
         }
         saveChatToLocal(msg, 'user');
-        setTimeout(() => {
-            const reply = getReply(msg);
-            appendMessage('Vincent IT', reply, 'admin');
-            saveChatToLocal(reply, 'admin');
-        }, 800);
+        if (serverAIEnabled) {
+            awaitingAIResponse = true;
+            showTypingIndicator('Vincent IT');
+            const aiCheck = setInterval(() => {
+                if (!awaitingAIResponse) { clearInterval(aiCheck); removeTypingIndicator(); }
+            }, 1000);
+            setTimeout(() => { if (awaitingAIResponse) { awaitingAIResponse = false; removeTypingIndicator(); } }, 30000);
+        } else {
+            setTimeout(() => {
+                const reply = getReply(msg);
+                appendMessage('Vincent IT', reply, 'admin');
+                saveChatToLocal(reply, 'admin');
+            }, 800);
+        }
         scrollChat();
     }
 

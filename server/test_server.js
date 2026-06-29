@@ -36,6 +36,19 @@ test('package.json exists', () => {
 });
 
 // Verify all required npm dependencies are listed
+test('ai-chat.js exists', () => {
+    assert.ok(fs.existsSync(path.join(__dirname, 'ai-chat.js')));
+});
+
+test('ai-chat module loads', () => {
+    const aiChat = require('./ai-chat');
+    assert.ok(typeof aiChat.generateResponse === 'function');
+    assert.ok(typeof aiChat.isEnabled === 'function');
+    assert.ok(typeof aiChat.getConfig === 'function');
+    const cfg = aiChat.getConfig();
+    assert.ok(typeof cfg.enabled === 'boolean');
+});
+
 test('required dependencies present', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
     const deps = Object.keys(pkg.dependencies);

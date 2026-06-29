@@ -19,6 +19,7 @@ const PDFDocument = require('pdfkit');
 const payfast = require('./payfast');
 const db = require('./database');
 const svgCaptcha = require('svg-captcha');
+const aiChat = require('./ai-chat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1596,14 +1597,20 @@ app.post('/api/admin/delete-client/:id', authenticateToken, async (req, res) => 
     }
 });
 
+// ===== AI Chatbot =====
+app.get('/api/chatbot/config', (req, res) => {
+    res.json(aiChat.getConfig());
+});
+
 // ===== Chat =====
 app.post('/api/chat', validate([
     { name: 'sender', label: 'Sender', required: true, maxLength: 100 },
     { name: 'message', label: 'Message', required: true, maxLength: 5000 }
-]), (req, res) => {
+]), async (req, res) => {
     const { sender, message, is_admin } = req.body;
+    const msgId = uuidv4();
     db.insert('chat_messages', {
-        id: uuidv4(),
+        id: msgId,
         sender: sender.trim().replace(/<[^>]*>/g, ''),
         message: message.trim().replace(/<[^>]*>/g, ''),
         is_admin: is_admin ? 1 : 0,
@@ -1612,6 +1619,30 @@ app.post('/api/chat', validate([
     });
     res.json({ success: true });
     if (broadcastChat) broadcastChat({ type: 'new_message', sender, message, is_admin: is_admin ? 1 : 0, created_at: new Date().toISOString() });
+
+    // Auto-respond with AI for visitor messages
+    if (!is_admin && aiChat.isEnabled()) {
+        try {
+            const history = db.query('chat_messages', null);
+            const aiReply = await aiChat.generateResponse(message, history);
+            if (aiReply && aiReply.trim()) {
+                const aiId = uuidv4();
+                db.insert('chat_messages', {
+                    id: aiId,
+                    sender: 'Vincent IT',
+                    message: aiReply.trim(),
+                    is_admin: 1,
+                    read: 0,
+                    created_at: new Date().toISOString()
+                });
+                if (broadcastChat) {
+                    broadcastChat({ type: 'new_message', sender: 'Vincent IT', message: aiReply.trim(), is_admin: 1, created_at: new Date().toISOString(), ai_responded: true });
+                }
+            }
+        } catch (e) {
+            console.error('AI chat response error:', e.message);
+        }
+    }
 });
 
 app.get('/api/chat', authenticateToken, (req, res) => {
